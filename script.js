@@ -1,61 +1,35 @@
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
+// Links iniciais
 const defaultLinks = [
-    // IA
     { id: generateId(), title: "ChatGPT", url: "https://chatgpt.com/", category: "IA" },
     { id: generateId(), title: "Gemini AI", url: "https://gemini.google.com/app", category: "IA" },
-    { id: generateId(), title: "Manus", url: "https://manus.im/app", category: "IA" },
-    { id: generateId(), title: "DeepSeek", url: "https://chat.deepseek.com/sign_in", category: "IA" },
-    
-    // Dev & Tools
     { id: generateId(), title: "GitHub", url: "https://github.com/", category: "Dev" },
-    { id: generateId(), title: "Vercel", url: "https://vercel.com/victors-projects-9d919fd2", category: "Dev" },
-    { id: generateId(), title: "Supabase", url: "https://supabase.com/dashboard/sign-in", category: "Dev" },
-    { id: generateId(), title: "AWS Console", url: "https://us-east-1.signin.aws/platform/d-9067642ac7/login", category: "Dev" },
-    { id: generateId(), title: "JSON Formatter", url: "https://jsonformatter.curiousconcept.com/", category: "Dev" },
-    { id: generateId(), title: "Diagrams.net", url: "https://app.diagrams.net/", category: "Dev" },
-
-    // Faculdade
-    { id: generateId(), title: "Microsoft Teams", url: "https://teams.microsoft.com/v2/", category: "Faculdade" },
-    { id: generateId(), title: "SIGA Aluno", url: "https://siga.cps.sp.gov.br/sigaaluno/applogin.aspx", category: "Faculdade" },
-
-    // Cursos
+    { id: generateId(), title: "Vercel", url: "https://vercel.com/", category: "Dev" },
     { id: generateId(), title: "Alura", url: "https://cursos.alura.com.br/loginForm", category: "Cursos" },
-    { id: generateId(), title: "DIO", url: "https://web.dio.me/home", category: "Cursos" },
-    { id: generateId(), title: "Circle.so", url: "https://login.circle.so/sign_in", category: "Cursos" },
-    { id: generateId(), title: "Estudar Na Prática", url: "https://ead.estudar.org.br/users/sign_in", category: "Cursos" },
-    { id: generateId(), title: "Danki Unity", url: "https://cursos.dankicode.com/unity?ref=U77942400J", category: "Cursos" },
-    { id: generateId(), title: "Curso Laravel", url: "https://www.cursou.com.br/informatica/programacao/php/laravel-framework-php-desenvolvimento-web/", category: "Cursos" },
-
-    // Música
-    { id: generateId(), title: "Song BPM", url: "https://getsongbpm.com/", category: "Música" },
-    { id: generateId(), title: "Violino Downloads", url: "https://canalparaviolinistas.com/downloads/", category: "Música" },
-
-    // Networking
-    { id: generateId(), title: "LinkedIn", url: "https://www.linkedin.com/feed/", category: "Networking" },
-    { id: generateId(), title: "Aspire Leaders", url: "https://engage.aspireleaders.org/profile", category: "Networking" },
-
-    // Jogos
-    { id: generateId(), title: "RetroGames", url: "https://www.retrogames.onl/", category: "Jogos" },
-    { id: generateId(), title: "Game3rb", url: "https://game3rb.com/category/games-online", category: "Jogos" },
-    { id: generateId(), title: "Nexus Mods", url: "https://www.nexusmods.com/skyrim/mods/116605", category: "Jogos" },
-    { id: generateId(), title: "WarriorJS", url: "https://warriorjs.com/", category: "Jogos" },
-    { id: generateId(), title: "Guia Monster Hunter", url: "https://guiadomh.carrd.co/", category: "Jogos" }
+    { id: generateId(), title: "LinkedIn", url: "https://www.linkedin.com/", category: "Networking" }
 ];
 
-let customLinks = JSON.parse(localStorage.getItem("myLinks")) || [];
-let activeCategory = "Todos"; 
+// --- GESTÃO DE DADOS ---
+let allLinks = JSON.parse(localStorage.getItem("myLinks"));
 
+if (!allLinks || allLinks.length === 0) {
+    allLinks = defaultLinks;
+    localStorage.setItem("myLinks", JSON.stringify(allLinks));
+}
+
+let activeCategory = "Todos"; 
 const container = document.getElementById("linksContainer");
 const navContainer = document.getElementById("categoryNav");
 const modal = document.getElementById("modal");
 
-function getAllLinks() { return [...defaultLinks, ...customLinks]; }
-function saveStorage() { localStorage.setItem("myLinks", JSON.stringify(customLinks)); }
+function saveStorage() { 
+    localStorage.setItem("myLinks", JSON.stringify(allLinks)); 
+}
 
+// --- RENDERIZAÇÃO ---
 function renderCategories() {
-    const links = getAllLinks();
-    const categories = ["Todos", ...new Set(links.map(l => l.category))].sort();
+    const categories = ["Todos", ...new Set(allLinks.map(l => l.category))].sort();
     
     navContainer.innerHTML = "";
     const select = document.getElementById("categorySelect");
@@ -65,6 +39,10 @@ function renderCategories() {
         const btn = document.createElement("button");
         btn.className = `nav-item ${activeCategory === cat ? 'active' : ''}`;
         btn.innerText = cat;
+        // Importante: classe específica para detecção
+        btn.classList.add("drop-target"); 
+        btn.setAttribute("data-target-cat", cat); 
+        
         btn.onclick = () => {
             activeCategory = cat;
             renderCategories();
@@ -73,7 +51,6 @@ function renderCategories() {
         navContainer.appendChild(btn);
     });
 
-    // Select do Modal
     categories.filter(c => c !== "Todos").forEach(c => {
         const opt = document.createElement("option");
         opt.value = c;
@@ -90,36 +67,112 @@ function renderLinks() {
     container.innerHTML = "";
     const searchTerm = document.getElementById("search").value.toLowerCase();
     
-    const filteredLinks = getAllLinks().filter(l => {
+    const filteredLinks = allLinks.filter(l => {
         const matchesCategory = activeCategory === "Todos" ? true : l.category === activeCategory;
         const matchesSearch = l.title.toLowerCase().includes(searchTerm);
         return matchesCategory && matchesSearch;
     });
 
     filteredLinks.forEach(link => {
-        const card = document.createElement("a");
+        const card = document.createElement("div");
         card.className = "card";
-        card.href = link.url;
-        card.target = "_blank";
-        card.rel = "noopener noreferrer";
-
+        card.setAttribute("data-id", link.id);
+        
+        card.onclick = (e) => {
+            if(!e.target.closest('.delete-btn')) {
+                window.open(link.url, '_blank');
+            }
+        };
+        
         const domain = new URL(link.url).hostname;
-        // Ícone pequeno (32px) para carregar rápido e ficar clean
         const iconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-
-        const isCustom = customLinks.some(cl => cl.id === link.id);
-        const deleteBtn = isCustom 
-            ? `<button class="delete-btn" onclick="event.preventDefault(); deleteLink('${link.id}')"><i class="fa-solid fa-trash"></i></button>`
-            : '';
 
         card.innerHTML = `
             <img src="${iconUrl}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
             <span>${link.title}</span>
-            ${deleteBtn}
+            <button class="delete-btn" onclick="deleteLink('${link.id}')"><i class="fa-solid fa-trash"></i></button>
         `;
         container.appendChild(card);
     });
 }
+
+// --- DRAG AND DROP LÓGICA (CORRIGIDA) ---
+
+new Sortable(container, {
+    animation: 150,
+    // ESSENCIAL: Desativa o drag nativo do HTML5 e usa elementos DOM reais
+    forceFallback: true, 
+    fallbackClass: "sortable-fallback", // Usa nossa classe CSS tunada
+    ghostClass: "sortable-ghost",
+    
+    onMove: function (evt) {
+        // Limpa destaques anteriores
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('drag-hover'));
+        
+        // Pega o evento original do mouse/toque
+        const originalEvent = evt.originalEvent;
+        
+        // Suporte para Mouse e Touch
+        const clientX = originalEvent.touches ? originalEvent.touches[0].clientX : originalEvent.clientX;
+        const clientY = originalEvent.touches ? originalEvent.touches[0].clientY : originalEvent.clientY;
+
+        // Procura o elemento EMBAIXO do mouse (graças ao pointer-events: none no CSS)
+        const elUnder = document.elementFromPoint(clientX, clientY);
+        
+        if (elUnder) {
+            // Verifica se é o botão ou está dentro do botão
+            const btn = elUnder.closest('.drop-target');
+            if (btn) {
+                const targetCat = btn.getAttribute("data-target-cat");
+                if (targetCat && targetCat !== "Todos") {
+                    btn.classList.add('drag-hover');
+                }
+            }
+        }
+    },
+
+    onEnd: function (evt) {
+        // Limpa visual
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('drag-hover'));
+
+        // Mesma lógica de detecção para o momento de soltar
+        const originalEvent = evt.originalEvent;
+        const clientX = originalEvent.changedTouches ? originalEvent.changedTouches[0].clientX : originalEvent.clientX;
+        const clientY = originalEvent.changedTouches ? originalEvent.changedTouches[0].clientY : originalEvent.clientY;
+        
+        const elUnder = document.elementFromPoint(clientX, clientY);
+        
+        if (elUnder) {
+            const btn = elUnder.closest('.drop-target');
+            
+            if (btn) {
+                const newCategory = btn.getAttribute("data-target-cat");
+                const linkId = evt.item.getAttribute("data-id");
+
+                if (newCategory && newCategory !== "Todos") {
+                    const linkIndex = allLinks.findIndex(l => l.id === linkId);
+                    
+                    if (linkIndex > -1 && allLinks[linkIndex].category !== newCategory) {
+                        // Confirmação visual (opcional) ou ação direta
+                        allLinks[linkIndex].category = newCategory;
+                        saveStorage();
+                        
+                        // Força refresh para mover o item visualmente
+                        activeCategory = "Todos"; // Opcional: mantém em todos ou vai para a nova
+                        renderCategories();
+                        renderLinks();
+                        return;
+                    }
+                }
+            }
+        }
+        
+        // Se soltou no nada, renderiza de volta para corrigir posição
+        renderLinks(); 
+    }
+});
+
+// --- FUNÇÕES CRUD ---
 
 function addLink() {
     const title = document.getElementById("titleInput").value;
@@ -130,7 +183,7 @@ function addLink() {
     if (!title || !url || !category) return alert("Preencha tudo");
     if (!url.startsWith("http")) url = `https://${url}`;
 
-    customLinks.push({ id: generateId(), title, url, category });
+    allLinks.push({ id: generateId(), title, url, category });
     saveStorage();
     closeModalFunc();
     activeCategory = category;
@@ -139,14 +192,17 @@ function addLink() {
 }
 
 function deleteLink(id) {
-    if(confirm("Excluir?")) {
-        customLinks = customLinks.filter(l => l.id !== id);
-        saveStorage();
-        renderLinks();
-    }
+    setTimeout(() => { 
+        if(confirm("Excluir este link?")) {
+            allLinks = allLinks.filter(l => l.id !== id);
+            saveStorage();
+            renderCategories();
+            renderLinks();
+        }
+    }, 10);
 }
 
-// Eventos e Modal
+// Eventos
 const closeModalFunc = () => {
     modal.style.display = "none";
     document.getElementById("urlInput").value = "";
@@ -155,7 +211,6 @@ const closeModalFunc = () => {
 };
 
 document.getElementById("urlInput").addEventListener("input", (e) => {
-    // Auto-preencher título ao colar URL
     const val = e.target.value;
     const titleInput = document.getElementById("titleInput");
     if(val.length > 8 && titleInput.value === ""){
@@ -179,22 +234,3 @@ window.onclick = (e) => { if(e.target == modal) closeModalFunc(); }
 
 renderCategories();
 renderLinks();
-
-new Sortable(container, {
-    animation: 150,
-    ghostClass: "dragging",
-    onEnd: function (evt) {
-
-        const links = getAllLinks();
-        const movedItem = links.splice(evt.oldIndex, 1)[0];
-        links.splice(evt.newIndex, 0, movedItem);
-
-        // salvar nova ordem apenas dos customLinks
-        customLinks = links.filter(l => 
-            customLinks.some(cl => cl.id === l.id)
-        );
-
-        saveStorage();
-        renderLinks();
-    }
-});

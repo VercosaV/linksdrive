@@ -1,115 +1,347 @@
+/* --- VARIÁVEIS E TEMA --- */
 :root {
-    --bg-color: #0f172a;       /* Fundo escuro */
-    --item-bg: #1e293b;        /* Fundo do item */
-    --item-hover: #334155;     /* Hover do item */
-    --text-main: #e2e8f0;      /* Texto principal */
-    --accent: #3b82f6;         /* Azul destaque */
-    --border: #334155;         /* Bordas sutis */
+    --bg-body: #0f172a;        /* Azul escuro profundo */
+    --bg-card: #1e293b;        /* Azul acinzentado */
+    --bg-header: rgba(15, 23, 42, 0.85); /* Vidro escuro */
+    
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    
+    --accent: #3b82f6;         /* Azul vibrante */
+    --accent-hover: #2563eb;
+    --danger: #ef4444;         /* Vermelho */
+    
+    --border: #334155;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    --radius: 12px;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-body { background-color: var(--bg-color); color: var(--text-main); }
+/* --- RESET BÁSICO --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
 
-/* --- HEADER (Fixo e Fino) --- */
+body {
+    background-color: var(--bg-body);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+/* --- SCROLLBAR CUSTOMIZADA --- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-body); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* --- HEADER --- */
 header {
-    background: rgba(15, 23, 42, 0.98);
+    background: var(--bg-header);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 100;
-    padding: 0.5rem 1.5rem;
-    display: flex; flex-direction: column; gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 1rem 1.5rem 0.5rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 
-.top-bar { display: flex; justify-content: space-between; align-items: center; }
-.logo { color: var(--accent); font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; }
-
-/* Navegação Compacta */
-.nav-scroll { overflow-x: auto; white-space: nowrap; padding-bottom: 5px; }
-.nav-tabs { display: flex; gap: 8px; }
-.nav-item {
-    background: transparent; border: none; color: #94a3b8;
-    padding: 6px 12px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
-    border-radius: 4px; transition: 0.2s;
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 15px;
 }
-.nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
-.nav-item.active { background: rgba(59, 130, 246, 0.15); color: var(--accent); }
 
-/* Inputs e Botões */
+.logo {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: -0.5px;
+}
+
+.logo i { color: var(--accent); }
+
+/* Área de Busca e Botão */
+.search-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
 .search-container input {
-    background: #020617; border: 1px solid var(--border); color: white;
-    padding: 6px 10px; border-radius: 4px; width: 220px; outline: none; font-size: 0.85rem;
-}
-.search-container input:focus { border-color: var(--accent); }
-.btn-new {
-    background: var(--accent); color: white; border: none; padding: 6px 12px;
-    border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+    background: #020617;
+    border: 1px solid var(--border);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    width: 250px;
+    outline: none;
+    transition: 0.2s;
 }
 
-/* --- GRID DE LISTA (O que você pediu) --- */
-main { padding: 1.5rem; max-width: 1600px; margin: 0 auto; }
+.search-container input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.btn-new {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-new:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+/* --- NAVEGAÇÃO DE CATEGORIAS --- */
+.nav-scroll {
+    overflow-x: auto;
+    padding-bottom: 10px;
+    margin: 0 -1.5rem; /* Extravasa o padding do header */
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    scrollbar-width: none; /* Firefox */
+}
+.nav-scroll::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
+.nav-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.nav-item {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.05);
+}
+
+.nav-item.active {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--accent);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* --- GRID PRINCIPAL --- */
+main {
+    padding: 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
+}
 
 .grid {
     display: grid;
-    /* Isso cria colunas automáticas.
-       Cada coluna terá no mínimo 200px. 
-       Em uma tela grande, caberão 6 ou 7 colunas lado a lado.
-    */
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 12px; /* Espaço entre eles */
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
 }
 
+/* --- CARD (LINKS) --- */
 .card {
-    background: var(--item-bg);
-    border: 1px solid transparent;
-    border-radius: 6px;
-    padding: 10px;
-    text-decoration: none;
-    transition: 0.1s;
-    
-    /* ALINHAMENTO HORIZONTAL */
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
     display: flex;
     align-items: center;
-    gap: 12px; /* Espaço entre ícone e texto */
+    gap: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    user-select: none; /* Melhora a sensação de arrastar */
 }
 
 .card:hover {
-    background: var(--item-hover);
-    border-color: var(--border);
-    transform: translateX(2px); /* Efeito sutil de movimento */
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: var(--shadow);
+    background: #253146;
 }
 
 .card img {
-    width: 24px;  /* Ícone pequeno */
-    height: 24px;
-    border-radius: 4px;
-    flex-shrink: 0; /* Garante que o ícone não amasse */
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    object-fit: cover;
 }
 
 .card span {
-    color: var(--text-main);
-    font-size: 0.85rem;
-    white-space: nowrap;      /* Texto em uma linha só */
-    overflow: hidden;         /* Corta se for grande */
-    text-overflow: ellipsis;  /* Coloca "..." no final */
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
 }
 
-/* Botão Excluir (Discreto) */
+/* Botão Deletar */
 .delete-btn {
-    margin-left: auto; /* Empurra para a direita */
-    background: transparent; color: #ef4444; border: none;
-    cursor: pointer; opacity: 0; font-size: 0.9rem; padding: 4px;
+    background: transparent;
+    color: var(--danger);
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    opacity: 0;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
+
+.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+
 .card:hover .delete-btn { opacity: 1; }
 
-/* Modal (Mantido simples) */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 200; }
-.modal-box { background: var(--item-bg); padding: 20px; border-radius: 8px; width: 350px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;}
-.input-row label { font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 4px; }
-.input-row input, select { width: 100%; padding: 8px; background: #020617; border: 1px solid var(--border); color: white; border-radius: 4px; outline: none; }
-.modal-actions { display: flex; gap: 10px; margin-top: 10px; justify-content: flex-end; }
-.btn-cancel { background: transparent; color: #94a3b8; border: none; cursor: pointer; }
+/* --- DRAG AND DROP (CRÍTICO - NÃO ALTERAR A LÓGICA) --- */
 
-.dragging {
-    opacity: 0.5;
-    transform: scale(1.03);
+/* 1. Item Fantasma (Placeholder na lista) */
+.sortable-ghost {
+    opacity: 0.4;
+    background: var(--accent);
+    border: 1px dashed var(--text-secondary);
+}
+
+/* 2. Item sendo Arrastado (Clone visual) */
+.sortable-fallback {
+    opacity: 1 !important;
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    transform: scale(1.02);
+    cursor: grabbing !important;
+    
+    /* O SEGREDO MÁGICO DO JS: */
+    pointer-events: none !important; 
+    z-index: 9999 !important;
+    position: fixed; 
+}
+
+/* 3. Botão da Categoria ao receber item */
+.nav-item.drag-hover {
+    background: var(--accent);
+    color: white;
+    transform: scale(1.15);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+    z-index: 1000;
+    border-color: transparent;
+}
+
+/* --- MODAL --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-box {
+    background: var(--bg-card);
+    padding: 24px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modal-box h3 { margin-bottom: 5px; color: white; }
+
+.input-row label {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+}
+
+.input-row input, .input-row select {
+    width: 100%;
+    background: #0f172a;
+    border: 1px solid var(--border);
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    outline: none;
+}
+
+.input-row input:focus, .input-row select:focus {
+    border-color: var(--accent);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.btn-cancel {
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: 500;
+}
+.btn-cancel:hover { color: white; }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* --- RESPONSIVIDADE (MOBILE) --- */
+@media (max-width: 600px) {
+    main { padding: 1rem; }
+    
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+    
+    .top-bar { flex-direction: column; align-items: stretch; }
+    .search-container { width: 100%; }
+    .search-container input { width: 100%; }
+    
+    /* No mobile, botão delete fica sempre meio visível para saberem que existe */
+    .delete-btn { opacity: 0.5; }
 }
