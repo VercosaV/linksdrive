@@ -179,3 +179,22 @@ window.onclick = (e) => { if(e.target == modal) closeModalFunc(); }
 
 renderCategories();
 renderLinks();
+
+new Sortable(container, {
+    animation: 150,
+    ghostClass: "dragging",
+    onEnd: function (evt) {
+
+        const links = getAllLinks();
+        const movedItem = links.splice(evt.oldIndex, 1)[0];
+        links.splice(evt.newIndex, 0, movedItem);
+
+        // salvar nova ordem apenas dos customLinks
+        customLinks = links.filter(l => 
+            customLinks.some(cl => cl.id === l.id)
+        );
+
+        saveStorage();
+        renderLinks();
+    }
+});
