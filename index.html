@@ -3,62 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Victor's Dashboard</title>
+    <title>Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <header>
-        <div class="logo">
-            <i class="fa-solid fa-rocket"></i>
-            <h1>Dev Dashboard</h1>
+        <div class="top-bar">
+            <div class="logo">
+                <i class="fa-solid fa-layer-group"></i> MyLinks
+            </div>
+            <div class="search-container">
+                <input type="text" id="search" placeholder="Filtrar links...">
+                <button id="addBtn" class="btn-new">+ Novo</button>
+            </div>
         </div>
         
-        <div class="search-bar">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="search" placeholder="Buscar (ex: Java, Alura, AWS)...">
+        <div class="nav-scroll">
+            <nav id="categoryNav" class="nav-tabs"></nav>
         </div>
-
-        <button id="addBtn" class="btn-primary">
-            <i class="fa-solid fa-plus"></i> Novo Link
-        </button>
     </header>
 
-    <main id="linksContainer">
-        </main>
+    <main id="linksContainer" class="grid"></main>
 
     <div id="modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Adicionar Link</h2>
-                <span id="closeModal" class="close">&times;</span>
-            </div>
+        <div class="modal-box">
+            <h3>Adicionar Link</h3>
             
-            <div class="input-group">
-                <label>Nome do Site</label>
-                <input id="titleInput" placeholder="Ex: Localhost 8080">
-            </div>
-            
-            <div class="input-group">
+            <div class="input-row">
                 <label>URL</label>
                 <input id="urlInput" placeholder="https://...">
             </div>
             
-            <div class="input-group">
+            <div class="input-row">
+                <label>Nome</label>
+                <input id="titleInput" placeholder="Ex: GitHub">
+            </div>
+            
+            <div class="input-row">
                 <label>Categoria</label>
-                <input id="categoryInput" list="categoryList" placeholder="Selecione ou digite...">
-                <datalist id="categoryList">
-                    <option value="Dev">
-                    <option value="Faculdade">
-                    <option value="Cursos">
-                    <option value="Jogos">
-                    <option value="Música">
-                </datalist>
+                <select id="categorySelect"></select>
+                <input id="newCategoryInput" placeholder="Nome da categoria..." style="display:none; margin-top:5px;">
             </div>
 
-            <button id="saveLink" class="btn-primary full-width">Salvar Link</button>
+            <div class="modal-actions">
+                <button id="closeModal" class="btn-cancel">Cancelar</button>
+                <button id="saveLink" class="btn-new">Salvar</button>
+            </div>
         </div>
     </div>
 
