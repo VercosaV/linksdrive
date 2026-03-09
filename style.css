@@ -108,3 +108,8 @@ main { padding: 1.5rem; max-width: 1600px; margin: 0 auto; }
 .input-row input, select { width: 100%; padding: 8px; background: #020617; border: 1px solid var(--border); color: white; border-radius: 4px; outline: none; }
 .modal-actions { display: flex; gap: 10px; margin-top: 10px; justify-content: flex-end; }
 .btn-cancel { background: transparent; color: #94a3b8; border: none; cursor: pointer; }
+
+.dragging {
+    opacity: 0.5;
+    transform: scale(1.03);
+}
