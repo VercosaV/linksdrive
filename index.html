@@ -1,49 +1,59 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Dashboard de Links</title>
-
-<link rel="stylesheet" href="style.css">
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<header>
+    <header>
+        <div class="top-bar">
+            <div class="logo">
+                <i class="fa-solid fa-layer-group"></i> MyLinks
+            </div>
+            <div class="search-container">
+                <input type="text" id="search" placeholder="Filtrar links...">
+                <button id="addBtn" class="btn-new">+ Novo</button>
+            </div>
+        </div>
+        
+        <div class="nav-scroll">
+            <nav id="categoryNav" class="nav-tabs"></nav>
+        </div>
+    </header>
 
-<h1>Meu Dashboard</h1>
+    <main id="linksContainer" class="grid"></main>
 
-<input type="text" id="search" placeholder="Buscar link...">
+    <div id="modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Adicionar Link</h3>
+            
+            <div class="input-row">
+                <label>URL</label>
+                <input id="urlInput" placeholder="https://...">
+            </div>
+            
+            <div class="input-row">
+                <label>Nome</label>
+                <input id="titleInput" placeholder="Ex: GitHub">
+            </div>
+            
+            <div class="input-row">
+                <label>Categoria</label>
+                <select id="categorySelect"></select>
+                <input id="newCategoryInput" placeholder="Nome da categoria..." style="display:none; margin-top:5px;">
+            </div>
 
-<button id="addBtn">+ Adicionar</button>
+            <div class="modal-actions">
+                <button id="closeModal" class="btn-cancel">Cancelar</button>
+                <button id="saveLink" class="btn-new">Salvar</button>
+            </div>
+        </div>
+    </div>
 
-</header>
-
-<main id="linksContainer"></main>
-
-<div id="modal">
-
-<div class="modal-content">
-
-<h2>Novo Link</h2>
-
-<input id="titleInput" placeholder="Nome do site">
-<input id="urlInput" placeholder="URL">
-<input id="categoryInput" placeholder="Categoria">
-
-<button id="saveLink">Salvar</button>
-
-</div>
-
-</div>
-
-<script src="script.js"></script>
-
+    <script src="script.js"></script>
 </body>
-
 </html>
