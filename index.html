@@ -3,48 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>MyLinks Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <header>
-        <div class="top-bar">
-            <div class="logo">
-                <i class="fa-solid fa-layer-group"></i> MyLinks
+        <div class="header-content">
+            <div class="top-bar">
+                <div class="logo">
+                    <div class="logo-icon"><i class="fa-solid fa-layer-group"></i></div>
+                    <span>MyLinks</span>
+                </div>
+                <div class="search-container">
+                    <i class="fa-solid fa-search search-icon"></i>
+                    <input type="text" id="search" placeholder="Buscar links...">
+                    <button id="addBtn" class="btn-new"><i class="fa-solid fa-plus"></i> Novo Link</button>
+                </div>
             </div>
-            <div class="search-container">
-                <input type="text" id="search" placeholder="Filtrar links...">
-                <button id="addBtn" class="btn-new">+ Novo</button>
+            
+            <div class="nav-scroll">
+                <nav id="categoryNav" class="nav-tabs"></nav>
             </div>
-        </div>
-        
-        <div class="nav-scroll">
-            <nav id="categoryNav" class="nav-tabs"></nav>
         </div>
     </header>
 
-    <main id="linksContainer" class="grid"></main>
+    <main>
+        <div id="linksContainer" class="grid">
+            </div>
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <i class="fa-solid fa-folder-open"></i>
+            <p>Nenhum link encontrado nesta categoria.</p>
+        </div>
+    </main>
 
     <div id="modal" class="modal-overlay">
         <div class="modal-box">
-            <h3>Adicionar Link</h3>
-            
-            <div class="input-row">
-                <label>URL</label>
-                <input id="urlInput" placeholder="https://...">
+            <div class="modal-header">
+                <h3>Adicionar Novo Link</h3>
+                <button id="closeModalIcon" class="btn-close-icon"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
             <div class="input-row">
-                <label>Nome</label>
-                <input id="titleInput" placeholder="Ex: GitHub">
+                <label>URL do site</label>
+                <input id="urlInput" type="url" placeholder="https://exemplo.com">
+            </div>
+            
+            <div class="input-row">
+                <label>Nome do Link</label>
+                <input id="titleInput" type="text" placeholder="Ex: GitHub">
             </div>
             
             <div class="input-row">
                 <label>Categoria</label>
                 <select id="categorySelect"></select>
-                <input id="newCategoryInput" placeholder="Nome da categoria..." style="display:none; margin-top:5px;">
+                <input id="newCategoryInput" type="text" placeholder="Digite o nome da nova categoria..." style="display:none; margin-top:8px;">
             </div>
 
             <div class="modal-actions">
@@ -54,8 +69,8 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-    
+    <div id="toastContainer" class="toast-container"></div>
+
     <script type="module" src="script.js"></script>
 </body>
 </html>

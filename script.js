@@ -1,194 +1,206 @@
-// Importações do Firebase (via CDN)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
-import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-// COLOQUE SUAS CREDENCIAIS AQUI (Você acha isso nas configurações do projeto no Firebase)
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "SEU_MESSAGING_ID",
-  appId: "SEU_APP_ID"
+  apiKey: "AIzaSyBc3ryOJEFBQlJIUpy835Anej0OulZqHEQ",
+  authDomain: "linksdrive-4012c.firebaseapp.com",
+  projectId: "linksdrive-4012c",
+  storageBucket: "linksdrive-4012c.firebasestorage.app",
+  messagingSenderId: "91948654259",
+  appId: "1:91948654259:web:2b596baed6d1ab78cc5ac6",
+  measurementId: "G-V1EZDLJQ2K"
 };
 
-// Inicializa Firebase e Database
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const linksRef = ref(db, 'links');
+const db = getFirestore(app);
+const linksRef = collection(db, "links");
 
 let allLinks = [];
-let activeCategory = "Todos"; 
-const container = document.getElementById("linksContainer");
-const navContainer = document.getElementById("categoryNav");
-const modal = document.getElementById("modal");
+let activeCategory = "Todos";
 
-// --- ESCUTA O FIREBASE EM TEMPO REAL ---
-onValue(linksRef, (snapshot) => {
-    allLinks = [];
-    snapshot.forEach((childSnapshot) => {
-        // Pega a chave única gerada pelo Firebase e os dados do link
-        allLinks.push({ id: childSnapshot.key, ...childSnapshot.val() });
+function startApp() {
+    const q = query(linksRef, orderBy("category"));
+    onSnapshot(q, (snapshot) => {
+        allLinks = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderUI();
+    }, (error) => {
+        console.error("Erro no Firebase:", error);
+        showToast("Erro ao conectar com o banco de dados.", "error");
     });
+}
+
+function renderUI() {
     renderCategories();
     renderLinks();
-});
+}
 
-// --- RENDERIZAÇÃO ---
 function renderCategories() {
-    const categories = ["Todos", ...new Set(allLinks.map(l => l.category))].sort();
-    
-    navContainer.innerHTML = "";
+    const nav = document.getElementById("categoryNav");
     const select = document.getElementById("categorySelect");
+    
+    // Obtém categorias únicas e ordena alfabeticamente
+    const categories = ["Todos", ...new Set(allLinks.map(l => l.category))].sort();
+
+    nav.innerHTML = "";
     select.innerHTML = "";
 
+    // Renderiza abas de navegação
     categories.forEach(cat => {
         const btn = document.createElement("button");
         btn.className = `nav-item ${activeCategory === cat ? 'active' : ''}`;
         btn.innerText = cat;
-        btn.classList.add("drop-target"); 
-        btn.setAttribute("data-target-cat", cat); 
-        
-        btn.onclick = () => {
-            activeCategory = cat;
-            renderCategories();
-            renderLinks();
-        };
-        navContainer.appendChild(btn);
-    });
+        btn.onclick = () => { activeCategory = cat; renderUI(); };
+        nav.appendChild(btn);
 
-    categories.filter(c => c !== "Todos").forEach(c => {
-        const opt = document.createElement("option");
-        opt.value = c;
-        opt.innerText = c;
-        select.appendChild(opt);
+        // Preenche o Select do Modal
+        if (cat !== "Todos") {
+            const opt = document.createElement("option");
+            opt.value = cat; 
+            opt.innerText = cat;
+            select.appendChild(opt);
+        }
     });
-    const newOpt = document.createElement("option");
-    newOpt.value = "new";
-    newOpt.innerText = "+ Nova...";
-    select.appendChild(newOpt);
+    
+    // Opção para criar nova categoria
+    select.innerHTML += `<option value="new">+ Nova Categoria...</option>`;
 }
 
 function renderLinks() {
-    container.innerHTML = "";
-    const searchTerm = document.getElementById("search").value.toLowerCase();
+    const container = document.getElementById("linksContainer");
+    const emptyState = document.getElementById("emptyState");
+    const search = document.getElementById("search").value.toLowerCase();
     
+    container.innerHTML = "";
+
     const filteredLinks = allLinks.filter(l => {
-        const matchesCategory = activeCategory === "Todos" ? true : l.category === activeCategory;
-        const matchesSearch = l.title.toLowerCase().includes(searchTerm);
-        return matchesCategory && matchesSearch;
+        const matchCat = activeCategory === "Todos" || l.category === activeCategory;
+        const matchSearch = l.title.toLowerCase().includes(search);
+        return matchCat && matchSearch;
     });
 
-    filteredLinks.forEach(link => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.setAttribute("data-id", link.id);
+    if (filteredLinks.length === 0) {
+        emptyState.style.display = "flex";
+    } else {
+        emptyState.style.display = "none";
         
-        card.onclick = (e) => {
-            if(!e.target.closest('.delete-btn')) {
-                window.open(link.url, '_blank');
-            }
-        };
-        
-        const domain = new URL(link.url).hostname;
-        const iconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+        filteredLinks.forEach(link => {
+            // Obter ícone (favicon) do site
+            let domain = "google.com";
+            try { domain = new URL(link.url).hostname; } catch (e) {}
 
-        card.innerHTML = `
-            <img src="${iconUrl}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
-            <span>${link.title}</span>
-            <button class="delete-btn" onclick="window.deleteLink('${link.id}')"><i class="fa-solid fa-trash"></i></button>
-        `;
-        container.appendChild(card);
-    });
+            // Criar o card como DIV para evitar bugs de clique no botão deletar
+            const card = document.createElement("div");
+            card.className = "card";
+            card.onclick = (e) => {
+                // Se o clique NÃO foi no botão de deletar, abre o link
+                if (!e.target.closest('.delete-btn')) {
+                    window.open(link.url, '_blank');
+                }
+            };
+
+            card.innerHTML = `
+                <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=64" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
+                <span>${link.title}</span>
+                <button class="delete-btn" aria-label="Deletar link">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            `;
+
+            // Adiciona evento específico para o botão deletar
+            const deleteBtn = card.querySelector('.delete-btn');
+            deleteBtn.onclick = async (e) => {
+                e.stopPropagation(); // Impede que o card seja clicado
+                if (confirm(`Deseja excluir "${link.title}" permanentemente?`)) {
+                    try {
+                        await deleteDoc(doc(db, "links", link.id));
+                        showToast("Link excluído com sucesso!");
+                    } catch (error) {
+                        showToast("Erro ao excluir o link.", "error");
+                    }
+                }
+            };
+
+            container.appendChild(card);
+        });
+    }
 }
 
-// --- DRAG AND DROP LÓGICA ---
-new Sortable(container, {
-    animation: 150,
-    forceFallback: true, 
-    fallbackClass: "sortable-fallback", 
-    ghostClass: "sortable-ghost",
-    
-    onMove: function (evt) {
-        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('drag-hover'));
-        const originalEvent = evt.originalEvent;
-        const clientX = originalEvent.touches ? originalEvent.touches[0].clientX : originalEvent.clientX;
-        const clientY = originalEvent.touches ? originalEvent.touches[0].clientY : originalEvent.clientY;
-        const elUnder = document.elementFromPoint(clientX, clientY);
-        
-        if (elUnder) {
-            const btn = elUnder.closest('.drop-target');
-            if (btn) {
-                const targetCat = btn.getAttribute("data-target-cat");
-                if (targetCat && targetCat !== "Todos") btn.classList.add('drag-hover');
-            }
-        }
-    },
+// --- Funções do Modal ---
+const modal = document.getElementById("modal");
 
-    onEnd: function (evt) {
-        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('drag-hover'));
-        const originalEvent = evt.originalEvent;
-        const clientX = originalEvent.changedTouches ? originalEvent.changedTouches[0].clientX : originalEvent.clientX;
-        const clientY = originalEvent.changedTouches ? originalEvent.changedTouches[0].clientY : originalEvent.clientY;
-        const elUnder = document.elementFromPoint(clientX, clientY);
-        
-        if (elUnder) {
-            const btn = elUnder.closest('.drop-target');
-            if (btn) {
-                const newCategory = btn.getAttribute("data-target-cat");
-                const linkId = evt.item.getAttribute("data-id");
-
-                if (newCategory && newCategory !== "Todos") {
-                    // Atualiza a categoria diretamente no Firebase
-                    const linkRef = ref(db, 'links/' + linkId);
-                    update(linkRef, { category: newCategory });
-                    return;
-                }
-            }
-        }
-        renderLinks(); 
-    }
-});
-
-// --- FUNÇÕES CRUD FIREBASE ---
-
-// Precisamos atrelar ao window pois usamos type="module" e onclick no HTML
-window.addLink = function() {
-    const title = document.getElementById("titleInput").value;
-    let url = document.getElementById("urlInput").value;
-    let category = document.getElementById("categorySelect").value;
-    if (category === "new") category = document.getElementById("newCategoryInput").value;
-
-    if (!title || !url || !category) return alert("Preencha tudo");
-    if (!url.startsWith("http")) url = `https://${url}`;
-
-    // Cria um novo registro no Firebase
-    const newLinkRef = push(linksRef);
-    set(newLinkRef, { title, url, category }).then(() => {
-        closeModalFunc();
-        activeCategory = category;
-    });
+const openModal = () => {
+    modal.style.display = "flex";
+    document.getElementById("urlInput").focus();
 };
 
-window.deleteLink = function(id) {
-    setTimeout(() => { 
-        if(confirm("Excluir este link?")) {
-            // Remove do Firebase
-            remove(ref(db, 'links/' + id));
-        }
-    }, 10);
-};
-
-// Eventos
-const closeModalFunc = () => {
+const closeModal = () => {
     modal.style.display = "none";
     document.getElementById("urlInput").value = "";
     document.getElementById("titleInput").value = "";
     document.getElementById("newCategoryInput").style.display = "none";
+    document.getElementById("newCategoryInput").value = "";
 };
 
-document.getElementById("urlInput").addEventListener("input", (e) => {
+document.getElementById("categorySelect").onchange = (e) => {
+    document.getElementById("newCategoryInput").style.display = e.target.value === "new" ? "block" : "none";
+};
+
+// --- Salvar no Firebase ---
+document.getElementById("saveLink").onclick = async () => {
+    const title = document.getElementById("titleInput").value.trim();
+    let url = document.getElementById("urlInput").value.trim();
+    let category = document.getElementById("categorySelect").value;
+    
+    if (category === "new") category = document.getElementById("newCategoryInput").value.trim();
+
+    if(!title || !url || !category) return showToast("Preencha todos os campos!", "error");
+    
+    // Garante que a URL tem http:// ou https://
+    if (!url.startsWith("http")) url = `https://${url}`;
+
+    const saveBtn = document.getElementById("saveLink");
+    saveBtn.innerText = "Salvando...";
+    saveBtn.disabled = true;
+
+    try {
+        await addDoc(linksRef, { title, url, category, timestamp: new Date() });
+        showToast("Link salvo com sucesso!");
+        closeModal();
+        activeCategory = category; // Muda para a aba da categoria salva
+    } catch (error) {
+        showToast("Erro ao salvar link.", "error");
+    } finally {
+        saveBtn.innerText = "Salvar";
+        saveBtn.disabled = false;
+    }
+};
+
+// --- Sistema de Toast (Avisos na tela) ---
+function showToast(message, type = "success") {
+    const container = document.getElementById("toastContainer");
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation'}"></i> ${message}`;
+    
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = "fadeOut 0.3s ease-out forwards";
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Event Listeners Globais
+document.getElementById("addBtn").onclick = openModal;
+document.getElementById("closeModal").onclick = closeModal;
+document.getElementById("closeModalIcon").onclick = closeModal;
+document.getElementById("search").oninput = renderLinks;
+
+// Fecha modal clicando fora dele
+window.onclick = (e) => { if (e.target === modal) closeModal(); }
+
+// Tentar auto-preencher o título com base na URL inserida
+document.getElementById("urlInput").addEventListener("blur", (e) => {
     const val = e.target.value;
     const titleInput = document.getElementById("titleInput");
     if(val.length > 8 && titleInput.value === ""){
@@ -196,59 +208,18 @@ document.getElementById("urlInput").addEventListener("input", (e) => {
             let host = new URL(val.startsWith("http") ? val : `https://${val}`).hostname;
             let name = host.replace("www.","").split(".")[0];
             titleInput.value = name.charAt(0).toUpperCase() + name.slice(1);
-        } catch(e){}
+        } catch(err){}
     }
 });
 
-document.getElementById("categorySelect").addEventListener("change", (e) => {
-    document.getElementById("newCategoryInput").style.display = e.target.value === "new" ? "block" : "none";
-});
+// Inicializa a aplicação
+startApp();
 
-document.getElementById("addBtn").onclick = () => { modal.style.display = "flex"; document.getElementById("urlInput").focus(); };
-document.getElementById("closeModal").onclick = closeModalFunc;
-document.getElementById("saveLink").onclick = window.addLink;
-document.getElementById("search").addEventListener("input", renderLinks);
-window.onclick = (e) => { if(e.target == modal) closeModalFunc(); }
-
-// Torna a função de importar global para você rodar no console
-window.importarLinksDoArquivo = importarLinksDoArquivo;
-
-// Função auxiliar para importar seu TXT de uma vez só!
-function importarLinksDoArquivo() {
-    const meusFavoritosTxt = [
-        { title: "ChatGPT", url: "https://chatgpt.com/", category: "IAs" },
-        { title: "Gemini", url: "https://gemini.google.com/app", category: "IAs" },
-        { title: "Manus Im", url: "https://manus.im/app", category: "IAs" },
-        { title: "Vercel", url: "https://vercel.com/victors-projects-9d919fd2", category: "Dev" },
-        { title: "Supabase", url: "https://supabase.com/dashboard/sign-in?returnTo=%2Forganizations", category: "Dev" },
-        { title: "AWS", url: "https://us-east-1.signin.aws/platform/d-9067642ac7/login", category: "Dev" },
-        { title: "DeepSeek", url: "https://chat.deepseek.com/sign_in", category: "IAs" },
-        { title: "JSON Formatter", url: "https://jsonformatter.curiousconcept.com/#", category: "Ferramentas" },
-        { title: "Teams (Faculdade)", url: "https://teams.microsoft.com/v2/", category: "Faculdade" },
-        { title: "Siga (Faculdade)", url: "https://siga.cps.sp.gov.br/sigaaluno/applogin.aspx", category: "Faculdade" },
-        { title: "DIO", url: "https://auth.dio.me/...", category: "Cursos" },
-        { title: "Alura", url: "https://cursos.alura.com.br/", category: "Cursos" },
-        { title: "Circle", url: "https://login.circle.so/sign_in", category: "Cursos" },
-        { title: "Estudar.org", url: "https://ead.estudar.org.br/users/sign_in", category: "Cursos" },
-        { title: "Unity", url: "https://cursos.dankicode.com/unity?ref=U77942400J", category: "Dev" },
-        { title: "Laravel", url: "https://www.cursou.com.br/informatica/programacao/php/laravel-framework-php-desenvolvimento-web/", category: "Dev" },
-        { title: "Diagramas", url: "https://app.diagrams.net/", category: "Ferramentas" },
-        { title: "Song BPM", url: "https://getsongbpm.com/", category: "Música" },
-        { title: "Aspire Leaders", url: "https://engage.aspireleaders.org/profile", category: "Networking" },
-        { title: "Retro Games", url: "https://www.retrogames.onl/", category: "Jogos" },
-        { title: "Game3RB", url: "https://game3rb.com/category/games-online/", category: "Jogos" },
-        { title: "Nexus Mods (Skyrim)", url: "https://www.nexusmods.com/skyrim/mods/116605", category: "Jogos" },
-        { title: "WarriorJS", url: "https://warriorjs.com/", category: "Jogos" },
-        { title: "Repertório Violino", url: "https://canalparaviolinistas.com/downloads/", category: "Música" },
-        { title: "GitHub", url: "https://github.com/", category: "Dev" },
-        { title: "LinkedIn", url: "https://www.linkedin.com/", category: "Networking" },
-        { title: "Guia Monster Hunter", url: "https://guiadomh.carrd.co/", category: "Jogos" }
-    ];
-
-    meusFavoritosTxt.forEach(link => {
-        const newRef = push(linksRef); // Usa o linksRef criado no topo do arquivo
-        set(newRef, link);
-    });
-
-    console.log("Todos os links do TXT foram importados para o Firebase com sucesso!");
-}
+// Função para importar em lote no console (OPCIONAL)
+window.importarLinksEmLote = async (linksArray) => {
+    for (const link of linksArray) {
+        await addDoc(linksRef, { ...link, timestamp: new Date() });
+        console.log(`Salvo: ${link.title}`);
+    }
+    console.log("Importação concluída!");
+};
