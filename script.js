@@ -1,31 +1,39 @@
-const generateId = () => Math.random().toString(36).substr(2, 9);
+// Importações do Firebase (via CDN)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js";
 
-// Links iniciais
-const defaultLinks = [
-    { id: generateId(), title: "ChatGPT", url: "https://chatgpt.com/", category: "IA" },
-    { id: generateId(), title: "Gemini AI", url: "https://gemini.google.com/app", category: "IA" },
-    { id: generateId(), title: "GitHub", url: "https://github.com/", category: "Dev" },
-    { id: generateId(), title: "Vercel", url: "https://vercel.com/", category: "Dev" },
-    { id: generateId(), title: "Alura", url: "https://cursos.alura.com.br/loginForm", category: "Cursos" },
-    { id: generateId(), title: "LinkedIn", url: "https://www.linkedin.com/", category: "Networking" }
-];
+// COLOQUE SUAS CREDENCIAIS AQUI (Você acha isso nas configurações do projeto no Firebase)
+const firebaseConfig = {
+  apiKey: "SUA_API_KEY",
+  authDomain: "SEU_PROJETO.firebaseapp.com",
+  databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
+  projectId: "SEU_PROJETO",
+  storageBucket: "SEU_PROJETO.appspot.com",
+  messagingSenderId: "SEU_MESSAGING_ID",
+  appId: "SEU_APP_ID"
+};
 
-// --- GESTÃO DE DADOS ---
-let allLinks = JSON.parse(localStorage.getItem("myLinks"));
+// Inicializa Firebase e Database
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const linksRef = ref(db, 'links');
 
-if (!allLinks || allLinks.length === 0) {
-    allLinks = defaultLinks;
-    localStorage.setItem("myLinks", JSON.stringify(allLinks));
-}
-
+let allLinks = [];
 let activeCategory = "Todos"; 
 const container = document.getElementById("linksContainer");
 const navContainer = document.getElementById("categoryNav");
 const modal = document.getElementById("modal");
 
-function saveStorage() { 
-    localStorage.setItem("myLinks", JSON.stringify(allLinks)); 
-}
+// --- ESCUTA O FIREBASE EM TEMPO REAL ---
+onValue(linksRef, (snapshot) => {
+    allLinks = [];
+    snapshot.forEach((childSnapshot) => {
+        // Pega a chave única gerada pelo Firebase e os dados do link
+        allLinks.push({ id: childSnapshot.key, ...childSnapshot.val() });
+    });
+    renderCategories();
+    renderLinks();
+});
 
 // --- RENDERIZAÇÃO ---
 function renderCategories() {
@@ -39,7 +47,6 @@ function renderCategories() {
         const btn = document.createElement("button");
         btn.className = `nav-item ${activeCategory === cat ? 'active' : ''}`;
         btn.innerText = cat;
-        // Importante: classe específica para detecção
         btn.classList.add("drop-target"); 
         btn.setAttribute("data-target-cat", cat); 
         
@@ -90,91 +97,64 @@ function renderLinks() {
         card.innerHTML = `
             <img src="${iconUrl}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
             <span>${link.title}</span>
-            <button class="delete-btn" onclick="deleteLink('${link.id}')"><i class="fa-solid fa-trash"></i></button>
+            <button class="delete-btn" onclick="window.deleteLink('${link.id}')"><i class="fa-solid fa-trash"></i></button>
         `;
         container.appendChild(card);
     });
 }
 
-// --- DRAG AND DROP LÓGICA (CORRIGIDA) ---
-
+// --- DRAG AND DROP LÓGICA ---
 new Sortable(container, {
     animation: 150,
-    // ESSENCIAL: Desativa o drag nativo do HTML5 e usa elementos DOM reais
     forceFallback: true, 
-    fallbackClass: "sortable-fallback", // Usa nossa classe CSS tunada
+    fallbackClass: "sortable-fallback", 
     ghostClass: "sortable-ghost",
     
     onMove: function (evt) {
-        // Limpa destaques anteriores
         document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('drag-hover'));
-        
-        // Pega o evento original do mouse/toque
         const originalEvent = evt.originalEvent;
-        
-        // Suporte para Mouse e Touch
         const clientX = originalEvent.touches ? originalEvent.touches[0].clientX : originalEvent.clientX;
         const clientY = originalEvent.touches ? originalEvent.touches[0].clientY : originalEvent.clientY;
-
-        // Procura o elemento EMBAIXO do mouse (graças ao pointer-events: none no CSS)
         const elUnder = document.elementFromPoint(clientX, clientY);
         
         if (elUnder) {
-            // Verifica se é o botão ou está dentro do botão
             const btn = elUnder.closest('.drop-target');
             if (btn) {
                 const targetCat = btn.getAttribute("data-target-cat");
-                if (targetCat && targetCat !== "Todos") {
-                    btn.classList.add('drag-hover');
-                }
+                if (targetCat && targetCat !== "Todos") btn.classList.add('drag-hover');
             }
         }
     },
 
     onEnd: function (evt) {
-        // Limpa visual
         document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('drag-hover'));
-
-        // Mesma lógica de detecção para o momento de soltar
         const originalEvent = evt.originalEvent;
         const clientX = originalEvent.changedTouches ? originalEvent.changedTouches[0].clientX : originalEvent.clientX;
         const clientY = originalEvent.changedTouches ? originalEvent.changedTouches[0].clientY : originalEvent.clientY;
-        
         const elUnder = document.elementFromPoint(clientX, clientY);
         
         if (elUnder) {
             const btn = elUnder.closest('.drop-target');
-            
             if (btn) {
                 const newCategory = btn.getAttribute("data-target-cat");
                 const linkId = evt.item.getAttribute("data-id");
 
                 if (newCategory && newCategory !== "Todos") {
-                    const linkIndex = allLinks.findIndex(l => l.id === linkId);
-                    
-                    if (linkIndex > -1 && allLinks[linkIndex].category !== newCategory) {
-                        // Confirmação visual (opcional) ou ação direta
-                        allLinks[linkIndex].category = newCategory;
-                        saveStorage();
-                        
-                        // Força refresh para mover o item visualmente
-                        activeCategory = "Todos"; // Opcional: mantém em todos ou vai para a nova
-                        renderCategories();
-                        renderLinks();
-                        return;
-                    }
+                    // Atualiza a categoria diretamente no Firebase
+                    const linkRef = ref(db, 'links/' + linkId);
+                    update(linkRef, { category: newCategory });
+                    return;
                 }
             }
         }
-        
-        // Se soltou no nada, renderiza de volta para corrigir posição
         renderLinks(); 
     }
 });
 
-// --- FUNÇÕES CRUD ---
+// --- FUNÇÕES CRUD FIREBASE ---
 
-function addLink() {
+// Precisamos atrelar ao window pois usamos type="module" e onclick no HTML
+window.addLink = function() {
     const title = document.getElementById("titleInput").value;
     let url = document.getElementById("urlInput").value;
     let category = document.getElementById("categorySelect").value;
@@ -183,24 +163,22 @@ function addLink() {
     if (!title || !url || !category) return alert("Preencha tudo");
     if (!url.startsWith("http")) url = `https://${url}`;
 
-    allLinks.push({ id: generateId(), title, url, category });
-    saveStorage();
-    closeModalFunc();
-    activeCategory = category;
-    renderCategories();
-    renderLinks();
-}
+    // Cria um novo registro no Firebase
+    const newLinkRef = push(linksRef);
+    set(newLinkRef, { title, url, category }).then(() => {
+        closeModalFunc();
+        activeCategory = category;
+    });
+};
 
-function deleteLink(id) {
+window.deleteLink = function(id) {
     setTimeout(() => { 
         if(confirm("Excluir este link?")) {
-            allLinks = allLinks.filter(l => l.id !== id);
-            saveStorage();
-            renderCategories();
-            renderLinks();
+            // Remove do Firebase
+            remove(ref(db, 'links/' + id));
         }
     }, 10);
-}
+};
 
 // Eventos
 const closeModalFunc = () => {
@@ -228,9 +206,49 @@ document.getElementById("categorySelect").addEventListener("change", (e) => {
 
 document.getElementById("addBtn").onclick = () => { modal.style.display = "flex"; document.getElementById("urlInput").focus(); };
 document.getElementById("closeModal").onclick = closeModalFunc;
-document.getElementById("saveLink").onclick = addLink;
+document.getElementById("saveLink").onclick = window.addLink;
 document.getElementById("search").addEventListener("input", renderLinks);
 window.onclick = (e) => { if(e.target == modal) closeModalFunc(); }
 
-renderCategories();
-renderLinks();
+// Torna a função de importar global para você rodar no console
+window.importarLinksDoArquivo = importarLinksDoArquivo;
+
+// Função auxiliar para importar seu TXT de uma vez só!
+function importarLinksDoArquivo() {
+    const meusFavoritosTxt = [
+        { title: "ChatGPT", url: "https://chatgpt.com/", category: "IAs" },
+        { title: "Gemini", url: "https://gemini.google.com/app", category: "IAs" },
+        { title: "Manus Im", url: "https://manus.im/app", category: "IAs" },
+        { title: "Vercel", url: "https://vercel.com/victors-projects-9d919fd2", category: "Dev" },
+        { title: "Supabase", url: "https://supabase.com/dashboard/sign-in?returnTo=%2Forganizations", category: "Dev" },
+        { title: "AWS", url: "https://us-east-1.signin.aws/platform/d-9067642ac7/login", category: "Dev" },
+        { title: "DeepSeek", url: "https://chat.deepseek.com/sign_in", category: "IAs" },
+        { title: "JSON Formatter", url: "https://jsonformatter.curiousconcept.com/#", category: "Ferramentas" },
+        { title: "Teams (Faculdade)", url: "https://teams.microsoft.com/v2/", category: "Faculdade" },
+        { title: "Siga (Faculdade)", url: "https://siga.cps.sp.gov.br/sigaaluno/applogin.aspx", category: "Faculdade" },
+        { title: "DIO", url: "https://auth.dio.me/...", category: "Cursos" },
+        { title: "Alura", url: "https://cursos.alura.com.br/", category: "Cursos" },
+        { title: "Circle", url: "https://login.circle.so/sign_in", category: "Cursos" },
+        { title: "Estudar.org", url: "https://ead.estudar.org.br/users/sign_in", category: "Cursos" },
+        { title: "Unity", url: "https://cursos.dankicode.com/unity?ref=U77942400J", category: "Dev" },
+        { title: "Laravel", url: "https://www.cursou.com.br/informatica/programacao/php/laravel-framework-php-desenvolvimento-web/", category: "Dev" },
+        { title: "Diagramas", url: "https://app.diagrams.net/", category: "Ferramentas" },
+        { title: "Song BPM", url: "https://getsongbpm.com/", category: "Música" },
+        { title: "Aspire Leaders", url: "https://engage.aspireleaders.org/profile", category: "Networking" },
+        { title: "Retro Games", url: "https://www.retrogames.onl/", category: "Jogos" },
+        { title: "Game3RB", url: "https://game3rb.com/category/games-online/", category: "Jogos" },
+        { title: "Nexus Mods (Skyrim)", url: "https://www.nexusmods.com/skyrim/mods/116605", category: "Jogos" },
+        { title: "WarriorJS", url: "https://warriorjs.com/", category: "Jogos" },
+        { title: "Repertório Violino", url: "https://canalparaviolinistas.com/downloads/", category: "Música" },
+        { title: "GitHub", url: "https://github.com/", category: "Dev" },
+        { title: "LinkedIn", url: "https://www.linkedin.com/", category: "Networking" },
+        { title: "Guia Monster Hunter", url: "https://guiadomh.carrd.co/", category: "Jogos" }
+    ];
+
+    meusFavoritosTxt.forEach(link => {
+        const newRef = push(linksRef); // Usa o linksRef criado no topo do arquivo
+        set(newRef, link);
+    });
+
+    console.log("Todos os links do TXT foram importados para o Firebase com sucesso!");
+}
