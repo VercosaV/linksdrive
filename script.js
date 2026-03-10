@@ -95,3 +95,4 @@ document.getElementById("saveLink").onclick = async () => {
 
     await addDoc(linksRef, { title, url, category, timestamp: new Date() });
     document.getElementById("modal").style.display = "none";
+}
