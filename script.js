@@ -95,4 +95,10 @@ document.getElementById("saveLink").onclick = async () => {
 
     await addDoc(linksRef, { title, url, category, timestamp: new Date() });
     document.getElementById("modal").style.display = "none";
-}
+};
+
+document.getElementById("addBtn").onclick = () => document.getElementById("modal").style.display = "flex";
+document.getElementById("closeModal").onclick = () => document.getElementById("modal").style.display = "none";
+document.getElementById("search").oninput = renderLinks;
+
+startApp();
