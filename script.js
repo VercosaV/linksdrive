@@ -223,3 +223,103 @@ window.importarLinksEmLote = async (linksArray) => {
     }
     console.log("Importação concluída!");
 };
+
+// Função para encontrar e apagar duplicatas no banco de dados
+window.removerDuplicatas = async () => {
+    const urlsVistas = new Set();
+    let quantidadeApagada = 0;
+
+    console.log("Iniciando limpeza de duplicatas...");
+
+    for (const link of allLinks) {
+        if (urlsVistas.has(link.url)) {
+            // Se a URL já está na nossa lista, significa que é cópia. Vamos apagar no Firebase.
+            try {
+                await deleteDoc(doc(db, "links", link.id));
+                quantidadeApagada++;
+                console.log(`🗑️ Duplicata apagada: ${link.title} (${link.url})`);
+            } catch (error) {
+                console.error("Erro ao apagar", error);
+            }
+        } else {
+            // É a primeira vez que vemos essa URL, vamos guardar na lista
+            urlsVistas.add(link.url);
+        }
+    }
+    
+    alert(`Limpeza concluída! ${quantidadeApagada} links repetidos foram apagados do Firebase.`);
+};
+
+// --- Salvar no Firebase ---
+document.getElementById("saveLink").onclick = async () => {
+    const title = document.getElementById("titleInput").value.trim();
+    let url = document.getElementById("urlInput").value.trim();
+    let category = document.getElementById("categorySelect").value;
+    
+    if (category === "new") category = document.getElementById("newCategoryInput").value.trim();
+
+    // 1. Verifica se os campos estão preenchidos
+    if(!title || !url || !category) {
+        return showToast("O link NÃO foi salvo. Preencha todos os campos!", "error");
+    }
+    
+    // Garante que a URL tem http:// ou https://
+    if (!url.startsWith("http")) url = `https://${url}`;
+
+    // 2. Verifica se o link já existe no banco (Evita duplicatas)
+    const linkJaExiste = allLinks.some(link => link.url.toLowerCase() === url.toLowerCase());
+    if (linkJaExiste) {
+        return showToast(`O link NÃO foi salvo. "${title}" já existe no banco!`, "error");
+    }
+
+    const saveBtn = document.getElementById("saveLink");
+    saveBtn.innerText = "Salvando...";
+    saveBtn.disabled = true;
+
+    try {
+        // 3. Tenta salvar no Firebase
+        await addDoc(linksRef, { title, url, category, timestamp: new Date() });
+        showToast("Link salvo com sucesso!");
+        closeModal();
+        activeCategory = category; // Muda para a aba da categoria salva
+        renderUI();
+    } catch (error) {
+        // 4. Se a internet cair ou o Firebase bloquear
+        console.error("Erro do Firebase:", error);
+        showToast("Falha na conexão: O link NÃO foi salvo.", "error");
+    } finally {
+        saveBtn.innerText = "Salvar no Firebase";
+        saveBtn.disabled = false;
+    }
+};
+
+// Função para importar em lote no console com relatórios de erro
+window.importarLinksEmLote = async (linksArray) => {
+    let salvos = 0;
+    let naoSalvos = 0;
+
+    console.log("Iniciando importação...");
+
+    for (const link of linksArray) {
+        // Verifica duplicata antes de enviar
+        const linkJaExiste = allLinks.some(l => l.url.toLowerCase() === link.url.toLowerCase());
+        
+        if (linkJaExiste) {
+            console.warn(`❌ NÃO SALVO (Já existe): ${link.title}`);
+            naoSalvos++;
+            continue; // Pula para o próximo link
+        }
+
+        try {
+            await addDoc(linksRef, { ...link, timestamp: new Date() });
+            console.log(`✅ Salvo: ${link.title}`);
+            salvos++;
+        } catch (error) {
+            console.error(`❌ Erro crítico ao salvar: ${link.title}`, error);
+            naoSalvos++;
+        }
+    }
+    
+    // Mostra um aviso na tela no final com o resumo
+    alert(`Importação concluída!\n\n✅ Sucessos: ${salvos}\n❌ Não salvos (duplicados/erro): ${naoSalvos}`);
+};
