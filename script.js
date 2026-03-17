@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBc3ryOJEFBQlJIUpy835Anej0OulZqHEQ",
@@ -14,8 +14,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const linksRef = collection(db, "links");
+const notesDocRef = doc(db, "settings", "userNotes");
 
 let allLinks = [];
+let isNotesView = false;
 let activeCategory = "Todos";
 
 function startApp() {
@@ -214,6 +216,65 @@ document.getElementById("urlInput").addEventListener("blur", (e) => {
         } catch(err){}
     }
 });
+
+// --- Lógica de Notas ---
+const toggleNotesBtn = document.getElementById("toggleNotesBtn");
+const linksView = document.getElementById("linksView");
+const notesView = document.getElementById("notesView");
+const notesArea = document.getElementById("notesArea");
+const saveStatus = document.getElementById("saveStatus");
+const navScroll = document.querySelector(".nav-scroll");
+const addBtn = document.getElementById("addBtn");
+const searchInput = document.getElementById("search");
+
+toggleNotesBtn.onclick = () => {
+    isNotesView = !isNotesView;
+    if (isNotesView) {
+        linksView.style.display = "none";
+        notesView.style.display = "block";
+        navScroll.classList.add("hide-nav");
+        addBtn.style.display = "none";
+        searchInput.style.display = "none";
+        toggleNotesBtn.innerHTML = `<i class="fa-solid fa-link"></i> Links`;
+        loadNotes();
+    } else {
+        linksView.style.display = "block";
+        notesView.style.display = "none";
+        navScroll.classList.remove("hide-nav");
+        addBtn.style.display = "flex";
+        searchInput.style.display = "block";
+        toggleNotesBtn.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Notas`;
+    }
+};
+
+let saveTimeout;
+notesArea.oninput = () => {
+    saveStatus.innerText = "Digitando...";
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(saveNotes, 1000);
+};
+
+async function saveNotes() {
+    saveStatus.innerText = "Salvando...";
+    try {
+        await setDoc(notesDocRef, { content: notesArea.value, lastUpdated: new Date() });
+        saveStatus.innerText = "Salvo automaticamente";
+    } catch (error) {
+        console.error("Erro ao salvar notas:", error);
+        saveStatus.innerText = "Erro ao salvar";
+    }
+}
+
+async function loadNotes() {
+    try {
+        const docSnap = await getDoc(notesDocRef);
+        if (docSnap.exists()) {
+            notesArea.value = docSnap.data().content;
+        }
+    } catch (error) {
+        console.error("Erro ao carregar notas:", error);
+    }
+}
 
 // Inicializa a aplicação
 startApp();

@@ -178,3 +178,53 @@ main { padding: 2rem 1.5rem; max-width: 1400px; margin: 0 auto; }
     .btn-new span { display: none; } /* Esconde o texto do botão no mobile se faltar espaço */
     .delete-btn { opacity: 1; background: var(--item-bg); } /* Sempre visível no celular */
 }
+/* --- AMBIENTE DE NOTAS --- */
+.btn-notes {
+    background: #64748b; color: white; border: none; 
+    padding: 10px 18px; border-radius: 8px; cursor: pointer; 
+    font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;
+    transition: 0.2s; white-space: nowrap;
+}
+.btn-notes:hover { background: #475569; transform: translateY(-1px); }
+
+.notes-container {
+    background: var(--item-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    height: calc(100vh - 250px);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow);
+}
+
+#notesArea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+}
+
+.notes-footer {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+#saveStatus {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Esconder navegação de categorias quando estiver em Notas */
+.hide-nav {
+    display: none !important;
+}
