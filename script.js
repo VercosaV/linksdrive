@@ -19,9 +19,12 @@ let allLinks = [];
 let activeCategory = "Todos";
 
 function startApp() {
+    console.log("Iniciando App e escutando Firestore...");
     const q = query(linksRef, orderBy("category"));
     onSnapshot(q, (snapshot) => {
+        console.log("Snapshot recebido. Documentos:", snapshot.size);
         allLinks = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        console.log("Links processados:", allLinks);
         renderUI();
     }, (error) => {
         console.error("Erro no Firebase:", error);
