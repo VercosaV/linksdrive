@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot, setDoc, getDoc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBc3ryOJEFBQlJIUpy835Anej0OulZqHEQ",
@@ -14,9 +14,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const linksRef = collection(db, "links");
-const notesDocRef = doc(db, "settings", "userNotes");
+const notesRef = collection(db, "notes");
 
 let allLinks = [];
+let allNotes = [];
 let isNotesView = false;
 let activeCategory = "Todos";
 
@@ -217,12 +218,13 @@ document.getElementById("urlInput").addEventListener("blur", (e) => {
     }
 });
 
-// --- Lógica de Notas ---
+// --- Lógica de Notas Adesivas ---
 const toggleNotesBtn = document.getElementById("toggleNotesBtn");
+const addNoteBtn = document.getElementById("addNoteBtn");
 const linksView = document.getElementById("linksView");
 const notesView = document.getElementById("notesView");
-const notesArea = document.getElementById("notesArea");
-const saveStatus = document.getElementById("saveStatus");
+const notesContainer = document.getElementById("notesContainer");
+const emptyNotesState = document.getElementById("emptyNotesState");
 const navScroll = document.querySelector(".nav-scroll");
 const addBtn = document.getElementById("addBtn");
 const searchInput = document.getElementById("search");
@@ -234,47 +236,78 @@ toggleNotesBtn.onclick = () => {
         notesView.style.display = "block";
         navScroll.classList.add("hide-nav");
         addBtn.style.display = "none";
+        addNoteBtn.style.display = "flex";
         searchInput.style.display = "none";
         toggleNotesBtn.innerHTML = `<i class="fa-solid fa-link"></i> Links`;
-        loadNotes();
+        startNotesApp();
     } else {
         linksView.style.display = "block";
         notesView.style.display = "none";
         navScroll.classList.remove("hide-nav");
         addBtn.style.display = "flex";
+        addNoteBtn.style.display = "none";
         searchInput.style.display = "block";
         toggleNotesBtn.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Notas`;
     }
 };
 
-let saveTimeout;
-notesArea.oninput = () => {
-    saveStatus.innerText = "Digitando...";
-    clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(saveNotes, 1000);
+function startNotesApp() {
+    const q = query(notesRef, orderBy("timestamp", "desc"));
+    onSnapshot(q, (snapshot) => {
+        allNotes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderNotes();
+    });
+}
+
+function renderNotes() {
+    notesContainer.innerHTML = "";
+    if (allNotes.length === 0) {
+        emptyNotesState.style.display = "flex";
+    } else {
+        emptyNotesState.style.display = "none";
+        allNotes.forEach(note => {
+            const card = document.createElement("div");
+            card.className = `note-card color-${note.color || 1}`;
+            
+            const date = note.timestamp ? new Date(note.timestamp.seconds * 1000).toLocaleDateString() : "Agora";
+
+            card.innerHTML = `
+                <div class="note-header">
+                    <span>${date}</span>
+                    <button class="delete-note-btn" title="Excluir nota"><i class="fa-solid fa-trash"></i></button>
+                </div>
+                <textarea placeholder="Escreva algo...">${note.content || ""}</textarea>
+            `;
+
+            const textarea = card.querySelector("textarea");
+            let saveTimeout;
+            textarea.oninput = () => {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(() => {
+                    updateDoc(doc(db, "notes", note.id), { content: textarea.value });
+                }, 1000);
+            };
+
+            const deleteBtn = card.querySelector(".delete-note-btn");
+            deleteBtn.onclick = async () => {
+                if (confirm("Deseja excluir esta nota?")) {
+                    await deleteDoc(doc(db, "notes", note.id));
+                }
+            };
+
+            notesContainer.appendChild(card);
+        });
+    }
+}
+
+addNoteBtn.onclick = async () => {
+    const color = Math.floor(Math.random() * 5) + 1;
+    await addDoc(notesRef, {
+        content: "",
+        color: color,
+        timestamp: serverTimestamp()
+    });
 };
-
-async function saveNotes() {
-    saveStatus.innerText = "Salvando...";
-    try {
-        await setDoc(notesDocRef, { content: notesArea.value, lastUpdated: new Date() });
-        saveStatus.innerText = "Salvo automaticamente";
-    } catch (error) {
-        console.error("Erro ao salvar notas:", error);
-        saveStatus.innerText = "Erro ao salvar";
-    }
-}
-
-async function loadNotes() {
-    try {
-        const docSnap = await getDoc(notesDocRef);
-        if (docSnap.exists()) {
-            notesArea.value = docSnap.data().content;
-        }
-    } catch (error) {
-        console.error("Erro ao carregar notas:", error);
-    }
-}
 
 // Inicializa a aplicação
 startApp();

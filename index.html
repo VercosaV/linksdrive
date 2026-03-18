@@ -21,6 +21,7 @@
                     <i class="fa-solid fa-search search-icon"></i>
                     <input type="text" id="search" placeholder="Buscar links...">
                     <button id="addBtn" class="btn-new"><i class="fa-solid fa-plus"></i> Novo Link</button>
+                    <button id="addNoteBtn" class="btn-new" style="display: none;"><i class="fa-solid fa-plus"></i> Nova Nota</button>
                     <button id="toggleNotesBtn" class="btn-notes"><i class="fa-solid fa-pen-to-square"></i> Notas</button>
                 </div>
             </div>
@@ -41,11 +42,10 @@
         </div>
 
         <div id="notesView" style="display: none;">
-            <div class="notes-container">
-                <textarea id="notesArea" placeholder="Escreva suas anotações aqui..."></textarea>
-                <div class="notes-footer">
-                    <span id="saveStatus">Salvo automaticamente</span>
-                </div>
+            <div id="notesContainer" class="grid"></div>
+            <div id="emptyNotesState" class="empty-state" style="display: none;">
+                <i class="fa-solid fa-note-sticky"></i>
+                <p>Nenhuma nota criada hoje.</p>
             </div>
         </div>
     </main>
