@@ -252,11 +252,25 @@ toggleNotesBtn.onclick = () => {
 };
 
 function startNotesApp() {
-    const q = query(notesRef, orderBy("timestamp", "desc"));
+    const q = query(notesRef, orderBy("order", "asc"));
     onSnapshot(q, (snapshot) => {
         allNotes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderNotes();
+        
+        // Garantir que todas as notas tenham o campo 'order'
+        if (allNotes.some(n => n.order === undefined)) {
+            fixMissingNoteOrders();
+        } else {
+            renderNotes();
+        }
     });
+}
+
+async function fixMissingNoteOrders() {
+    for (let i = 0; i < allNotes.length; i++) {
+        if (allNotes[i].order === undefined) {
+            await updateDoc(doc(db, "notes", allNotes[i].id), { order: i });
+        }
+    }
 }
 
 function renderNotes() {
@@ -265,19 +279,58 @@ function renderNotes() {
         emptyNotesState.style.display = "flex";
     } else {
         emptyNotesState.style.display = "none";
-        allNotes.forEach(note => {
+        allNotes.forEach((note, index) => {
             const card = document.createElement("div");
             card.className = `note-card color-${note.color || 1}`;
+            card.draggable = true;
+            card.dataset.id = note.id;
+            card.dataset.index = index;
             
+            // Aplicar tamanho salvo se existir
+            if (note.width) card.style.width = note.width;
+            if (note.height) card.style.height = note.height;
+
             const date = note.timestamp ? new Date(note.timestamp.seconds * 1000).toLocaleDateString() : "Agora";
 
             card.innerHTML = `
                 <div class="note-header">
-                    <span>${date}</span>
+                    <div class="note-controls">
+                        <div class="note-drag-handle"><i class="fa-solid fa-grip-vertical"></i></div>
+                        <div class="color-dot" style="background:#fef08a" data-color="1"></div>
+                        <div class="color-dot" style="background:#bfdbfe" data-color="2"></div>
+                        <div class="color-dot" style="background:#bbf7d0" data-color="3"></div>
+                        <div class="color-dot" style="background:#fed7aa" data-color="4"></div>
+                        <div class="color-dot" style="background:#f5d0fe" data-color="5"></div>
+                        <div class="color-dot" style="background:#fecaca" data-color="6"></div>
+                    </div>
                     <button class="delete-note-btn" title="Excluir nota"><i class="fa-solid fa-trash"></i></button>
                 </div>
                 <textarea placeholder="Escreva algo...">${note.content || ""}</textarea>
+                <div class="note-footer" style="font-size:0.7rem; color:rgba(0,0,0,0.3); text-align:right;">${date}</div>
             `;
+
+            // Eventos de Drag & Drop para Notas
+            card.addEventListener('dragstart', handleNoteDragStart);
+            card.addEventListener('dragover', handleNoteDragOver);
+            card.addEventListener('drop', handleNoteDrop);
+            card.addEventListener('dragend', handleNoteDragEnd);
+
+            // Lógica de Redimensionamento (salvar ao soltar o mouse)
+            card.onmouseup = () => {
+                const newWidth = card.style.width;
+                const newHeight = card.style.height;
+                if (newWidth !== note.width || newHeight !== note.height) {
+                    updateDoc(doc(db, "notes", note.id), { width: newWidth, height: newHeight });
+                }
+            };
+
+            // Troca de Cor
+            card.querySelectorAll(".color-dot").forEach(dot => {
+                dot.onclick = () => {
+                    const newColor = dot.dataset.color;
+                    updateDoc(doc(db, "notes", note.id), { color: parseInt(newColor) });
+                };
+            });
 
             const textarea = card.querySelector("textarea");
             let saveTimeout;
@@ -300,11 +353,66 @@ function renderNotes() {
     }
 }
 
+// --- Drag & Drop para Notas ---
+let dragNoteSrcEl = null;
+
+function handleNoteDragStart(e) {
+    this.classList.add('dragging');
+    dragNoteSrcEl = this;
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleNoteDragOver(e) {
+    if (e.preventDefault) e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleNoteDrop(e) {
+    if (e.stopPropagation) e.stopPropagation();
+    if (dragNoteSrcEl !== this) {
+        const sourceId = dragNoteSrcEl.dataset.id;
+        const targetId = this.dataset.id;
+        updateNoteOrder(sourceId, targetId);
+    }
+    return false;
+}
+
+function handleNoteDragEnd(e) {
+    this.classList.remove('dragging');
+}
+
+async function updateNoteOrder(sourceId, targetId) {
+    const sourceIndex = allNotes.findIndex(n => n.id === sourceId);
+    const targetIndex = allNotes.findIndex(n => n.id === targetId);
+    
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    const newNotes = [...allNotes];
+    const [removed] = newNotes.splice(sourceIndex, 1);
+    newNotes.splice(targetIndex, 0, removed);
+
+    const start = Math.min(sourceIndex, targetIndex);
+    const end = Math.max(sourceIndex, targetIndex);
+
+    try {
+        const updates = [];
+        for (let i = start; i <= end; i++) {
+            updates.push(updateDoc(doc(db, "notes", newNotes[i].id), { order: i }));
+        }
+        await Promise.all(updates);
+    } catch (error) {
+        console.error("Erro ao atualizar ordem das notas:", error);
+    }
+}
+
 addNoteBtn.onclick = async () => {
-    const color = Math.floor(Math.random() * 5) + 1;
+    const color = Math.floor(Math.random() * 6) + 1;
+    const order = allNotes.length;
     await addDoc(notesRef, {
         content: "",
         color: color,
+        order: order,
         timestamp: serverTimestamp()
     });
 };
