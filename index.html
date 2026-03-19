@@ -30,8 +30,9 @@
 html{scroll-behavior:smooth}
 body{
   background:var(--vg-bg);color:var(--vg-text);
-  font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden;
+  font-family:'DM Mono',monospace;min-height:100vh;
 }
+html{overflow-x:clip}
 body::before{
   content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   background-image:
@@ -101,9 +102,10 @@ body.ml-mode .nav-brand{
   min-height:calc(100vh - var(--nav-h));
   transition:transform var(--slide);
   will-change:transform;
+  overflow:visible;
 }
 .track.show-links{transform:translateX(-50%)}
-.pane{width:50%;flex-shrink:0;min-height:calc(100vh - var(--nav-h));position:relative}
+.pane{width:50%;flex-shrink:0;min-height:calc(100vh - var(--nav-h));position:relative;overflow:visible}
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    ── VIDEOGET ──
@@ -253,15 +255,15 @@ kbd{background:#1a1a2e;padding:1px 6px;border-radius:4px;border:1px solid #333}
 .ml-empty i{font-size:2rem;opacity:.4}
 
 /* modal links */
-.ml-modal{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:none;justify-content:center;align-items:center;z-index:1000;padding:16px}
-.ml-modal-box{background:var(--ml-bg);padding:20px;border-radius:12px;width:100%;max-width:390px;border:1px solid var(--ml-border);box-shadow:0 25px 50px -12px rgba(0,0,0,.5);animation:slideUp .22s ease-out;font-family:'Inter',sans-serif}
+.ml-modal{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:none;justify-content:center;align-items:center;z-index:99999;padding:16px;isolation:isolate}
+.ml-modal-box{background:var(--ml-bg);padding:20px;border-radius:12px;width:100%;max-width:min(390px,calc(100vw - 32px));border:1px solid var(--ml-border);box-shadow:0 25px 50px -12px rgba(0,0,0,.5);animation:slideUp .22s ease-out;font-family:'Inter',sans-serif}
 .ml-mhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
 .ml-mhdr h3{font-size:.95rem;color:var(--ml-text)}
 .ml-mx{background:transparent;border:none;color:var(--ml-muted);font-size:1rem;cursor:pointer}
 .ml-mx:hover{color:#fff}
 .ml-ir{margin-bottom:12px}
 .ml-ir label{display:block;font-size:.76rem;font-weight:500;color:var(--ml-muted);margin-bottom:4px}
-.ml-ir input,.ml-ir select{width:100%;padding:8px 10px;background:var(--ml-item);border:1px solid var(--ml-border);color:#fff;border-radius:7px;outline:none;font-size:.86rem;transition:.2s;font-family:'Inter',sans-serif}
+.ml-ir input,.ml-ir select{width:100%;padding:8px 10px;background:var(--ml-item);border:1px solid var(--ml-border);color:#fff;border-radius:7px;outline:none;font-size:max(.86rem,16px);transition:.2s;font-family:'Inter',sans-serif}
 .ml-ir input:focus,.ml-ir select:focus{border-color:var(--ml-accent)}
 .ml-mact{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 .ml-cancel{background:transparent;color:var(--ml-muted);border:none;cursor:pointer;padding:7px 12px;font-weight:500;border-radius:7px;transition:.2s;font-family:'Inter',sans-serif;font-size:.86rem}
@@ -429,29 +431,30 @@ kbd{background:#1a1a2e;padding:1px 6px;border-radius:4px;border:1px solid #333}
       </div>
     </div>
 
-    <!-- modal add link -->
-    <div id="ml-modal" class="ml-modal">
-      <div class="ml-modal-box">
-        <div class="ml-mhdr">
-          <h3>Adicionar Link</h3>
-          <button class="ml-mx" id="ml-mclose"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="ml-ir"><label>URL</label><input id="ml-urlIn" type="url" placeholder="https://…"/></div>
-        <div class="ml-ir"><label>Nome</label><input id="ml-titleIn" type="text" placeholder="Ex: GitHub"/></div>
-        <div class="ml-ir">
-          <label>Categoria</label>
-          <select id="ml-catSel"></select>
-          <input id="ml-newCatIn" type="text" placeholder="Nome da nova categoria…" style="display:none;margin-top:7px"/>
-        </div>
-        <div class="ml-mact">
-          <button class="ml-cancel" id="ml-mcancel">Cancelar</button>
-          <button class="ml-btn ml-btn-blue" id="ml-saveLink">Salvar</button>
-        </div>
-      </div>
-    </div>
   </div>
 
 </div><!-- /track -->
+
+<!-- modal add link (moved to body level to fix z-index/overflow clipping) -->
+<div id="ml-modal" class="ml-modal">
+  <div class="ml-modal-box">
+    <div class="ml-mhdr">
+      <h3>Adicionar Link</h3>
+      <button class="ml-mx" id="ml-mclose"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="ml-ir"><label>URL</label><input id="ml-urlIn" type="url" placeholder="https://…"/></div>
+    <div class="ml-ir"><label>Nome</label><input id="ml-titleIn" type="text" placeholder="Ex: GitHub"/></div>
+    <div class="ml-ir">
+      <label>Categoria</label>
+      <select id="ml-catSel"></select>
+      <input id="ml-newCatIn" type="text" placeholder="Nome da nova categoria…" style="display:none;margin-top:7px"/>
+    </div>
+    <div class="ml-mact">
+      <button class="ml-cancel" id="ml-mcancel">Cancelar</button>
+      <button class="ml-btn ml-btn-blue" id="ml-saveLink">Salvar</button>
+    </div>
+  </div>
+</div>
 
 <div id="toastWrap" class="toast-wrap"></div>
 
