@@ -5,580 +5,629 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>MyDashboard — MyLinks</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   TOKENS GLOBAIS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════ */
 :root {
-  --ml-bg:      #0f172a;
-  --ml-item:    #1e293b;
-  --ml-hover:   #27354c;
-  --ml-text:    #f8fafc;
-  --ml-muted:   #94a3b8;
-  --ml-accent:  #3b82f6;
-  --ml-accent-h:#2563eb;
-  --ml-danger:  #ef4444;
-  --ml-border:  #334155;
-  --ml-shadow:  0 4px 6px -1px rgba(0,0,0,.25), 0 2px 4px -1px rgba(0,0,0,.15);
-  --r:          12px;
-  --nav-h:      54px;
+  /* Cores base */
+  --bg:        #080c14;
+  --bg2:       #0d1421;
+  --surface:   #111827;
+  --surface2:  #1a2333;
+  --border:    #1e2d42;
+  --border2:   #253447;
+
+  /* Texto */
+  --tx:        #e8edf5;
+  --tx2:       #8496b0;
+  --tx3:       #4d6080;
+
+  /* Accent */
+  --accent:    #3b82f6;
+  --accent2:   #2563eb;
+  --accent-glow: rgba(59,130,246,.18);
+
+  /* Status */
+  --danger:    #ef4444;
+  --success:   #22c55e;
+  --warn:      #f59e0b;
+
+  /* Notas */
+  --n1: #fef9c3; --n1d: #78350f;
+  --n2: #dbeafe; --n2d: #1e3a5f;
+  --n3: #dcfce7; --n3d: #14532d;
+  --n4: #ffedd5; --n4d: #7c2d12;
+  --n5: #f3e8ff; --n5d: #4a1d96;
+  --n6: #ffe4e6; --n6d: #881337;
+
+  /* Layout */
+  --r:    10px;
+  --r2:   14px;
+  --shadow: 0 4px 24px rgba(0,0,0,.4);
+  --shadow2: 0 8px 40px rgba(0,0,0,.55);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; overflow-x: clip; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
-  background: var(--ml-bg);
-  color: var(--ml-text);
-  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--tx);
+  font-family: 'Space Grotesk', system-ui, sans-serif;
   min-height: 100vh;
+  /* grade sutil no fundo */
+  background-image:
+    linear-gradient(rgba(59,130,246,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,.03) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 5px; }
-::-webkit-scrollbar-track { background: var(--ml-bg); }
-::-webkit-scrollbar-thumb { background: var(--ml-border); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--ml-muted); }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--tx3); }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   HEADER STICKY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-.ml-hdr {
-  background: rgba(15,23,42,.90);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--ml-border);
+/* ═══════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════ */
+.hdr {
+  background: rgba(8,12,20,.88);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
-  z-index: 200;
+  z-index: 300;
 }
-.ml-hdr-inner {
-  max-width: 1400px;
+.hdr-inner {
+  max-width: 1500px;
   margin: 0 auto;
-  padding: .85rem 1.2rem 0;
+  padding: .9rem 1.4rem 0;
 }
-
-/* Top bar: logo + actions */
-.ml-topbar {
+.hdr-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: .75rem;
-  margin-bottom: .85rem;
+  margin-bottom: .9rem;
 }
 
-.ml-logo {
+/* Logo */
+.logo {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   font-weight: 700;
-  font-size: 1.15rem;
-  letter-spacing: -.5px;
-  color: var(--ml-text);
+  font-size: 1.1rem;
+  letter-spacing: -.4px;
+  color: var(--tx);
+  text-decoration: none;
 }
-.ml-logo-ico {
-  background: var(--ml-accent);
-  color: #fff;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.logo-mark {
+  width: 32px; height: 32px;
+  background: var(--accent);
   border-radius: 8px;
-  font-size: .85rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem;
+  box-shadow: 0 0 14px rgba(59,130,246,.5);
 }
 
-.ml-actions {
+/* Barra de ações */
+.hdr-actions {
   display: flex;
-  gap: 7px;
-  flex-wrap: wrap;
   align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 /* Search */
-.ml-srch { position: relative; display: flex; align-items: center; }
-.ml-srch i {
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-wrap i {
   position: absolute;
-  left: 10px;
-  color: var(--ml-muted);
-  font-size: .8rem;
+  left: 11px;
+  color: var(--tx3);
+  font-size: .78rem;
   pointer-events: none;
 }
-.ml-srch input {
-  background: rgba(0,0,0,.22);
-  border: 1px solid var(--ml-border);
-  color: #fff;
-  padding: 7px 9px 7px 32px;
-  border-radius: 7px;
+.search-wrap input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--tx);
+  padding: 7px 10px 7px 32px;
+  border-radius: 8px;
   outline: none;
-  transition: .2s;
-  font-size: .85rem;
-  font-family: 'Inter', sans-serif;
-  width: 180px;
-}
-@media(max-width:500px){ .ml-srch input { width: 130px; } }
-.ml-srch input:focus {
-  border-color: var(--ml-accent);
-  box-shadow: 0 0 0 3px rgba(59,130,246,.16);
-}
-
-/* Buttons */
-.ml-btn {
-  border: none;
-  padding: 7px 13px;
-  border-radius: 7px;
-  cursor: pointer;
-  font-weight: 600;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: .83rem;
+  width: 190px;
+  transition: .2s;
+}
+.search-wrap input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+@media(max-width:500px){ .search-wrap input { width: 130px; } }
+
+/* Sort select */
+.sort-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: .2s;
-  white-space: nowrap;
-  font-family: 'Inter', sans-serif;
 }
-.ml-btn-blue  { background: var(--ml-accent); color: #fff; }
-.ml-btn-blue:hover  { background: var(--ml-accent-h); transform: translateY(-1px); }
-.ml-btn-gray  { background: #64748b; color: #fff; }
-.ml-btn-gray:hover  { background: #475569; transform: translateY(-1px); }
-@media(max-width:440px){ .ml-btn span { display: none; } }
+.sort-wrap label {
+  font-size: .75rem;
+  color: var(--tx3);
+  white-space: nowrap;
+}
+.sort-select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--tx2);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: .8rem;
+  outline: none;
+  cursor: pointer;
+  transition: .2s;
+}
+.sort-select:focus { border-color: var(--accent); }
 
-/* Category tabs */
-.ml-nav-scroll { overflow-x: auto; padding-bottom: 9px; }
-.ml-nav-tabs   { display: flex; gap: 5px; }
-.ml-nav-item {
+/* Botões */
+.btn {
+  border: none;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: .82rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: .18s;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 0 10px rgba(59,130,246,.35); }
+.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+.btn-ghost  { background: var(--surface2); color: var(--tx2); border: 1px solid var(--border); }
+.btn-ghost:hover  { background: var(--surface); color: var(--tx); transform: translateY(-1px); }
+@media(max-width:450px){ .btn span { display: none; } }
+
+/* Tabs de categoria */
+.cat-scroll { overflow-x: auto; padding-bottom: 8px; }
+.cat-tabs { display: flex; gap: 4px; }
+.cat-tab {
   background: transparent;
   border: 1px solid transparent;
-  color: var(--ml-muted);
-  padding: 5px 13px;
-  cursor: pointer;
-  font-size: .85rem;
-  font-weight: 500;
+  color: var(--tx3);
+  padding: 5px 14px;
   border-radius: 20px;
-  transition: all .18s;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: .82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: .18s;
   white-space: nowrap;
-  font-family: 'Inter', sans-serif;
 }
-.ml-nav-item:hover { color: var(--ml-text); background: rgba(255,255,255,.05); }
-.ml-nav-item.active {
+.cat-tab:hover { color: var(--tx); background: rgba(255,255,255,.04); }
+.cat-tab.active {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-color: rgba(59,130,246,.35);
+}
+.cat-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
   background: rgba(59,130,246,.15);
-  color: var(--ml-accent);
-  border-color: rgba(59,130,246,.3);
+  color: var(--accent);
+  font-size: .65rem;
+  font-weight: 700;
+  margin-left: 4px;
 }
-.hide-nav { display: none !important; }
+.hide { display: none !important; }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   MAIN CONTENT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-.ml-main {
-  padding: 1.2rem;
-  max-width: 1400px;
+/* ═══════════════════════════════════════════════
+   MAIN
+═══════════════════════════════════════════════ */
+.main {
+  max-width: 1500px;
   margin: 0 auto;
+  padding: 1.2rem 1.4rem;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* ═══════════════════════════════════════════════
    LINKS GRID
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-.ml-grid {
+═══════════════════════════════════════════════ */
+.links-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+  gap: 9px;
 }
-@media(max-width:480px){ .ml-grid { grid-template-columns: 1fr 1fr; } }
-@media(max-width:340px){ .ml-grid { grid-template-columns: 1fr; } }
+@media(max-width:480px){ .links-grid { grid-template-columns: 1fr 1fr; gap: 7px; } }
 
-.ml-card {
-  background: var(--ml-item);
-  border: 1px solid var(--ml-border);
-  border-radius: 10px;
-  padding: 10px 12px;
+.link-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 10px 13px;
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: all .2s cubic-bezier(.4,0,.2,1);
   cursor: pointer;
+  transition: all .2s cubic-bezier(.4,0,.2,1);
   position: relative;
+  overflow: hidden;
 }
-.ml-card:hover {
-  background: var(--ml-hover);
-  border-color: var(--ml-accent);
-  transform: translateY(-3px);
-  box-shadow: var(--ml-shadow);
+/* barra colorida esquerda ao hover */
+.link-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  transform: scaleY(0);
+  transition: transform .2s;
+  border-radius: 2px 0 0 2px;
 }
-.ml-card img {
+.link-card:hover::before { transform: scaleY(1); }
+.link-card:hover {
+  background: var(--surface2);
+  border-color: rgba(59,130,246,.3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.link-card img {
   width: 22px; height: 22px;
-  border-radius: 4px;
+  border-radius: 5px;
   object-fit: cover;
   background: #fff;
   padding: 2px;
   flex-shrink: 0;
 }
-.ml-card span {
-  color: var(--ml-text);
-  font-size: .85rem;
+.link-title {
+  color: var(--tx);
+  font-size: .84rem;
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
 }
-.ml-del-btn {
-  background: transparent;
-  color: var(--ml-muted);
-  border: none;
-  cursor: pointer;
-  opacity: 0;
-  width: 27px; height: 27px;
-  border-radius: 5px;
-  transition: .2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.link-cat-badge {
+  font-size: .62rem;
+  color: var(--tx3);
+  background: var(--bg2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
   flex-shrink: 0;
 }
-.ml-del-btn:hover { background: rgba(239,68,68,.15); color: var(--ml-danger); }
-.ml-card:hover .ml-del-btn { opacity: 1; }
-@media(max-width:640px){ .ml-del-btn { opacity: 1; } }
+.link-del {
+  background: transparent;
+  border: none;
+  color: var(--tx3);
+  cursor: pointer;
+  width: 26px; height: 26px;
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: .18s;
+  flex-shrink: 0;
+  font-size: .75rem;
+}
+.link-del:hover { background: rgba(239,68,68,.14); color: var(--danger); }
+.link-card:hover .link-del { opacity: 1; }
+@media(max-width:640px){ .link-del { opacity: 1; } }
 
-.ml-empty {
+.empty-state {
   text-align: center;
-  color: var(--ml-muted);
-  padding: 2.2rem;
+  color: var(--tx3);
+  padding: 3rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
 }
-.ml-empty i { font-size: 2rem; opacity: .4; }
+.empty-state i { font-size: 2.2rem; opacity: .35; }
+.empty-state p { font-size: .9rem; }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   NOTES — toolbar + pastas
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ═══════════════════════════════════════════════
+   NOTES VIEW
+═══════════════════════════════════════════════ */
+
+/* Toolbar de pastas */
 .notes-toolbar {
   display: flex;
   align-items: center;
-  gap: 9px;
-  margin-bottom: 14px;
+  gap: 10px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
 }
-.folder-strip { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
+.folder-strip { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+
 .ftab {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(255,255,255,.05);
-  border: 1px solid var(--ml-border);
-  color: var(--ml-muted);
-  padding: 4px 11px;
+  gap: 5px;
+  padding: 5px 13px;
   border-radius: 20px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  color: var(--tx3);
   font-size: .8rem;
   font-weight: 500;
+  font-family: 'Space Grotesk', sans-serif;
   cursor: pointer;
-  transition: all .18s;
-  font-family: 'Inter', sans-serif;
+  transition: .18s;
+  position: relative;
 }
-.ftab:hover { border-color: var(--ml-accent); color: var(--ml-accent); }
+.ftab:hover { border-color: var(--accent); color: var(--accent); }
 .ftab.on {
-  background: rgba(59,130,246,.15);
-  border-color: rgba(59,130,246,.35);
-  color: var(--ml-accent);
+  background: var(--accent-glow);
+  border-color: rgba(59,130,246,.4);
+  color: var(--accent);
 }
-.ftab .fcnt { font-size: .66rem; opacity: .6; }
-.ftab .fdel {
-  margin-left: 3px;
-  opacity: 0;
-  font-size: .68rem;
-  transition: opacity .15s;
+.ftab-count {
+  font-size: .64rem;
+  opacity: .6;
+}
+.ftab-del {
+  margin-left: 2px;
+  font-size: .65rem;
+  color: inherit;
   background: none;
   border: none;
-  color: inherit;
   cursor: pointer;
+  opacity: 0;
+  transition: .15s;
   padding: 0 2px;
   line-height: 1;
 }
-.ftab:hover .fdel { opacity: 1; }
-.btn-add-folder {
-  display: flex;
+.ftab:hover .ftab-del { opacity: .7; }
+.ftab-del:hover { opacity: 1 !important; color: var(--danger) !important; }
+
+.btn-new-folder {
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: none;
-  border: 1px dashed var(--ml-border);
-  color: var(--ml-muted);
-  padding: 4px 11px;
+  gap: 5px;
+  padding: 5px 12px;
   border-radius: 20px;
+  border: 1px dashed var(--border2);
+  background: transparent;
+  color: var(--tx3);
   font-size: .78rem;
+  font-family: 'Space Grotesk', sans-serif;
   cursor: pointer;
-  transition: all .18s;
-  font-family: 'Inter', sans-serif;
+  transition: .18s;
 }
-.btn-add-folder:hover { border-color: var(--ml-accent); color: var(--ml-accent); }
+.btn-new-folder:hover { border-color: var(--accent); color: var(--accent); }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   NOTE CARDS — redesenhados
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-/*
-  EXPLICAÇÃO DO LAYOUT:
-  Cada .note-card usa display:flex + flex-direction:column.
-  O textarea dentro tem flex:1, o que faz ele PREENCHER todo
-  o espaço vertical disponível no card.
-
-  O card tem:
-  - min-height: 200px  → altura mínima decente
-  - min-width: 200px   → largura mínima
-  - resize: both       → handle nativo do browser (canto inferior direito)
-  - overflow: hidden   → necessário para o resize funcionar
-*/
+/* Grid das notas */
 .notes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
   gap: 14px;
-  align-items: start; /* cards não esticam verticalmente entre si */
+  align-items: start;
 }
 
+/* ──────────────────────────────────────
+   NOTE CARD — redesenhado
+   Estrutura:
+   ┌──────────────────┐
+   │ .note-topbar     │  cor, drag, ações
+   │ .note-title-wrap │  input de título editável
+   │ textarea         │  conteúdo (flex:1)
+   │ .note-footer     │  pasta + timestamp + chars
+   └──────────────────┘
+────────────────────────────────────── */
 .note-card {
-  border-radius: 10px;
-  padding: 0;               /* sem padding aqui — usamos no interior */
-  min-height: 200px;
+  border-radius: var(--r2);
+  min-height: 220px;
   min-width: 200px;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--ml-shadow);
+  box-shadow: 0 2px 12px rgba(0,0,0,.18);
   transition: transform .2s, box-shadow .2s;
   position: relative;
-  resize: both;             /* ← permite redimensionar com o handle nativo */
-  overflow: hidden;         /* necessário para resize funcionar */
+  /*
+    resize:both + overflow:hidden = handle nativo do browser
+    no canto inferior direito para redimensionar o card.
+    Isso é puro CSS, sem JS para detecção de resize no drag.
+  */
+  resize: both;
+  overflow: hidden;
 }
 .note-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  box-shadow: 0 10px 32px rgba(0,0,0,.28);
 }
-.note-card.dragging { opacity: .5; transform: scale(.95); }
+.note-card.dragging { opacity: .45; transform: scale(.96) rotate(1.5deg); }
 
-/* Cores */
-.note-card.c1 { background: #fef08a; color: #1e293b; }
-.note-card.c2 { background: #bfdbfe; color: #1e293b; }
-.note-card.c3 { background: #bbf7d0; color: #1e293b; }
-.note-card.c4 { background: #fed7aa; color: #1e293b; }
-.note-card.c5 { background: #f5d0fe; color: #1e293b; }
-.note-card.c6 { background: #fecaca; color: #1e293b; }
+/* Cores das notas */
+.nc1 { background: var(--n1); color: #1c1917; }
+.nc2 { background: var(--n2); color: #0f172a; }
+.nc3 { background: var(--n3); color: #052e16; }
+.nc4 { background: var(--n4); color: #1c0a00; }
+.nc5 { background: var(--n5); color: #1e0635; }
+.nc6 { background: var(--n6); color: #1c0a0a; }
 
-/* Header da nota */
-.note-hdr {
+/* Topbar da nota */
+.note-topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px 6px;
-  flex-shrink: 0;           /* não deixa o header encolher */
+  padding: 9px 11px 5px;
+  flex-shrink: 0;
 }
-.note-ctrl { display: flex; gap: 5px; align-items: center; }
+.note-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.note-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
 
+/* Handle de drag */
+.note-drag {
+  cursor: grab;
+  color: rgba(0,0,0,.25);
+  font-size: .78rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: .15s;
+}
+.note-drag:hover { color: rgba(0,0,0,.5); background: rgba(0,0,0,.07); }
+.note-drag:active { cursor: grabbing; }
+
+/* Dots de cor */
 .cdot {
   width: 11px; height: 11px;
   border-radius: 50%;
   cursor: pointer;
-  border: 1px solid rgba(0,0,0,.12);
-  transition: transform .1s;
+  border: 1.5px solid rgba(0,0,0,.12);
+  transition: transform .12s;
   flex-shrink: 0;
 }
-.cdot:hover { transform: scale(1.4); }
+.cdot:hover { transform: scale(1.45); }
 
-.ndrag {
-  cursor: grab;
-  padding: 3px;
-  color: rgba(0,0,0,.3);
-  font-size: .8rem;
-}
-.ndrag:active { cursor: grabbing; }
-
-/* Botões de ação no header */
-.note-actions { display: flex; gap: 3px; align-items: center; }
-
-.ndel, .nexpand {
+/* Botões de ação na topbar */
+.note-act-btn {
   background: transparent;
   border: none;
-  color: rgba(0,0,0,.35);
+  color: rgba(0,0,0,.3);
   cursor: pointer;
-  font-size: .8rem;
-  padding: 3px 5px;
-  border-radius: 4px;
-  transition: .18s;
-  line-height: 1;
+  width: 26px; height: 26px;
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem;
+  transition: .15s;
 }
-.ndel:hover   { color: #ef4444; background: rgba(239,68,68,.12); }
-.nexpand:hover { color: #1e40af; background: rgba(59,130,246,.12); }
+.note-act-btn:hover { color: rgba(0,0,0,.65); background: rgba(0,0,0,.09); }
+.note-act-btn.danger:hover { color: #ef4444; background: rgba(239,68,68,.12); }
 
-/*
-  TEXTAREA DENTRO DO CARD:
-  - flex:1 faz ele ocupar TODO espaço vertical restante
-  - resize:none porque o resize está no card pai
-  - min-height:0 para não impedir o card de ser pequeno
-  - padding lateral para respirar
-*/
-.note-card textarea {
+/* Input de título da nota */
+.note-title-wrap {
+  padding: 2px 12px 4px;
+  flex-shrink: 0;
+}
+.note-title-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: inherit;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: .85rem;
+  font-weight: 700;
+  outline: none;
+  padding: 2px 0;
+  transition: border-color .18s;
+  letter-spacing: -.2px;
+}
+.note-title-input::placeholder { color: rgba(0,0,0,.25); font-weight: 500; }
+.note-title-input:focus { border-bottom-color: rgba(0,0,0,.25); }
+
+/* Textarea do conteúdo */
+.note-body {
   flex: 1;
   min-height: 0;
   background: transparent;
   border: none;
   color: inherit;
-  font-size: .9rem;
-  line-height: 1.55;
-  resize: none;             /* resize no card, não na textarea */
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: .87rem;
+  line-height: 1.58;
+  resize: none;
   outline: none;
-  font-family: 'Inter', sans-serif;
   padding: 0 12px 6px;
-  overflow-y: auto;         /* scroll se o conteúdo exceder o card */
+  overflow-y: auto;
 }
-.note-card textarea::placeholder { color: rgba(0,0,0,.3); }
+.note-body::placeholder { color: rgba(0,0,0,.25); }
 
 /* Footer da nota */
 .note-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px 12px 9px;
+  padding: 5px 11px 9px;
   flex-shrink: 0;
+  gap: 6px;
 }
-.note-ts { font-size: .62rem; color: rgba(0,0,0,.35); }
-
-.note-folder-sel {
-  font-size: .67rem;
-  background: rgba(0,0,0,.1);
-  border: none;
-  border-radius: 4px;
-  color: rgba(0,0,0,.45);
-  padding: 1px 4px;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  max-width: 90px;
-}
-.note-folder-sel:focus { outline: none; }
-
-/* Contador de caracteres */
-.note-char-count {
+.note-ts {
   font-size: .6rem;
   color: rgba(0,0,0,.3);
-  padding-right: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.note-folder-sel {
+  font-size: .67rem;
+  background: rgba(0,0,0,.08);
+  border: none;
+  border-radius: 5px;
+  color: rgba(0,0,0,.4);
+  padding: 2px 5px;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  max-width: 100px;
+  flex-shrink: 0;
+}
+.note-folder-sel:focus { outline: none; }
+.note-chars {
+  font-size: .6rem;
+  color: rgba(0,0,0,.28);
+  font-family: 'JetBrains Mono', monospace;
   flex-shrink: 0;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   MODAL — ADICIONAR LINK
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-.ml-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.65);
-  backdrop-filter: blur(4px);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 99999;
-  padding: 16px;
-}
-.ml-modal-box {
-  background: var(--ml-bg);
-  padding: 20px;
-  border-radius: 12px;
-  width: 100%;
-  max-width: min(390px, calc(100vw - 32px));
-  border: 1px solid var(--ml-border);
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,.5);
-  animation: slideUp .22s ease-out;
-  font-family: 'Inter', sans-serif;
-}
-.ml-mhdr {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-.ml-mhdr h3 { font-size: .95rem; color: var(--ml-text); }
-.ml-mx { background: transparent; border: none; color: var(--ml-muted); font-size: 1rem; cursor: pointer; }
-.ml-mx:hover { color: #fff; }
-
-.ml-ir { margin-bottom: 12px; }
-.ml-ir label {
-  display: block;
-  font-size: .76rem;
-  font-weight: 500;
-  color: var(--ml-muted);
-  margin-bottom: 4px;
-}
-.ml-ir input, .ml-ir select {
-  width: 100%;
-  padding: 8px 10px;
-  background: var(--ml-item);
-  border: 1px solid var(--ml-border);
-  color: #fff;
-  border-radius: 7px;
-  outline: none;
-  font-size: max(.86rem, 16px);
-  transition: .2s;
-  font-family: 'Inter', sans-serif;
-}
-.ml-ir input:focus, .ml-ir select:focus { border-color: var(--ml-accent); }
-
-.ml-mact {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
-}
-.ml-cancel {
-  background: transparent;
-  color: var(--ml-muted);
-  border: none;
-  cursor: pointer;
-  padding: 7px 12px;
-  font-weight: 500;
-  border-radius: 7px;
-  transition: .2s;
-  font-family: 'Inter', sans-serif;
-  font-size: .86rem;
-}
-.ml-cancel:hover { background: var(--ml-item); color: #fff; }
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   MODAL — EXPANDIR NOTA (tela cheia de edição)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ═══════════════════════════════════════════════
+   MODAL EXPANDIR NOTA
+═══════════════════════════════════════════════ */
 /*
-  Por que um modal separado para a nota?
-  ─────────────────────────────────────────
-  O card tem espaço limitado. Quando o usuário quer escrever
-  um texto longo (ex: resumo de aula, lista de tarefas, código),
-  ele clica em ⤢ e a nota abre em um modal grande onde a
-  textarea ocupa quase a tela inteira. Ao fechar, o conteúdo
-  já foi salvo via Firestore (auto-save por debounce).
+  Por que um modal expandido?
+  O card tem tamanho limitado. Para textos longos (resumos,
+  código, listas extensas), o usuário clica em ⤢ e a nota
+  abre em um modal onde a textarea ocupa quase toda a tela.
+  O auto-save (debounce 900ms) continua funcionando aqui.
 */
-.note-expand-modal {
+.expand-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,.75);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
   display: none;
   justify-content: center;
   align-items: center;
   z-index: 99998;
   padding: 20px;
 }
-.note-expand-modal.open { display: flex; }
+.expand-overlay.open { display: flex; }
 
-.note-expand-box {
+.expand-box {
   width: 100%;
-  max-width: 760px;
-  height: min(80vh, 700px);
-  border-radius: 14px;
+  max-width: 780px;
+  height: min(82vh, 700px);
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 30px 60px -10px rgba(0,0,0,.6);
-  animation: slideUp .24s ease-out;
+  box-shadow: 0 40px 80px rgba(0,0,0,.65);
+  animation: slideUp .22s ease-out;
   overflow: hidden;
 }
 
-/* Header do modal de nota */
-.note-expand-hdr {
+.expand-topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -586,161 +635,258 @@ body {
   flex-shrink: 0;
   border-bottom: 1px solid rgba(0,0,0,.1);
 }
-.note-expand-ctrl { display: flex; gap: 6px; align-items: center; }
-.note-expand-close {
+.expand-title {
+  width: 100%;
   background: transparent;
   border: none;
-  color: rgba(0,0,0,.45);
-  cursor: pointer;
-  font-size: .95rem;
-  padding: 4px 7px;
-  border-radius: 5px;
-  transition: .18s;
+  color: inherit;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  outline: none;
+  margin-right: 10px;
 }
-.note-expand-close:hover { background: rgba(0,0,0,.1); color: rgba(0,0,0,.7); }
+.expand-title::placeholder { color: rgba(0,0,0,.3); }
 
-/*
-  Textarea do modal expandido:
-  - flex:1 ocupa TODO o espaço vertical disponível
-  - font-size maior para leitura confortável
-  - padding generoso
-*/
-.note-expand-box textarea {
+.expand-body {
   flex: 1;
   background: transparent;
   border: none;
   color: inherit;
-  font-size: 1rem;
-  line-height: 1.65;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: .97rem;
+  line-height: 1.68;
   resize: none;
   outline: none;
-  font-family: 'Inter', sans-serif;
-  padding: 16px 20px;
+  padding: 16px 22px;
   overflow-y: auto;
 }
-.note-expand-box textarea::placeholder { color: rgba(0,0,0,.3); }
+.expand-body::placeholder { color: rgba(0,0,0,.3); }
 
-/* Footer do modal expandido */
-.note-expand-footer {
+.expand-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 8px 16px 12px;
   flex-shrink: 0;
   border-top: 1px solid rgba(0,0,0,.08);
+  gap: 10px;
 }
-.note-expand-footer .note-ts { font-size: .65rem; color: rgba(0,0,0,.35); }
-.note-expand-footer .note-char-count { font-size: .65rem; color: rgba(0,0,0,.35); }
+.expand-footer .note-ts { font-size: .65rem; }
+.expand-footer .note-chars { font-size: .65rem; }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* ═══════════════════════════════════════════════
+   MODAL ADICIONAR LINK
+═══════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(6px);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  padding: 16px;
+}
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--r2);
+  padding: 22px;
+  width: 100%;
+  max-width: min(400px, calc(100vw - 32px));
+  box-shadow: var(--shadow2);
+  animation: slideUp .22s ease-out;
+}
+.modal-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.modal-hdr h3 { font-size: .95rem; font-weight: 700; color: var(--tx); }
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--tx3);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: .15s;
+}
+.modal-close:hover { color: var(--tx); }
+
+.form-row { margin-bottom: 13px; }
+.form-row label {
+  display: block;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--tx3);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.form-row input, .form-row select {
+  width: 100%;
+  padding: 9px 11px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--tx);
+  border-radius: 8px;
+  outline: none;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: max(.86rem, 16px);
+  transition: .18s;
+}
+.form-row input:focus, .form-row select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+.btn-cancel {
+  background: transparent;
+  border: none;
+  color: var(--tx3);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: .85rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 7px;
+  transition: .15s;
+}
+.btn-cancel:hover { background: var(--surface2); color: var(--tx); }
+
+/* ═══════════════════════════════════════════════
    TOAST
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+═══════════════════════════════════════════════ */
 .toast-wrap {
   position: fixed;
-  bottom: 16px;
-  right: 16px;
-  z-index: 9999;
+  bottom: 18px;
+  right: 18px;
+  z-index: 99999;
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  max-width: calc(100vw - 32px);
+  gap: 8px;
+  max-width: calc(100vw - 36px);
 }
 .toast {
-  background: var(--ml-item);
-  color: #fff;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--tx);
   padding: 9px 16px;
-  border-radius: 8px;
-  border-left: 4px solid var(--ml-accent);
-  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+  border-radius: 9px;
+  border-left: 4px solid var(--accent);
+  box-shadow: var(--shadow);
   font-size: .82rem;
   font-weight: 500;
-  animation: slideInR .26s ease-out forwards;
-  font-family: 'Inter', sans-serif;
+  animation: slideInR .24s ease-out forwards;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.toast.err { border-left-color: var(--ml-danger); }
+.toast.err { border-left-color: var(--danger); }
+.toast.ok  { border-left-color: var(--success); }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* ═══════════════════════════════════════════════
    ANIMATIONS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-@keyframes slideUp   { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-@keyframes slideInR  { from { transform:translateX(110%); opacity:0; } to { transform:translateX(0); opacity:1; } }
-@keyframes fadeOut   { to   { opacity:0; transform:translateY(7px); } }
+═══════════════════════════════════════════════ */
+@keyframes slideUp   { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+@keyframes slideInR  { from { opacity:0; transform:translateX(110%); } to { opacity:1; transform:translateX(0); } }
+@keyframes fadeOut   { to   { opacity:0; transform:translateY(8px); } }
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════
+<!-- ════════════════════════════════════
      HEADER
-══════════════════════════════════════════ -->
-<div class="ml-hdr">
-  <div class="ml-hdr-inner">
-
-    <div class="ml-topbar">
+════════════════════════════════════ -->
+<div class="hdr">
+  <div class="hdr-inner">
+    <div class="hdr-top">
       <!-- Logo -->
-      <div class="ml-logo">
-        <div class="ml-logo-ico"><i class="fa-solid fa-layer-group"></i></div>
-        <span>MyLinks</span>
+      <div class="logo">
+        <div class="logo-mark"><i class="fa-solid fa-layer-group"></i></div>
+        <span>MyDashboard</span>
       </div>
 
-      <!-- Actions -->
-      <div class="ml-actions">
-        <!-- Search (só visível em Links) -->
-        <div class="ml-srch" id="ml-srchWrap">
+      <!-- Ações -->
+      <div class="hdr-actions">
+
+        <!-- Busca (links) -->
+        <div class="search-wrap" id="searchWrap">
           <i class="fa-solid fa-search"></i>
-          <input type="text" id="ml-search" placeholder="Buscar…"/>
+          <input type="text" id="searchInput" placeholder="Buscar link…"/>
         </div>
 
-        <!-- Botão "Adicionar Link" (visível em Links) -->
-        <button id="ml-addBtn" class="ml-btn ml-btn-blue">
-          <i class="fa-solid fa-plus"></i><span> Link</span>
+        <!-- Ordenação (links) -->
+        <div class="sort-wrap" id="sortWrap">
+          <label><i class="fa-solid fa-arrow-up-wide-short"></i></label>
+          <select class="sort-select" id="sortSelect">
+            <option value="cat_asc">Categoria A→Z</option>
+            <option value="cat_desc">Categoria Z→A</option>
+            <option value="title_asc">Título A→Z</option>
+            <option value="title_desc">Título Z→A</option>
+            <option value="date_desc">Mais recentes</option>
+            <option value="date_asc">Mais antigos</option>
+          </select>
+        </div>
+
+        <!-- Botão adicionar link -->
+        <button class="btn btn-primary" id="addLinkBtn">
+          <i class="fa-solid fa-plus"></i><span>Link</span>
         </button>
 
-        <!-- Botão "Nova Nota" (visível em Notas) -->
-        <button id="ml-addNoteBtn" class="ml-btn ml-btn-blue" style="display:none">
-          <i class="fa-solid fa-plus"></i><span> Nota</span>
+        <!-- Botão adicionar nota (oculto inicialmente) -->
+        <button class="btn btn-primary hide" id="addNoteBtn">
+          <i class="fa-solid fa-plus"></i><span>Nota</span>
         </button>
 
-        <!-- Toggle Notas/Links -->
-        <button id="ml-toggleNotes" class="ml-btn ml-btn-gray">
-          <i class="fa-solid fa-pen-to-square"></i><span> Notas</span>
+        <!-- Toggle Links ↔ Notas -->
+        <button class="btn btn-ghost" id="toggleBtn">
+          <i class="fa-solid fa-pen-to-square"></i><span>Notas</span>
         </button>
       </div>
     </div>
 
-    <!-- Category tabs (apenas Links) -->
-    <div class="ml-nav-scroll" id="ml-navScroll">
-      <nav id="ml-catNav" class="ml-nav-tabs"></nav>
+    <!-- Abas de categoria -->
+    <div class="cat-scroll" id="catScroll">
+      <nav id="catNav" class="cat-tabs"></nav>
     </div>
-
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
+<!-- ════════════════════════════════════
      MAIN
-══════════════════════════════════════════ -->
-<div class="ml-main">
+════════════════════════════════════ -->
+<div class="main">
 
-  <!-- View: Links -->
-  <div id="ml-linksView">
-    <div id="ml-linksGrid" class="ml-grid"></div>
-    <div id="ml-linksEmpty" class="ml-empty" style="display:none">
+  <!-- ── View: Links ── -->
+  <div id="linksView">
+    <div id="linksGrid" class="links-grid"></div>
+    <div id="linksEmpty" class="empty-state" style="display:none">
       <i class="fa-solid fa-folder-open"></i>
-      <p>Nenhum link aqui.</p>
+      <p>Nenhum link encontrado.</p>
     </div>
   </div>
 
-  <!-- View: Notas -->
-  <div id="ml-notesView" style="display:none">
-    <!-- Pasta toolbar -->
+  <!-- ── View: Notas ── -->
+  <div id="notesView" style="display:none">
+    <!-- Toolbar de pastas -->
     <div class="notes-toolbar">
-      <div class="folder-strip" id="folder-strip"></div>
-      <button class="btn-add-folder" id="btn-add-folder">
+      <div class="folder-strip" id="folderStrip"></div>
+      <button class="btn-new-folder" id="newFolderBtn">
         <i class="fa-solid fa-folder-plus"></i> Nova pasta
       </button>
     </div>
-    <!-- Grid das notas -->
-    <div id="ml-notesGrid" class="notes-grid"></div>
-    <div id="ml-notesEmpty" class="ml-empty" style="display:none">
+    <!-- Grid de notas -->
+    <div id="notesGrid" class="notes-grid"></div>
+    <div id="notesEmpty" class="empty-state" style="display:none">
       <i class="fa-solid fa-note-sticky"></i>
       <p>Nenhuma nota. Clique em "+ Nota" para criar.</p>
     </div>
@@ -748,65 +894,67 @@ body {
 
 </div>
 
-<!-- ══════════════════════════════════════════
+<!-- ════════════════════════════════════
      MODAL — ADICIONAR LINK
-══════════════════════════════════════════ -->
-<div id="ml-modal" class="ml-modal">
-  <div class="ml-modal-box">
-    <div class="ml-mhdr">
-      <h3>Adicionar Link</h3>
-      <button class="ml-mx" id="ml-mclose"><i class="fa-solid fa-xmark"></i></button>
+════════════════════════════════════ -->
+<div id="linkModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h3><i class="fa-solid fa-link" style="color:var(--accent);margin-right:7px"></i>Adicionar Link</h3>
+      <button class="modal-close" id="modalClose"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="ml-ir"><label>URL</label><input id="ml-urlIn" type="url" placeholder="https://…"/></div>
-    <div class="ml-ir"><label>Nome</label><input id="ml-titleIn" type="text" placeholder="Ex: GitHub"/></div>
-    <div class="ml-ir">
+    <div class="form-row">
+      <label>URL</label>
+      <input id="urlInput" type="url" placeholder="https://…"/>
+    </div>
+    <div class="form-row">
+      <label>Nome</label>
+      <input id="titleInput" type="text" placeholder="Ex: GitHub"/>
+    </div>
+    <div class="form-row">
       <label>Categoria</label>
-      <select id="ml-catSel"></select>
-      <input id="ml-newCatIn" type="text" placeholder="Nome da nova categoria…" style="display:none;margin-top:7px"/>
+      <select id="catSelect"></select>
+      <input id="newCatInput" type="text" placeholder="Nome da nova categoria…"
+             style="display:none;margin-top:8px"/>
     </div>
-    <div class="ml-mact">
-      <button class="ml-cancel" id="ml-mcancel">Cancelar</button>
-      <button class="ml-btn ml-btn-blue" id="ml-saveLink">Salvar</button>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Cancelar</button>
+      <button class="btn btn-primary" id="saveLink">Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
+<!-- ════════════════════════════════════
      MODAL — EXPANDIR NOTA
-     Permite editar a nota em tela cheia
-══════════════════════════════════════════ -->
-<div id="note-expand-modal" class="note-expand-modal">
-  <div class="note-expand-box" id="note-expand-box">
-    <div class="note-expand-hdr">
-      <div class="note-expand-ctrl">
-        <!-- Os color dots são inseridos via JS para manter a cor atual -->
-        <span id="nexp-dots"></span>
+════════════════════════════════════ -->
+<div id="expandOverlay" class="expand-overlay">
+  <div class="expand-box" id="expandBox">
+    <div class="expand-topbar">
+      <div style="display:flex;align-items:center;gap:7px;flex:1">
+        <!-- Dots de cor injetados via JS -->
+        <span id="expDots"></span>
+        <input id="expTitle" class="expand-title" type="text" placeholder="Título da nota…"/>
       </div>
-      <!-- Folder selector também presente aqui -->
-      <div style="display:flex;align-items:center;gap:8px">
-        <select id="nexp-folder" class="note-folder-sel" style="max-width:120px"></select>
-        <button id="note-expand-close" class="note-expand-close" title="Fechar">
+      <div style="display:flex;align-items:center;gap:7px">
+        <select id="expFolder" class="note-folder-sel" style="max-width:130px"></select>
+        <button class="note-act-btn" id="expandClose" title="Fechar">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
     </div>
-    <!--
-      Textarea principal do modal expandido.
-      O id="nexp-ta" é vinculado ao ID da nota ativa via JS.
-    -->
-    <textarea id="nexp-ta" placeholder="Escreva à vontade…"></textarea>
-    <div class="note-expand-footer">
-      <span class="note-ts" id="nexp-ts"></span>
-      <span class="note-char-count" id="nexp-char">0 caracteres</span>
+    <textarea id="expBody" class="expand-body" placeholder="Escreva à vontade…"></textarea>
+    <div class="expand-footer">
+      <span class="note-ts" id="expTs"></span>
+      <span class="note-chars" id="expChars">0 car.</span>
     </div>
   </div>
 </div>
 
 <div id="toastWrap" class="toast-wrap"></div>
 
-<!-- ══════════════════════════════════════════
-     SCRIPTS — Firebase + MyLinks + Notas
-══════════════════════════════════════════ -->
+<!-- ════════════════════════════════════
+     SCRIPT — Firebase + App
+════════════════════════════════════ -->
 <script type="module">
 import { initializeApp }     from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
@@ -815,7 +963,7 @@ import {
   writeBatch, getDocs
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-/* ── Firebase config ── */
+/* ── Config Firebase ── */
 const cfg = {
   apiKey:            "AIzaSyBc3ryOJEFBQlJIUpy835Anej0OulZqHEQ",
   authDomain:        "linksdrive-4012c.firebaseapp.com",
@@ -834,93 +982,140 @@ const foldersRef = collection(db, "note_folders");
 let allLinks   = [];
 let allNotes   = [];
 let allFolders = [];
-let isNotes    = false;
-let activeCat  = "Todos";
-let activeFolder = "all";
+let isNotes       = false;
+let activeCat     = "Todos";
+let activeFolder  = "all";
+let expandNoteId  = null;
+let currentSort   = "cat_asc";
 
-// ID da nota atualmente aberta no modal expandido
-let expandNoteId = null;
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   TOAST — exibe mensagens temporárias na tela
-   Tipo: 'ok' (borda azul) ou 'err' (borda vermelha)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function toast(msg, type = 'ok') {
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TOAST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/*
+  Exibe mensagens temporárias no canto inferior direito.
+  type: 'ok' → borda verde | 'err' → borda vermelha | padrão → azul
+  Desaparece automaticamente após 3 s com animação fadeOut.
+*/
+function toast(msg, type = '') {
   const w = document.getElementById('toastWrap');
   const t = document.createElement('div');
-  t.className = 'toast' + (type === 'err' ? ' err' : '');
-  t.innerHTML = `<i class="fa-solid ${type==='ok'?'fa-check-circle':'fa-circle-exclamation'}"></i> ${msg}`;
+  t.className = 'toast' + (type ? ' ' + type : '');
+  const icon = type === 'err'
+    ? 'fa-circle-exclamation'
+    : type === 'ok' ? 'fa-check-circle' : 'fa-circle-info';
+  t.innerHTML = `<i class="fa-solid ${icon}"></i> ${msg}`;
   w.appendChild(t);
-  // Remove após 3 s com animação de saída
   setTimeout(() => {
-    t.style.animation = 'fadeOut .28s ease-out forwards';
+    t.style.animation = 'fadeOut .28s forwards';
     setTimeout(() => t.remove(), 280);
   }, 3000);
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   UTIL — formatar timestamp do Firestore
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   UTIL — formatar timestamp Firestore
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/*
+  Converte o Timestamp do Firestore (objeto com .seconds)
+  em string legível no formato DD/MM/AA HH:MM.
+*/
 function fmtDate(ts) {
   if (!ts) return 'Agora';
   const d = new Date(ts.seconds * 1000);
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
-       + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' })
+       + ' ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   LINKS — escuta em tempo real (onSnapshot)
-   onSnapshot recebe qualquer mudança no Firestore
-   e re-renderiza a UI automaticamente
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   LINKS — escuta em tempo real
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/*
+  onSnapshot: o Firestore envia atualizações em tempo real.
+  Cada vez que um doc é adicionado/editado/removido,
+  a callback dispara novamente e re-renderizamos.
+  Ordenamos por "category" no servidor para reduzir tráfego.
+*/
 function startLinks() {
   onSnapshot(query(linksRef, orderBy("category")), snap => {
     allLinks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderCats();
     renderLinks();
-  }, () => toast("Erro Firebase", "err"));
+  }, () => toast("Erro Firebase — verifique a conexão.", "err"));
 }
 
-/* Renderiza as abas de categorias e popula o <select> do modal */
+/* ─── Ordenação local dos links ─── */
+/*
+  O Firestore não suporta ordenação por múltiplos critérios mistos
+  facilmente sem índices. Fazemos a ordenação no cliente (JS) depois
+  de receber os dados, o que é suficiente para uma lista pessoal.
+  currentSort é um valor do <select id="sortSelect">.
+*/
+function sortLinks(list) {
+  const arr = [...list];
+  switch (currentSort) {
+    case 'cat_asc':   return arr.sort((a,b) => a.category.localeCompare(b.category));
+    case 'cat_desc':  return arr.sort((a,b) => b.category.localeCompare(a.category));
+    case 'title_asc': return arr.sort((a,b) => a.title.localeCompare(b.title));
+    case 'title_desc':return arr.sort((a,b) => b.title.localeCompare(a.title));
+    case 'date_desc': return arr.sort((a,b) => {
+      const ta = a.timestamp?.seconds || 0;
+      const tb = b.timestamp?.seconds || 0;
+      return tb - ta;
+    });
+    case 'date_asc': return arr.sort((a,b) => {
+      const ta = a.timestamp?.seconds || 0;
+      const tb = b.timestamp?.seconds || 0;
+      return ta - tb;
+    });
+    default: return arr;
+  }
+}
+
+/* Renderiza abas de categoria */
 function renderCats() {
-  const nav = document.getElementById('ml-catNav');
-  const sel = document.getElementById('ml-catSel');
-  // Set garante valores únicos; spread + sort ordena alfabeticamente
-  const cats = ["Todos", ...new Set(allLinks.map(l => l.category))].sort();
+  const nav = document.getElementById('catNav');
+  const sel = document.getElementById('catSelect');
+  /*
+    new Set() remove duplicatas.
+    spread + sort ordena alfabeticamente.
+    "Todos" fica sempre primeiro.
+  */
+  const cats = ["Todos", ...new Set(allLinks.map(l => l.category))].sort((a, b) =>
+    a === 'Todos' ? -1 : b === 'Todos' ? 1 : a.localeCompare(b)
+  );
 
   nav.innerHTML = '';
   sel.innerHTML = '';
 
   cats.forEach(c => {
-    // Aba de navegação
+    const count = c === 'Todos' ? allLinks.length : allLinks.filter(l => l.category === c).length;
     const b = document.createElement('button');
-    b.className = 'ml-nav-item' + (activeCat === c ? ' active' : '');
-    b.textContent = c;
+    b.className = 'cat-tab' + (activeCat === c ? ' active' : '');
+    b.innerHTML = `${c}<span class="cat-count">${count}</span>`;
     b.onclick = () => { activeCat = c; renderLinks(); renderCats(); };
     nav.appendChild(b);
 
-    // Opção do select (exceto "Todos")
     if (c !== 'Todos') {
       const o = document.createElement('option');
-      o.value = c;
-      o.textContent = c;
+      o.value = c; o.textContent = c;
       sel.appendChild(o);
     }
   });
-  sel.innerHTML += `<option value="new">+ Nova Categoria…</option>`;
+  sel.innerHTML += `<option value="new">＋ Nova Categoria…</option>`;
 }
 
-/* Renderiza os cards de links filtrando por categoria e busca */
+/* Renderiza cards de link */
 function renderLinks() {
-  const G = document.getElementById('ml-linksGrid');
-  const E = document.getElementById('ml-linksEmpty');
-  const q = document.getElementById('ml-search').value.toLowerCase();
+  const G = document.getElementById('linksGrid');
+  const E = document.getElementById('linksEmpty');
+  const q = document.getElementById('searchInput').value.toLowerCase();
   G.innerHTML = '';
 
-  const fl = allLinks.filter(l =>
+  // Filtra por categoria e busca, depois ordena
+  let fl = allLinks.filter(l =>
     (activeCat === 'Todos' || l.category === activeCat)
-    && l.title.toLowerCase().includes(q)
+    && (l.title.toLowerCase().includes(q) || l.category.toLowerCase().includes(q))
   );
+  fl = sortLinks(fl);
 
   if (!fl.length) { E.style.display = 'flex'; return; }
   E.style.display = 'none';
@@ -930,175 +1125,205 @@ function renderLinks() {
     try { dom = new URL(link.url).hostname; } catch {}
 
     const c = document.createElement('div');
-    c.className = 'ml-card';
-    // Clique no card abre o link; clique no lixeiro exclui
-    c.onclick = e => { if (!e.target.closest('.ml-del-btn')) window.open(link.url, '_blank'); };
+    c.className = 'link-card';
+    /*
+      e.target.closest('.link-del') → verifica se o clique
+      foi no botão de deletar antes de abrir o link.
+      Isso evita abrir a URL ao tentar deletar.
+    */
+    c.onclick = e => { if (!e.target.closest('.link-del')) window.open(link.url, '_blank'); };
     c.innerHTML = `
       <img src="https://www.google.com/s2/favicons?domain=${dom}&sz=64"
            onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
-      <span>${link.title}</span>
-      <button class="ml-del-btn"><i class="fa-solid fa-trash"></i></button>`;
-    c.querySelector('.ml-del-btn').onclick = async e => {
+      <span class="link-title">${link.title}</span>
+      ${activeCat === 'Todos' ? `<span class="link-cat-badge">${link.category}</span>` : ''}
+      <button class="link-del" title="Excluir link"><i class="fa-solid fa-trash"></i></button>`;
+    c.querySelector('.link-del').onclick = async e => {
       e.stopPropagation();
       if (confirm(`Excluir "${link.title}"?`))
-        try { await deleteDoc(doc(db, 'links', link.id)); toast('Link excluído!'); }
-        catch { toast('Erro ao excluir.', 'err'); }
+        try { await deleteDoc(doc(db,'links',link.id)); toast('Link excluído!','ok'); }
+        catch { toast('Erro ao excluir.','err'); }
     };
     G.appendChild(c);
   });
 }
 
-/* ── Modal de adicionar link ── */
-const modal = document.getElementById('ml-modal');
-const openM  = () => { modal.style.display = 'flex'; document.getElementById('ml-urlIn').focus(); };
-const closeM = () => {
-  modal.style.display = 'none';
-  ['ml-urlIn','ml-titleIn','ml-newCatIn'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('ml-newCatIn').style.display = 'none';
+/* ─── Listener de ordenação ─── */
+document.getElementById('sortSelect').onchange = e => {
+  currentSort = e.target.value;
+  renderLinks();
 };
 
-document.getElementById('ml-addBtn').onclick  = openM;
-document.getElementById('ml-mclose').onclick  = closeM;
-document.getElementById('ml-mcancel').onclick = closeM;
-window.addEventListener('click', e => { if (e.target === modal) closeM(); });
+/* ── Modal de adicionar link ── */
+const linkModal = document.getElementById('linkModal');
+const openModal  = () => { linkModal.style.display = 'flex'; document.getElementById('urlInput').focus(); };
+const closeModal = () => {
+  linkModal.style.display = 'none';
+  ['urlInput','titleInput','newCatInput'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('newCatInput').style.display = 'none';
+};
 
-// Mostra campo "nova categoria" se o usuário escolher "+ Nova"
-document.getElementById('ml-catSel').onchange = e =>
-  document.getElementById('ml-newCatIn').style.display = e.target.value === 'new' ? 'block' : 'none';
+document.getElementById('addLinkBtn').onclick = openModal;
+document.getElementById('modalClose').onclick  = closeModal;
+document.getElementById('modalCancel').onclick = closeModal;
+window.addEventListener('click', e => { if (e.target === linkModal) closeModal(); });
 
-// Auto-preenche o título com o hostname quando a URL perde o foco
-document.getElementById('ml-urlIn').addEventListener('blur', e => {
+document.getElementById('catSelect').onchange = e =>
+  document.getElementById('newCatInput').style.display = e.target.value === 'new' ? 'block' : 'none';
+
+/* Auto-preenche título com hostname quando URL perde o foco */
+document.getElementById('urlInput').addEventListener('blur', e => {
   const v = e.target.value;
-  const ti = document.getElementById('ml-titleIn');
+  const ti = document.getElementById('titleInput');
   if (v.length > 8 && ti.value === '') {
     try {
       let h = new URL(v.startsWith('http') ? v : `https://${v}`).hostname;
-      let n = h.replace('www.', '').split('.')[0];
+      let n = h.replace('www.','').split('.')[0];
       ti.value = n.charAt(0).toUpperCase() + n.slice(1);
     } catch {}
   }
 });
 
-// Salvar link no Firestore
-document.getElementById('ml-saveLink').onclick = async () => {
-  const title = document.getElementById('ml-titleIn').value.trim();
-  let url     = document.getElementById('ml-urlIn').value.trim();
-  let cat     = document.getElementById('ml-catSel').value;
-  if (cat === 'new') cat = document.getElementById('ml-newCatIn').value.trim();
+/* Salvar link */
+document.getElementById('saveLink').onclick = async () => {
+  const title = document.getElementById('titleInput').value.trim();
+  let   url   = document.getElementById('urlInput').value.trim();
+  let   cat   = document.getElementById('catSelect').value;
+  if (cat === 'new') cat = document.getElementById('newCatInput').value.trim();
 
-  if (!title || !url || !cat) return toast('Preencha todos os campos!', 'err');
+  if (!title || !url || !cat) return toast('Preencha todos os campos!','err');
   if (!url.startsWith('http')) url = 'https://' + url;
   if (allLinks.some(l => l.url.toLowerCase() === url.toLowerCase()))
-    return toast(`"${title}" já existe!`, 'err');
+    return toast(`"${title}" já existe!`,'err');
 
-  const btn = document.getElementById('ml-saveLink');
-  btn.textContent = 'Salvando…';
-  btn.disabled = true;
+  const btn = document.getElementById('saveLink');
+  btn.textContent = 'Salvando…'; btn.disabled = true;
   try {
     await addDoc(linksRef, { title, url, category: cat, timestamp: new Date() });
-    toast('Link salvo!');
-    closeM();
+    toast('Link salvo!','ok');
+    closeModal();
     activeCat = cat;
-    renderCats();
-    renderLinks();
-  } catch { toast('Falha ao salvar.', 'err'); }
+    renderCats(); renderLinks();
+  } catch { toast('Falha ao salvar.','err'); }
   finally { btn.textContent = 'Salvar'; btn.disabled = false; }
 };
 
-document.getElementById('ml-search').oninput = renderLinks;
+document.getElementById('searchInput').oninput = renderLinks;
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    TOGGLE LINKS ↔ NOTAS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const toggleBtn  = document.getElementById('ml-toggleNotes');
-const addNoteBtn = document.getElementById('ml-addNoteBtn');
-const linksView  = document.getElementById('ml-linksView');
-const notesView  = document.getElementById('ml-notesView');
-const navScroll  = document.getElementById('ml-navScroll');
-const addBtn     = document.getElementById('ml-addBtn');
-const srchWrap   = document.getElementById('ml-srchWrap');
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const toggleBtn  = document.getElementById('toggleBtn');
+const addNoteBtn = document.getElementById('addNoteBtn');
+const linksView  = document.getElementById('linksView');
+const notesView  = document.getElementById('notesView');
+const catScroll  = document.getElementById('catScroll');
+const addLinkBtn = document.getElementById('addLinkBtn');
+const searchWrap = document.getElementById('searchWrap');
+const sortWrap   = document.getElementById('sortWrap');
 
 toggleBtn.onclick = () => {
   isNotes = !isNotes;
   if (isNotes) {
-    linksView.style.display = 'none';
+    linksView.style.display  = 'none';
     notesView.style.display  = 'block';
-    navScroll.classList.add('hide-nav');
-    addBtn.style.display     = 'none';
-    addNoteBtn.style.display = 'flex';
-    srchWrap.style.display   = 'none';
+    catScroll.classList.add('hide');
+    addLinkBtn.classList.add('hide');
+    searchWrap.classList.add('hide');
+    sortWrap.classList.add('hide');
+    addNoteBtn.classList.remove('hide');
     toggleBtn.innerHTML = '<i class="fa-solid fa-link"></i><span> Links</span>';
     startNotes();
   } else {
     linksView.style.display  = 'block';
     notesView.style.display  = 'none';
-    navScroll.classList.remove('hide-nav');
-    addBtn.style.display     = 'flex';
-    addNoteBtn.style.display = 'none';
-    srchWrap.style.display   = 'flex';
+    catScroll.classList.remove('hide');
+    addLinkBtn.classList.remove('hide');
+    searchWrap.classList.remove('hide');
+    sortWrap.classList.remove('hide');
+    addNoteBtn.classList.add('hide');
     toggleBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i><span> Notas</span>';
   }
 };
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   NOTAS — inicialização
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   NOTAS — escuta em tempo real
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+let notesStarted = false;
+
 function startNotes() {
-  // Escuta pastas em tempo real
+  /*
+    Evita registrar dois onSnapshot para a mesma coleção
+    quando o usuário alterna entre Links e Notas várias vezes.
+    onSnapshot já é um listener contínuo — basta registrar uma vez.
+  */
+  if (notesStarted) { renderNotes(); return; }
+  notesStarted = true;
+
   onSnapshot(query(foldersRef, orderBy("name")), snap => {
     allFolders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderFolderTabs();
   });
-  // Escuta notas ordenadas por 'order'
-  onSnapshot(query(notesRef, orderBy("order", "asc")), snap => {
+
+  onSnapshot(query(notesRef, orderBy("order","asc")), snap => {
     allNotes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // Se alguma nota não tem 'order', corrige antes de renderizar
     if (allNotes.some(n => n.order === undefined)) fixOrders();
     else renderNotes();
   });
 }
 
-/* Corrige notas sem campo 'order' (legado) */
+/* Corrige notas sem campo 'order' (dados legados) */
 async function fixOrders() {
   for (let i = 0; i < allNotes.length; i++)
     if (allNotes[i].order === undefined)
-      await updateDoc(doc(db, 'notes', allNotes[i].id), { order: i });
+      await updateDoc(doc(db,'notes',allNotes[i].id), { order: i });
 }
 
-/* Renderiza as abas de pastas */
+/* ─── Renderizar abas de pasta ─── */
+/*
+  Cada pasta vira uma aba clicável.
+  .ftab-del aparece ao hover da aba para excluir a pasta.
+  Ao excluir: batch remove a pasta e desvincula suas notas.
+*/
 function renderFolderTabs() {
-  const strip = document.getElementById('folder-strip');
+  const strip = document.getElementById('folderStrip');
   strip.innerHTML = '';
 
   // Aba "Todas"
   const all = document.createElement('button');
   all.className = 'ftab' + (activeFolder === 'all' ? ' on' : '');
-  all.innerHTML = `Todas <span class="fcnt">${allNotes.length}</span>`;
+  all.innerHTML = `Todas <span class="ftab-count">${allNotes.length}</span>`;
   all.onclick = () => { activeFolder = 'all'; renderFolderTabs(); renderNotes(); };
   strip.appendChild(all);
 
-  // Uma aba por pasta
   allFolders.forEach(f => {
     const cnt = allNotes.filter(n => n.folder === f.id).length;
     const b = document.createElement('button');
     b.className = 'ftab' + (activeFolder === f.id ? ' on' : '');
-    b.innerHTML = `<i class="fa-solid fa-folder" style="font-size:.75rem"></i> ${f.name}
-      <span class="fcnt">${cnt}</span>
-      <button class="fdel" title="Excluir pasta">✕</button>`;
+    b.innerHTML = `<i class="fa-solid fa-folder" style="font-size:.72rem"></i>
+      ${f.name}
+      <span class="ftab-count">${cnt}</span>
+      <button class="ftab-del" title="Excluir pasta">✕</button>`;
+
     b.onclick = e => {
-      if (e.target.classList.contains('fdel')) return;
+      if (e.target.classList.contains('ftab-del')) return;
       activeFolder = f.id;
       renderFolderTabs();
       renderNotes();
     };
-    b.querySelector('.fdel').onclick = async e => {
+
+    b.querySelector('.ftab-del').onclick = async e => {
       e.stopPropagation();
       if (!confirm(`Excluir pasta "${f.name}"? As notas ficam sem pasta.`)) return;
-      // Remove a pasta e desvincula as notas
+      /*
+        writeBatch: agrupa múltiplas escritas Firestore em uma
+        única transação atômica. Evita estados inconsistentes
+        onde a pasta foi deletada mas as notas ainda apontam para ela.
+      */
       const batch = writeBatch(db);
       allNotes.filter(n => n.folder === f.id)
-              .forEach(n => batch.update(doc(db, 'notes', n.id), { folder: '' }));
-      batch.delete(doc(db, 'note_folders', f.id));
+              .forEach(n => batch.update(doc(db,'notes',n.id), { folder: '' }));
+      batch.delete(doc(db,'note_folders',f.id));
       await batch.commit();
       if (activeFolder === f.id) activeFolder = 'all';
     };
@@ -1106,22 +1331,36 @@ function renderFolderTabs() {
   });
 }
 
-/* Botão para criar nova pasta */
-document.getElementById('btn-add-folder').onclick = async () => {
+/* Botão "Nova pasta" */
+document.getElementById('newFolderBtn').onclick = async () => {
   const name = prompt('Nome da nova pasta:');
-  if (!name || !name.trim()) return;
+  if (!name?.trim()) return;
   await addDoc(foldersRef, { name: name.trim(), created: serverTimestamp() });
+  toast('Pasta criada!','ok');
 };
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    NOTAS — renderizar cards
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/*
+  Mapa de cores: índice (1-6) → hex da cor de fundo.
+  Usado para aplicar tanto a classe CSS quanto o inline
+  style no modal expandido.
+*/
+const COLOR_MAP = {
+  1:'#fef9c3', 2:'#dbeafe', 3:'#dcfce7',
+  4:'#ffedd5', 5:'#f3e8ff', 6:'#ffe4e6'
+};
+const TEXT_MAP = {
+  1:'#1c1917', 2:'#0f172a', 3:'#052e16',
+  4:'#1c0a00', 5:'#1e0635', 6:'#1c0a0a'
+};
+
 function renderNotes() {
-  const G = document.getElementById('ml-notesGrid');
-  const E = document.getElementById('ml-notesEmpty');
+  const G = document.getElementById('notesGrid');
+  const E = document.getElementById('notesEmpty');
   G.innerHTML = '';
 
-  // Filtra por pasta ativa
   const visible = activeFolder === 'all'
     ? allNotes
     : allNotes.filter(n => n.folder === activeFolder);
@@ -1131,59 +1370,64 @@ function renderNotes() {
 
   visible.forEach((note, idx) => {
     const card = document.createElement('div');
-    card.className = `note-card c${note.color || 1}`;
+    card.className = `note-card nc${note.color || 1}`;
     card.draggable = true;
     card.dataset.id  = note.id;
     card.dataset.idx = idx;
 
     /*
-      Restaurar tamanho salvo:
-      O usuário pode redimensionar o card arrastando o handle nativo
-      (canto inferior direito). Ao soltar o mouse, salvamos
-      width e height no Firestore. Aqui restauramos esse tamanho.
+      Restaura tamanho salvo:
+      width/height são strings CSS salvas no Firestore
+      (ex: "340px", "280px"). Aplicamos inline para sobrescrever
+      o tamanho padrão do grid.
     */
     if (note.width)  card.style.width  = note.width;
     if (note.height) card.style.height = note.height;
 
     // Opções de pasta para o <select> dentro do card
     const folderOpts = allFolders.map(f =>
-      `<option value="${f.id}" ${note.folder === f.id ? 'selected' : ''}>${f.name}</option>`
+      `<option value="${f.id}" ${note.folder === f.id ? 'selected':''}>📁 ${f.name}</option>`
     ).join('');
 
-    // Contador de caracteres atual
-    const charCount = (note.content || '').length;
-
     card.innerHTML = `
-      <div class="note-hdr">
-        <div class="note-ctrl">
-          <span class="ndrag"><i class="fa-solid fa-grip-vertical"></i></span>
-          <span class="cdot" style="background:#fef08a" data-c="1"></span>
-          <span class="cdot" style="background:#bfdbfe" data-c="2"></span>
-          <span class="cdot" style="background:#bbf7d0" data-c="3"></span>
-          <span class="cdot" style="background:#fed7aa" data-c="4"></span>
-          <span class="cdot" style="background:#f5d0fe" data-c="5"></span>
-          <span class="cdot" style="background:#fecaca" data-c="6"></span>
+      <div class="note-topbar">
+        <div class="note-topbar-left">
+          <span class="note-drag" title="Arrastar"><i class="fa-solid fa-grip-vertical"></i></span>
+          <span class="cdot" style="background:#fef9c3" data-c="1"></span>
+          <span class="cdot" style="background:#dbeafe" data-c="2"></span>
+          <span class="cdot" style="background:#dcfce7" data-c="3"></span>
+          <span class="cdot" style="background:#ffedd5" data-c="4"></span>
+          <span class="cdot" style="background:#f3e8ff" data-c="5"></span>
+          <span class="cdot" style="background:#ffe4e6" data-c="6"></span>
         </div>
-        <div class="note-actions">
-          <!-- Botão expandir: abre a nota em modal de tela cheia -->
-          <button class="nexpand" title="Expandir para editar">
+        <div class="note-topbar-right">
+          <button class="note-act-btn nexpand" title="Expandir">
             <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
           </button>
-          <button class="ndel" title="Excluir nota">
+          <button class="note-act-btn danger ndel" title="Excluir">
             <i class="fa-solid fa-trash"></i>
           </button>
         </div>
       </div>
-      <textarea placeholder="Escreva algo…">${note.content || ''}</textarea>
+
+      <!-- Título editável -->
+      <div class="note-title-wrap">
+        <input class="note-title-input" type="text"
+               placeholder="Título da nota…"
+               value="${(note.title || '').replace(/"/g,'&quot;')}"/>
+      </div>
+
+      <!-- Conteúdo -->
+      <textarea class="note-body" placeholder="Escreva algo…">${note.content || ''}</textarea>
+
+      <!-- Footer -->
       <div class="note-footer">
         <span class="note-ts">${fmtDate(note.createdAt || note.timestamp)}</span>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span class="note-char-count">${charCount} car.</span>
-          <select class="note-folder-sel">
-            <option value="">📁 Sem pasta</option>
-            ${folderOpts}
-          </select>
-        </div>
+        <span class="note-chars">${(note.content||'').length} car.</span>
+        <select class="note-folder-sel">
+          <option value="">Sem pasta</option>
+          ${folderOpts}
+        </select>
       </div>`;
 
     /* ── Drag & Drop ── */
@@ -1193,27 +1437,20 @@ function renderNotes() {
     card.addEventListener('dragend',   onDragEnd);
 
     /*
-      REDIMENSIONAMENTO:
-      O browser fornece o handle nativo via `resize: both` no CSS.
-      Quando o usuário solta o mouse após redimensionar, capturamos
-      as novas dimensões e salvamos no Firestore.
-
-      Por que mouseup e não resize event?
-      O evento `resize` existe no window, não em elementos.
-      Para elementos, o ResizeObserver é mais robusto, mas
-      mouseup é simples e funciona bem neste contexto.
+      Redimensionamento via ResizeObserver:
+      O browser aplica resize:both (CSS) ao card.
+      O ResizeObserver detecta mudanças de tamanho causadas
+      pelo handle nativo. Usamos debounce de 400ms para não
+      salvar no Firestore a cada pixel arrastado.
     */
     const ro = new ResizeObserver(() => {
-      // Debounce: espera 400ms após parar de redimensionar para salvar
-      clearTimeout(card._resizeTimer);
-      card._resizeTimer = setTimeout(() => {
+      clearTimeout(card._rt);
+      card._rt = setTimeout(() => {
         const w = card.style.width;
         const h = card.style.height;
         if (w !== note.width || h !== note.height) {
-          updateDoc(doc(db, 'notes', note.id), { width: w, height: h });
-          // Atualiza localmente para evitar saves desnecessários
-          note.width  = w;
-          note.height = h;
+          updateDoc(doc(db,'notes',note.id), { width: w, height: h });
+          note.width = w; note.height = h;
         }
       }, 400);
     });
@@ -1221,44 +1458,56 @@ function renderNotes() {
 
     /* ── Troca de cor ── */
     card.querySelectorAll('.cdot').forEach(d =>
-      d.onclick = () => updateDoc(doc(db, 'notes', note.id), { color: parseInt(d.dataset.c) })
+      d.onclick = () => {
+        const c = parseInt(d.dataset.c);
+        updateDoc(doc(db,'notes',note.id), { color: c });
+      }
     );
 
+    /* ── Auto-save título (debounce 900ms) ── */
     /*
-      AUTO-SAVE DO CONTEÚDO:
-      Usa debounce de 900ms para não disparar um save a cada tecla.
-      Também atualiza o contador de caracteres em tempo real.
+      Debounce: adiamos o salvamento para 900ms após o usuário
+      parar de digitar. Isso evita uma escrita Firestore por tecla,
+      reduzindo custo e latência.
     */
-    const ta = card.querySelector('textarea');
-    const charEl = card.querySelector('.note-char-count');
+    const titleInput = card.querySelector('.note-title-input');
+    let titleTimer;
+    titleInput.oninput = () => {
+      clearTimeout(titleTimer);
+      titleTimer = setTimeout(() =>
+        updateDoc(doc(db,'notes',note.id), { title: titleInput.value }), 900
+      );
+      // Sync com modal expandido se estiver aberto
+      if (expandNoteId === note.id)
+        document.getElementById('expTitle').value = titleInput.value;
+    };
+
+    /* ── Auto-save conteúdo (debounce 900ms) ── */
+    const ta = card.querySelector('.note-body');
+    const charEl = card.querySelector('.note-chars');
     let saveTimer;
     ta.oninput = () => {
       charEl.textContent = ta.value.length + ' car.';
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() =>
-        updateDoc(doc(db, 'notes', note.id), { content: ta.value }), 900
+        updateDoc(doc(db,'notes',note.id), { content: ta.value }), 900
       );
-      // Se a nota estiver aberta no modal expandido, sincroniza
       if (expandNoteId === note.id) {
-        document.getElementById('nexp-ta').value = ta.value;
-        document.getElementById('nexp-char').textContent = ta.value.length + ' caracteres';
+        document.getElementById('expBody').value = ta.value;
+        document.getElementById('expChars').textContent = ta.value.length + ' car.';
       }
     };
 
     /* ── Excluir nota ── */
     card.querySelector('.ndel').onclick = async () => {
-      if (confirm('Excluir nota?')) await deleteDoc(doc(db, 'notes', note.id));
+      if (confirm('Excluir nota?')) await deleteDoc(doc(db,'notes',note.id));
     };
 
     /* ── Mudar pasta ── */
     card.querySelector('.note-folder-sel').onchange = e =>
-      updateDoc(doc(db, 'notes', note.id), { folder: e.target.value });
+      updateDoc(doc(db,'notes',note.id), { folder: e.target.value });
 
-    /*
-      BOTÃO EXPANDIR (⤢):
-      Abre o modal de edição completa para essa nota.
-      Passa o ID e os dados da nota para o modal.
-    */
+    /* ── Expandir nota ── */
     card.querySelector('.nexpand').onclick = () => openExpandModal(note);
 
     G.appendChild(card);
@@ -1267,105 +1516,117 @@ function renderNotes() {
   renderFolderTabs();
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    MODAL EXPANDIR NOTA
-   Abre a nota em um modal grande para edição confortável
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function openExpandModal(note) {
   expandNoteId = note.id;
-  const m   = document.getElementById('note-expand-modal');
-  const box = document.getElementById('note-expand-box');
-  const ta  = document.getElementById('nexp-ta');
-  const ts  = document.getElementById('nexp-ts');
-  const chr = document.getElementById('nexp-char');
+  const overlay = document.getElementById('expandOverlay');
+  const box     = document.getElementById('expandBox');
+  const taExp   = document.getElementById('expBody');
+  const titleExp = document.getElementById('expTitle');
 
-  // Aplica a cor do card no modal
-  box.className = `note-expand-box c${note.color || 1}`;
-  // Estende o estilo diretamente para os elementos internos herdarem a cor
-  box.style.background = '';
-  const colorMap = {1:'#fef08a',2:'#bfdbfe',3:'#bbf7d0',4:'#fed7aa',5:'#f5d0fe',6:'#fecaca'};
-  box.style.background = colorMap[note.color || 1];
-  box.style.color = '#1e293b';
+  // Aplica cor da nota ao modal
+  box.style.background = COLOR_MAP[note.color || 1];
+  box.style.color      = TEXT_MAP[note.color || 1];
 
-  ta.value = note.content || '';
-  ts.textContent = fmtDate(note.createdAt || note.timestamp);
-  chr.textContent = (note.content || '').length + ' caracteres';
+  titleExp.value = note.title || '';
+  taExp.value    = note.content || '';
+  document.getElementById('expTs').textContent    = fmtDate(note.createdAt || note.timestamp);
+  document.getElementById('expChars').textContent = (note.content||'').length + ' car.';
 
-  // Popula os color dots no header do modal
-  const dotsWrap = document.getElementById('nexp-dots');
+  // Popula color dots no modal
+  const dotsWrap = document.getElementById('expDots');
   dotsWrap.innerHTML = '';
   [1,2,3,4,5,6].forEach(c => {
     const d = document.createElement('span');
     d.className = 'cdot';
-    d.style.background = colorMap[c];
+    d.style.background = COLOR_MAP[c];
     d.dataset.c = c;
     d.onclick = () => {
-      updateDoc(doc(db, 'notes', note.id), { color: c });
-      box.style.background = colorMap[c];
+      updateDoc(doc(db,'notes',note.id), { color: c });
+      box.style.background = COLOR_MAP[c];
+      box.style.color      = TEXT_MAP[c];
       note.color = c;
     };
     dotsWrap.appendChild(d);
   });
 
-  // Popula o folder select do modal
-  const fsel = document.getElementById('nexp-folder');
-  fsel.innerHTML = `<option value="">📁 Sem pasta</option>`
+  // Folder select
+  const fsel = document.getElementById('expFolder');
+  fsel.innerHTML = `<option value="">Sem pasta</option>`
     + allFolders.map(f =>
-        `<option value="${f.id}" ${note.folder === f.id ? 'selected' : ''}>${f.name}</option>`
+        `<option value="${f.id}" ${note.folder===f.id?'selected':''}>${f.name}</option>`
       ).join('');
-  fsel.onchange = e => updateDoc(doc(db, 'notes', note.id), { folder: e.target.value });
+  fsel.onchange = e => updateDoc(doc(db,'notes',note.id), { folder: e.target.value });
 
-  // Auto-save no modal expandido (debounce 900ms)
-  let expandSaveTimer;
-  ta.oninput = () => {
-    chr.textContent = ta.value.length + ' caracteres';
-    clearTimeout(expandSaveTimer);
-    expandSaveTimer = setTimeout(() => {
-      updateDoc(doc(db, 'notes', note.id), { content: ta.value });
-      // Sincroniza com o card se estiver visível
+  // Auto-save no modal expandido (título)
+  let expTitleTimer;
+  titleExp.oninput = () => {
+    clearTimeout(expTitleTimer);
+    expTitleTimer = setTimeout(() => {
+      updateDoc(doc(db,'notes',note.id), { title: titleExp.value });
+      // Sync com o card se visível
       const card = document.querySelector(`.note-card[data-id="${note.id}"]`);
       if (card) {
-        const cardTa = card.querySelector('textarea');
-        const cardCh = card.querySelector('.note-char-count');
-        if (cardTa) cardTa.value = ta.value;
-        if (cardCh) cardCh.textContent = ta.value.length + ' car.';
+        const inp = card.querySelector('.note-title-input');
+        if (inp) inp.value = titleExp.value;
       }
     }, 900);
   };
 
-  m.classList.add('open');
-  ta.focus();
+  // Auto-save no modal expandido (conteúdo)
+  let expSaveTimer;
+  taExp.oninput = () => {
+    document.getElementById('expChars').textContent = taExp.value.length + ' car.';
+    clearTimeout(expSaveTimer);
+    expSaveTimer = setTimeout(() => {
+      updateDoc(doc(db,'notes',note.id), { content: taExp.value });
+      const card = document.querySelector(`.note-card[data-id="${note.id}"]`);
+      if (card) {
+        const ta = card.querySelector('.note-body');
+        const ch = card.querySelector('.note-chars');
+        if (ta) ta.value = taExp.value;
+        if (ch) ch.textContent = taExp.value.length + ' car.';
+      }
+    }, 900);
+  };
+
+  overlay.classList.add('open');
+  taExp.focus();
 }
 
-/* Fecha o modal expandido */
 function closeExpandModal() {
-  document.getElementById('note-expand-modal').classList.remove('open');
+  document.getElementById('expandOverlay').classList.remove('open');
   expandNoteId = null;
 }
-
-document.getElementById('note-expand-close').onclick = closeExpandModal;
-// Fecha clicando no backdrop
-document.getElementById('note-expand-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('note-expand-modal')) closeExpandModal();
+document.getElementById('expandClose').onclick = closeExpandModal;
+document.getElementById('expandOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('expandOverlay')) closeExpandModal();
 });
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    DRAG & DROP das notas
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 let dragSrc = null;
 
 function onDragStart(e) { this.classList.add('dragging'); dragSrc = this; e.dataTransfer.effectAllowed = 'move'; }
 function onDragOver(e)  { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; }
-function onDrop(e)      { e.stopPropagation(); if (dragSrc !== this) reorder(dragSrc.dataset.id, this.dataset.id); return false; }
-function onDragEnd()    { this.classList.remove('dragging'); }
+function onDrop(e) {
+  e.stopPropagation();
+  if (dragSrc !== this) reorderNotes(dragSrc.dataset.id, this.dataset.id);
+  return false;
+}
+function onDragEnd() { this.classList.remove('dragging'); }
 
 /*
   Reordenar notas:
-  1. Encontra os índices de origem e destino em allNotes
-  2. Remove do array e insere na nova posição (splice)
-  3. Salva apenas o range afetado (otimização: não salva tudo)
+  1. Encontra índices de origem (si) e destino (ti) em allNotes.
+  2. Remove do array e insere na nova posição (splice).
+  3. Salva apenas o intervalo afetado (s→e) para minimizar escritas.
+  4. Promise.all: executa todas as escritas em paralelo.
 */
-async function reorder(srcId, tgtId) {
+async function reorderNotes(srcId, tgtId) {
   const si = allNotes.findIndex(n => n.id === srcId);
   const ti = allNotes.findIndex(n => n.id === tgtId);
   if (si < 0 || ti < 0) return;
@@ -1377,7 +1638,7 @@ async function reorder(srcId, tgtId) {
   const s = Math.min(si, ti), e = Math.max(si, ti);
   await Promise.all(
     Array.from({ length: e - s + 1 }, (_, i) =>
-      updateDoc(doc(db, 'notes', arr[s + i].id), { order: s + i })
+      updateDoc(doc(db,'notes',arr[s+i].id), { order: s+i })
     )
   );
 }
@@ -1386,6 +1647,7 @@ async function reorder(srcId, tgtId) {
 addNoteBtn.onclick = async () => {
   await addDoc(notesRef, {
     content:   '',
+    title:     '',
     color:     Math.floor(Math.random() * 6) + 1,
     order:     allNotes.length,
     folder:    activeFolder === 'all' ? '' : activeFolder,
@@ -1394,9 +1656,14 @@ addNoteBtn.onclick = async () => {
   });
 };
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    HELPERS DE CONSOLE (utilitários globais)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/*
+  Expor funções no window permite chamá-las no DevTools:
+    importarLinksEmLote([{ title: "GitHub", url: "https://github.com", category: "Dev" }])
+    removerDuplicatas()
+*/
 window.importarLinksEmLote = async arr => {
   let ok = 0, nok = 0;
   for (const l of arr) {
@@ -1410,7 +1677,7 @@ window.importarLinksEmLote = async arr => {
 window.removerDuplicatas = async () => {
   const seen = new Set(); let n = 0;
   for (const l of allLinks) {
-    if (seen.has(l.url)) { await deleteDoc(doc(db, 'links', l.id)); n++; }
+    if (seen.has(l.url)) { await deleteDoc(doc(db,'links',l.id)); n++; }
     else seen.add(l.url);
   }
   alert(`${n} duplicatas removidas.`);
