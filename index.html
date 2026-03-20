@@ -3,828 +3,322 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>MyDashboard — MyLinks</title>
+<title>MyDashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
-/* ═══════════════════════════════════════════════
-   DESIGN TOKENS
-═══════════════════════════════════════════════ */
 :root {
-  /* Cores base */
-  --bg:        #080c14;
-  --bg2:       #0d1421;
-  --surface:   #111827;
-  --surface2:  #1a2333;
-  --border:    #1e2d42;
-  --border2:   #253447;
-
-  /* Texto */
-  --tx:        #e8edf5;
-  --tx2:       #8496b0;
-  --tx3:       #4d6080;
-
-  /* Accent */
-  --accent:    #3b82f6;
-  --accent2:   #2563eb;
-  --accent-glow: rgba(59,130,246,.18);
-
-  /* Status */
-  --danger:    #ef4444;
-  --success:   #22c55e;
-  --warn:      #f59e0b;
-
-  /* Notas */
-  --n1: #fef9c3; --n1d: #78350f;
-  --n2: #dbeafe; --n2d: #1e3a5f;
-  --n3: #dcfce7; --n3d: #14532d;
-  --n4: #ffedd5; --n4d: #7c2d12;
-  --n5: #f3e8ff; --n5d: #4a1d96;
-  --n6: #ffe4e6; --n6d: #881337;
-
-  /* Layout */
-  --r:    10px;
-  --r2:   14px;
-  --shadow: 0 4px 24px rgba(0,0,0,.4);
-  --shadow2: 0 8px 40px rgba(0,0,0,.55);
+  --bg: #080c14; --bg2: #0d1421; --surface: #111827; --surface2: #1a2333;
+  --border: #1e2d42; --border2: #253447;
+  --tx: #e8edf5; --tx2: #8496b0; --tx3: #4d6080;
+  --accent: #3b82f6; --accent2: #2563eb; --accent-glow: rgba(59,130,246,.18);
+  --danger: #ef4444; --success: #22c55e;
+  --r: 10px; --r2: 14px;
+  --shadow: 0 4px 24px rgba(0,0,0,.4); --shadow2: 0 8px 40px rgba(0,0,0,.55);
 }
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; overflow-x: hidden; }
-
 body {
-  background: var(--bg);
-  color: var(--tx);
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  min-height: 100vh;
-  /* grade sutil no fundo */
+  background: var(--bg); color: var(--tx);
+  font-family: 'Space Grotesk', system-ui, sans-serif; min-height: 100vh;
   background-image:
-    linear-gradient(rgba(59,130,246,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59,130,246,.03) 1px, transparent 1px);
+    linear-gradient(rgba(59,130,246,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,.025) 1px, transparent 1px);
   background-size: 40px 40px;
 }
-
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--tx3); }
 
-/* ═══════════════════════════════════════════════
-   HEADER
-═══════════════════════════════════════════════ */
+/* HEADER */
 .hdr {
-  background: rgba(8,12,20,.88);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 300;
+  background: rgba(8,12,20,.9); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 300;
 }
-.hdr-inner {
-  max-width: 1500px;
-  margin: 0 auto;
-  padding: .9rem 1.4rem 0;
-}
+.hdr-inner { max-width: 1500px; margin: 0 auto; padding: .9rem 1.4rem 0; }
 .hdr-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: .75rem;
-  margin-bottom: .9rem;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: .75rem; margin-bottom: .9rem;
 }
-
-/* Logo */
 .logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
-  font-size: 1.1rem;
-  letter-spacing: -.4px;
-  color: var(--tx);
-  text-decoration: none;
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700; font-size: 1.1rem; letter-spacing: -.4px; color: var(--tx);
 }
 .logo-mark {
-  width: 32px; height: 32px;
-  background: var(--accent);
-  border-radius: 8px;
+  width: 32px; height: 32px; background: var(--accent); border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
-  font-size: .9rem;
-  box-shadow: 0 0 14px rgba(59,130,246,.5);
+  font-size: .9rem; box-shadow: 0 0 14px rgba(59,130,246,.45);
 }
-
-/* Barra de ações */
-.hdr-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+/* Badge offline */
+.offline-badge {
+  display: none; align-items: center; gap: 5px; font-size: .72rem;
+  color: var(--tx3); background: var(--surface2); border: 1px solid var(--border);
+  padding: 3px 9px; border-radius: 20px;
 }
+.offline-badge.visible { display: flex; }
+.offline-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--tx3); }
+.offline-badge.online .offline-dot { background: var(--success); }
+.hdr-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 /* Search */
-.search-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.search-wrap i {
-  position: absolute;
-  left: 11px;
-  color: var(--tx3);
-  font-size: .78rem;
-  pointer-events: none;
-}
+.search-wrap { position: relative; display: flex; align-items: center; }
+.search-wrap i { position: absolute; left: 11px; color: var(--tx3); font-size: .78rem; pointer-events: none; }
 .search-wrap input {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--tx);
-  padding: 7px 10px 7px 32px;
-  border-radius: 8px;
-  outline: none;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: .83rem;
-  width: 190px;
-  transition: .2s;
+  background: var(--surface); border: 1px solid var(--border); color: var(--tx);
+  padding: 7px 10px 7px 32px; border-radius: 8px; outline: none;
+  font-family: 'Space Grotesk', sans-serif; font-size: .83rem; width: 190px; transition: .2s;
 }
-.search-wrap input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
-}
+.search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
 @media(max-width:500px){ .search-wrap input { width: 130px; } }
 
-/* Sort select */
-.sort-wrap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.sort-wrap label {
-  font-size: .75rem;
-  color: var(--tx3);
-  white-space: nowrap;
-}
+/* Sort */
+.sort-wrap { display: flex; align-items: center; gap: 6px; }
+.sort-wrap label { font-size: .75rem; color: var(--tx3); }
 .sort-select {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--tx2);
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: .8rem;
-  outline: none;
-  cursor: pointer;
-  transition: .2s;
+  background: var(--surface); border: 1px solid var(--border); color: var(--tx2);
+  padding: 6px 10px; border-radius: 8px; font-family: 'Space Grotesk', sans-serif;
+  font-size: .8rem; outline: none; cursor: pointer;
 }
 .sort-select:focus { border-color: var(--accent); }
 
 /* Botões */
 .btn {
-  border: none;
-  padding: 7px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 600;
-  font-size: .82rem;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: .18s;
-  white-space: nowrap;
+  border: none; padding: 7px 14px; border-radius: 8px; cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: .82rem;
+  display: flex; align-items: center; gap: 6px; transition: .18s; white-space: nowrap;
 }
-.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 0 10px rgba(59,130,246,.35); }
+.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 0 10px rgba(59,130,246,.3); }
 .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
-.btn-ghost  { background: var(--surface2); color: var(--tx2); border: 1px solid var(--border); }
-.btn-ghost:hover  { background: var(--surface); color: var(--tx); transform: translateY(-1px); }
+.btn-ghost { background: var(--surface2); color: var(--tx2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--surface); color: var(--tx); transform: translateY(-1px); }
 @media(max-width:450px){ .btn span { display: none; } }
 
-/* Tabs de categoria */
+/* Category tabs */
 .cat-scroll { overflow-x: auto; padding-bottom: 8px; }
 .cat-tabs { display: flex; gap: 4px; }
 .cat-tab {
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--tx3);
-  padding: 5px 14px;
-  border-radius: 20px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: .82rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: .18s;
-  white-space: nowrap;
+  background: transparent; border: 1px solid transparent; color: var(--tx3);
+  padding: 5px 14px; border-radius: 20px; font-family: 'Space Grotesk', sans-serif;
+  font-size: .82rem; font-weight: 500; cursor: pointer; transition: .18s; white-space: nowrap;
 }
 .cat-tab:hover { color: var(--tx); background: rgba(255,255,255,.04); }
-.cat-tab.active {
-  background: var(--accent-glow);
-  color: var(--accent);
-  border-color: rgba(59,130,246,.35);
-}
+.cat-tab.active { background: var(--accent-glow); color: var(--accent); border-color: rgba(59,130,246,.35); }
 .cat-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  background: rgba(59,130,246,.15);
-  color: var(--accent);
-  font-size: .65rem;
-  font-weight: 700;
-  margin-left: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%; background: rgba(59,130,246,.13);
+  color: var(--accent); font-size: .65rem; font-weight: 700; margin-left: 4px;
 }
 .hide { display: none !important; }
 
-/* ═══════════════════════════════════════════════
-   MAIN
-═══════════════════════════════════════════════ */
-.main {
-  max-width: 1500px;
-  margin: 0 auto;
-  padding: 1.2rem 1.4rem;
-}
+/* MAIN */
+.main { max-width: 1500px; margin: 0 auto; padding: 1.2rem 1.4rem; }
 
-/* ═══════════════════════════════════════════════
-   LINKS GRID
-═══════════════════════════════════════════════ */
-.links-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
-  gap: 9px;
+/* Skeleton */
+.skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 9px; }
+.skeleton-card {
+  height: 44px; border-radius: var(--r); background: var(--surface);
+  border: 1px solid var(--border); overflow: hidden; position: relative;
 }
+.skeleton-card::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.04) 50%, transparent 100%);
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+/* Links grid */
+.links-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 9px; }
 @media(max-width:480px){ .links-grid { grid-template-columns: 1fr 1fr; gap: 7px; } }
-
 .link-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 10px 13px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  transition: all .2s cubic-bezier(.4,0,.2,1);
-  position: relative;
-  overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 10px 13px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; transition: all .2s cubic-bezier(.4,0,.2,1);
+  position: relative; overflow: hidden;
 }
-/* barra colorida esquerda ao hover */
 .link-card::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: var(--accent);
-  transform: scaleY(0);
-  transition: transform .2s;
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--accent); transform: scaleY(0); transition: transform .2s;
   border-radius: 2px 0 0 2px;
 }
 .link-card:hover::before { transform: scaleY(1); }
 .link-card:hover {
-  background: var(--surface2);
-  border-color: rgba(59,130,246,.3);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
+  background: var(--surface2); border-color: rgba(59,130,246,.3);
+  transform: translateY(-2px); box-shadow: var(--shadow);
 }
 .link-card img {
-  width: 22px; height: 22px;
-  border-radius: 5px;
-  object-fit: cover;
-  background: #fff;
-  padding: 2px;
-  flex-shrink: 0;
+  width: 22px; height: 22px; border-radius: 5px; object-fit: cover;
+  background: #fff; padding: 2px; flex-shrink: 0;
 }
-.link-title {
-  color: var(--tx);
-  font-size: .84rem;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-}
-.link-cat-badge {
-  font-size: .62rem;
-  color: var(--tx3);
-  background: var(--bg2);
-  border-radius: 4px;
-  padding: 1px 5px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
+.link-title { color: var(--tx); font-size: .84rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.link-cat-badge { font-size: .62rem; color: var(--tx3); background: var(--bg2); border-radius: 4px; padding: 1px 5px; white-space: nowrap; flex-shrink: 0; }
 .link-del {
-  background: transparent;
-  border: none;
-  color: var(--tx3);
-  cursor: pointer;
-  width: 26px; height: 26px;
-  border-radius: 5px;
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0;
-  transition: .18s;
-  flex-shrink: 0;
-  font-size: .75rem;
+  background: transparent; border: none; color: var(--tx3); cursor: pointer;
+  width: 26px; height: 26px; border-radius: 5px; display: flex; align-items: center;
+  justify-content: center; opacity: 0; transition: .18s; flex-shrink: 0; font-size: .75rem;
 }
 .link-del:hover { background: rgba(239,68,68,.14); color: var(--danger); }
 .link-card:hover .link-del { opacity: 1; }
 @media(max-width:640px){ .link-del { opacity: 1; } }
 
 .empty-state {
-  text-align: center;
-  color: var(--tx3);
-  padding: 3rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+  text-align: center; color: var(--tx3); padding: 3rem;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
 }
 .empty-state i { font-size: 2.2rem; opacity: .35; }
 .empty-state p { font-size: .9rem; }
 
-/* ═══════════════════════════════════════════════
-   NOTES VIEW
-═══════════════════════════════════════════════ */
-
-/* Toolbar de pastas */
-.notes-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
+/* Notes toolbar */
+.notes-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
 .folder-strip { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
-
 .ftab {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 13px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,.03);
-  color: var(--tx3);
-  font-size: .8rem;
-  font-weight: 500;
-  font-family: 'Space Grotesk', sans-serif;
-  cursor: pointer;
-  transition: .18s;
-  position: relative;
+  display: inline-flex; align-items: center; gap: 5px; padding: 5px 13px;
+  border-radius: 20px; border: 1px solid var(--border); background: rgba(255,255,255,.03);
+  color: var(--tx3); font-size: .8rem; font-weight: 500; font-family: 'Space Grotesk', sans-serif;
+  cursor: pointer; transition: .18s;
 }
 .ftab:hover { border-color: var(--accent); color: var(--accent); }
-.ftab.on {
-  background: var(--accent-glow);
-  border-color: rgba(59,130,246,.4);
-  color: var(--accent);
-}
-.ftab-count {
-  font-size: .64rem;
-  opacity: .6;
-}
+.ftab.on { background: var(--accent-glow); border-color: rgba(59,130,246,.4); color: var(--accent); }
+.ftab-count { font-size: .64rem; opacity: .6; }
 .ftab-del {
-  margin-left: 2px;
-  font-size: .65rem;
-  color: inherit;
-  background: none;
-  border: none;
-  cursor: pointer;
-  opacity: 0;
-  transition: .15s;
-  padding: 0 2px;
-  line-height: 1;
+  margin-left: 2px; font-size: .65rem; color: inherit; background: none; border: none;
+  cursor: pointer; opacity: 0; transition: .15s; padding: 0 2px; line-height: 1;
 }
 .ftab:hover .ftab-del { opacity: .7; }
 .ftab-del:hover { opacity: 1 !important; color: var(--danger) !important; }
-
 .btn-new-folder {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  border: 1px dashed var(--border2);
-  background: transparent;
-  color: var(--tx3);
-  font-size: .78rem;
-  font-family: 'Space Grotesk', sans-serif;
-  cursor: pointer;
-  transition: .18s;
+  display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px;
+  border-radius: 20px; border: 1px dashed var(--border2); background: transparent;
+  color: var(--tx3); font-size: .78rem; font-family: 'Space Grotesk', sans-serif;
+  cursor: pointer; transition: .18s;
 }
 .btn-new-folder:hover { border-color: var(--accent); color: var(--accent); }
 
-/* Grid das notas */
-.notes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  gap: 14px;
-  align-items: start;
-}
+/* Notes grid */
+.notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; align-items: start; }
 
-/* ──────────────────────────────────────
-   NOTE CARD — redesenhado
-   Estrutura:
-   ┌──────────────────┐
-   │ .note-topbar     │  cor, drag, ações
-   │ .note-title-wrap │  input de título editável
-   │ textarea         │  conteúdo (flex:1)
-   │ .note-footer     │  pasta + timestamp + chars
-   └──────────────────┘
-────────────────────────────────────── */
+/*
+  NOTE CARD
+  ┌──────────────────┐
+  │ .note-topbar     │ dots + drag + botões
+  │ .note-title-wrap │ input título editável
+  │ .note-body       │ textarea (flex:1, cresce)
+  │ .note-footer     │ pasta + data + chars
+  └──────────────────┘
+  resize:both + overflow:hidden = handle nativo do browser
+*/
 .note-card {
-  border-radius: var(--r2);
-  min-height: 220px;
-  min-width: 200px;
-  display: flex;
-  flex-direction: column;
+  border-radius: var(--r2); min-height: 220px; min-width: 200px;
+  display: flex; flex-direction: column;
   box-shadow: 0 2px 12px rgba(0,0,0,.18);
   transition: transform .2s, box-shadow .2s;
-  position: relative;
-  /*
-    resize:both + overflow:hidden = handle nativo do browser
-    no canto inferior direito para redimensionar o card.
-    Isso é puro CSS, sem JS para detecção de resize no drag.
-  */
-  resize: both;
-  overflow: hidden;
+  position: relative; resize: both; overflow: hidden;
 }
-.note-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 32px rgba(0,0,0,.28);
-}
-.note-card.dragging { opacity: .45; transform: scale(.96) rotate(1.5deg); }
+.note-card:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(0,0,0,.28); }
+.note-card.dragging { opacity: .4; transform: scale(.96) rotate(1.5deg); }
+.note-card.drag-over { outline: 2px dashed rgba(0,0,0,.3); outline-offset: -3px; }
+/* Cores */
+.nc1{background:#fef9c3;color:#1c1917} .nc2{background:#dbeafe;color:#0f172a}
+.nc3{background:#dcfce7;color:#052e16} .nc4{background:#ffedd5;color:#1c0a00}
+.nc5{background:#f3e8ff;color:#1e0635} .nc6{background:#ffe4e6;color:#1c0a0a}
 
-/* Cores das notas */
-.nc1 { background: var(--n1); color: #1c1917; }
-.nc2 { background: var(--n2); color: #0f172a; }
-.nc3 { background: var(--n3); color: #052e16; }
-.nc4 { background: var(--n4); color: #1c0a00; }
-.nc5 { background: var(--n5); color: #1e0635; }
-.nc6 { background: var(--n6); color: #1c0a0a; }
-
-/* Topbar da nota */
-.note-topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 9px 11px 5px;
-  flex-shrink: 0;
-}
-.note-topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.note-topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-
-/* Handle de drag */
-.note-drag {
-  cursor: grab;
-  color: rgba(0,0,0,.25);
-  font-size: .78rem;
-  padding: 2px 4px;
-  border-radius: 4px;
-  transition: .15s;
-}
+.note-topbar { display: flex; justify-content: space-between; align-items: center; padding: 9px 11px 5px; flex-shrink: 0; }
+.note-tbl { display: flex; align-items: center; gap: 5px; }
+.note-tbr { display: flex; align-items: center; gap: 3px; }
+.note-drag { cursor: grab; color: rgba(0,0,0,.22); font-size: .78rem; padding: 2px 4px; border-radius: 4px; transition: .15s; }
 .note-drag:hover { color: rgba(0,0,0,.5); background: rgba(0,0,0,.07); }
 .note-drag:active { cursor: grabbing; }
-
-/* Dots de cor */
-.cdot {
-  width: 11px; height: 11px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 1.5px solid rgba(0,0,0,.12);
-  transition: transform .12s;
-  flex-shrink: 0;
-}
+.cdot { width: 11px; height: 11px; border-radius: 50%; cursor: pointer; border: 1.5px solid rgba(0,0,0,.12); transition: transform .12s; flex-shrink: 0; }
 .cdot:hover { transform: scale(1.45); }
+.note-btn { background: transparent; border: none; color: rgba(0,0,0,.28); cursor: pointer; width: 26px; height: 26px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: .75rem; transition: .15s; }
+.note-btn:hover { color: rgba(0,0,0,.65); background: rgba(0,0,0,.09); }
+.note-btn.danger:hover { color: #ef4444; background: rgba(239,68,68,.12); }
 
-/* Botões de ação na topbar */
-.note-act-btn {
-  background: transparent;
-  border: none;
-  color: rgba(0,0,0,.3);
-  cursor: pointer;
-  width: 26px; height: 26px;
-  border-radius: 5px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: .75rem;
-  transition: .15s;
-}
-.note-act-btn:hover { color: rgba(0,0,0,.65); background: rgba(0,0,0,.09); }
-.note-act-btn.danger:hover { color: #ef4444; background: rgba(239,68,68,.12); }
-
-/* Input de título da nota */
-.note-title-wrap {
-  padding: 2px 12px 4px;
-  flex-shrink: 0;
-}
+.note-title-wrap { padding: 2px 12px 4px; flex-shrink: 0; }
 .note-title-input {
-  width: 100%;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid transparent;
-  color: inherit;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: .85rem;
-  font-weight: 700;
-  outline: none;
-  padding: 2px 0;
-  transition: border-color .18s;
-  letter-spacing: -.2px;
+  width: 100%; background: transparent; border: none; border-bottom: 1px solid transparent;
+  color: inherit; font-family: 'Space Grotesk', sans-serif; font-size: .85rem; font-weight: 700;
+  outline: none; padding: 2px 0; transition: border-color .18s; letter-spacing: -.2px;
 }
-.note-title-input::placeholder { color: rgba(0,0,0,.25); font-weight: 500; }
-.note-title-input:focus { border-bottom-color: rgba(0,0,0,.25); }
+.note-title-input::placeholder { color: rgba(0,0,0,.22); font-weight: 500; }
+.note-title-input:focus { border-bottom-color: rgba(0,0,0,.22); }
 
-/* Textarea do conteúdo */
 .note-body {
-  flex: 1;
-  min-height: 0;
-  background: transparent;
-  border: none;
-  color: inherit;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: .87rem;
-  line-height: 1.58;
-  resize: none;
-  outline: none;
-  padding: 0 12px 6px;
-  overflow-y: auto;
+  flex: 1; min-height: 0; background: transparent; border: none; color: inherit;
+  font-family: 'Space Grotesk', sans-serif; font-size: .87rem; line-height: 1.58;
+  resize: none; outline: none; padding: 0 12px 6px; overflow-y: auto;
 }
-.note-body::placeholder { color: rgba(0,0,0,.25); }
+.note-body::placeholder { color: rgba(0,0,0,.22); }
 
-/* Footer da nota */
-.note-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px 11px 9px;
-  flex-shrink: 0;
-  gap: 6px;
-}
-.note-ts {
-  font-size: .6rem;
-  color: rgba(0,0,0,.3);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.note-folder-sel {
-  font-size: .67rem;
-  background: rgba(0,0,0,.08);
-  border: none;
-  border-radius: 5px;
-  color: rgba(0,0,0,.4);
-  padding: 2px 5px;
-  cursor: pointer;
-  font-family: 'Space Grotesk', sans-serif;
-  max-width: 100px;
-  flex-shrink: 0;
-}
+.note-footer { display: flex; justify-content: space-between; align-items: center; padding: 5px 11px 9px; flex-shrink: 0; gap: 6px; }
+.note-ts { font-size: .6rem; color: rgba(0,0,0,.28); white-space: nowrap; flex-shrink: 0; }
+.note-folder-sel { font-size: .67rem; background: rgba(0,0,0,.08); border: none; border-radius: 5px; color: rgba(0,0,0,.38); padding: 2px 5px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; max-width: 100px; flex-shrink: 0; }
 .note-folder-sel:focus { outline: none; }
-.note-chars {
-  font-size: .6rem;
-  color: rgba(0,0,0,.28);
-  font-family: 'JetBrains Mono', monospace;
-  flex-shrink: 0;
-}
+.note-chars { font-size: .6rem; color: rgba(0,0,0,.26); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
 
-/* ═══════════════════════════════════════════════
-   MODAL EXPANDIR NOTA
-═══════════════════════════════════════════════ */
-/*
-  Por que um modal expandido?
-  O card tem tamanho limitado. Para textos longos (resumos,
-  código, listas extensas), o usuário clica em ⤢ e a nota
-  abre em um modal onde a textarea ocupa quase toda a tela.
-  O auto-save (debounce 900ms) continua funcionando aqui.
-*/
+/* MODAL EXPANDIR */
 .expand-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.75);
-  backdrop-filter: blur(8px);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 99998;
-  padding: 20px;
+  position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(8px);
+  display: none; justify-content: center; align-items: center; z-index: 99998; padding: 20px;
 }
 .expand-overlay.open { display: flex; }
-
 .expand-box {
-  width: 100%;
-  max-width: 780px;
-  height: min(82vh, 700px);
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 40px 80px rgba(0,0,0,.65);
-  animation: slideUp .22s ease-out;
-  overflow: hidden;
+  width: 100%; max-width: 780px; height: min(82vh, 700px); border-radius: 16px;
+  display: flex; flex-direction: column; box-shadow: 0 40px 80px rgba(0,0,0,.65);
+  animation: slideUp .22s ease-out; overflow: hidden;
 }
+.expand-topbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; flex-shrink: 0; border-bottom: 1px solid rgba(0,0,0,.1); gap: 10px; }
+.expand-title { flex: 1; background: transparent; border: none; color: inherit; font-family: 'Space Grotesk', sans-serif; font-size: 1rem; font-weight: 700; outline: none; }
+.expand-title::placeholder { color: rgba(0,0,0,.28); }
+.expand-body { flex: 1; background: transparent; border: none; color: inherit; font-family: 'Space Grotesk', sans-serif; font-size: .97rem; line-height: 1.68; resize: none; outline: none; padding: 16px 22px; overflow-y: auto; }
+.expand-body::placeholder { color: rgba(0,0,0,.28); }
+.expand-footer { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px 12px; flex-shrink: 0; border-top: 1px solid rgba(0,0,0,.08); }
 
-.expand-topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  flex-shrink: 0;
-  border-bottom: 1px solid rgba(0,0,0,.1);
-}
-.expand-title {
-  width: 100%;
-  background: transparent;
-  border: none;
-  color: inherit;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  outline: none;
-  margin-right: 10px;
-}
-.expand-title::placeholder { color: rgba(0,0,0,.3); }
-
-.expand-body {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: inherit;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: .97rem;
-  line-height: 1.68;
-  resize: none;
-  outline: none;
-  padding: 16px 22px;
-  overflow-y: auto;
-}
-.expand-body::placeholder { color: rgba(0,0,0,.3); }
-
-.expand-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 16px 12px;
-  flex-shrink: 0;
-  border-top: 1px solid rgba(0,0,0,.08);
-  gap: 10px;
-}
-.expand-footer .note-ts { font-size: .65rem; }
-.expand-footer .note-chars { font-size: .65rem; }
-
-/* ═══════════════════════════════════════════════
-   MODAL ADICIONAR LINK
-═══════════════════════════════════════════════ */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.7);
-  backdrop-filter: blur(6px);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 99999;
-  padding: 16px;
-}
-.modal-box {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: var(--r2);
-  padding: 22px;
-  width: 100%;
-  max-width: min(400px, calc(100vw - 32px));
-  box-shadow: var(--shadow2);
-  animation: slideUp .22s ease-out;
-}
-.modal-hdr {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 18px;
-}
+/* MODAL LINK */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 99999; padding: 16px; }
+.modal-box { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--r2); padding: 22px; width: 100%; max-width: min(400px, calc(100vw - 32px)); box-shadow: var(--shadow2); animation: slideUp .22s ease-out; }
+.modal-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
 .modal-hdr h3 { font-size: .95rem; font-weight: 700; color: var(--tx); }
-.modal-close {
-  background: transparent;
-  border: none;
-  color: var(--tx3);
-  font-size: 1rem;
-  cursor: pointer;
-  transition: .15s;
-}
+.modal-close { background: transparent; border: none; color: var(--tx3); font-size: 1rem; cursor: pointer; transition: .15s; }
 .modal-close:hover { color: var(--tx); }
-
 .form-row { margin-bottom: 13px; }
-.form-row label {
-  display: block;
-  font-size: .75rem;
-  font-weight: 600;
-  color: var(--tx3);
-  margin-bottom: 5px;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-}
-.form-row input, .form-row select {
-  width: 100%;
-  padding: 9px 11px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  color: var(--tx);
-  border-radius: 8px;
-  outline: none;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: max(.86rem, 16px);
-  transition: .18s;
-}
-.form-row input:focus, .form-row select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
-}
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 18px;
-}
-.btn-cancel {
-  background: transparent;
-  border: none;
-  color: var(--tx3);
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: .85rem;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 7px;
-  transition: .15s;
-}
+.form-row label { display: block; font-size: .75rem; font-weight: 600; color: var(--tx3); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+.form-row input, .form-row select { width: 100%; padding: 9px 11px; background: var(--bg2); border: 1px solid var(--border); color: var(--tx); border-radius: 8px; outline: none; font-family: 'Space Grotesk', sans-serif; font-size: max(.86rem, 16px); transition: .18s; }
+.form-row input:focus, .form-row select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.btn-cancel { background: transparent; border: none; color: var(--tx3); font-family: 'Space Grotesk', sans-serif; font-size: .85rem; font-weight: 500; cursor: pointer; padding: 8px 12px; border-radius: 7px; transition: .15s; }
 .btn-cancel:hover { background: var(--surface2); color: var(--tx); }
 
-/* ═══════════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════════ */
-.toast-wrap {
-  position: fixed;
-  bottom: 18px;
-  right: 18px;
-  z-index: 99999;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: calc(100vw - 36px);
-}
-.toast {
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  color: var(--tx);
-  padding: 9px 16px;
-  border-radius: 9px;
-  border-left: 4px solid var(--accent);
-  box-shadow: var(--shadow);
-  font-size: .82rem;
-  font-weight: 500;
-  animation: slideInR .24s ease-out forwards;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+/* TOAST */
+.toast-wrap { position: fixed; bottom: 18px; right: 18px; z-index: 99999; display: flex; flex-direction: column; gap: 8px; max-width: calc(100vw - 36px); }
+.toast { background: var(--surface2); border: 1px solid var(--border2); color: var(--tx); padding: 9px 16px; border-radius: 9px; border-left: 4px solid var(--accent); box-shadow: var(--shadow); font-size: .82rem; font-weight: 500; animation: slideInR .24s ease-out forwards; display: flex; align-items: center; gap: 8px; }
 .toast.err { border-left-color: var(--danger); }
 .toast.ok  { border-left-color: var(--success); }
 
-/* ═══════════════════════════════════════════════
-   ANIMATIONS
-═══════════════════════════════════════════════ */
-@keyframes slideUp   { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
-@keyframes slideInR  { from { opacity:0; transform:translateX(110%); } to { opacity:1; transform:translateX(0); } }
-@keyframes fadeOut   { to   { opacity:0; transform:translateY(8px); } }
+@keyframes slideUp  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideInR { from{opacity:0;transform:translateX(110%)} to{opacity:1;transform:translateX(0)} }
+@keyframes fadeOut  { to{opacity:0;transform:translateY(8px)} }
 </style>
 </head>
 <body>
 
-<!-- ════════════════════════════════════
-     HEADER
-════════════════════════════════════ -->
 <div class="hdr">
   <div class="hdr-inner">
     <div class="hdr-top">
-      <!-- Logo -->
       <div class="logo">
         <div class="logo-mark"><i class="fa-solid fa-layer-group"></i></div>
         <span>MyDashboard</span>
+        <div class="offline-badge" id="offlineBadge">
+          <span class="offline-dot"></span>
+          <span id="offlineLabel">Cache</span>
+        </div>
       </div>
-
-      <!-- Ações -->
       <div class="hdr-actions">
-
-        <!-- Busca (links) -->
         <div class="search-wrap" id="searchWrap">
           <i class="fa-solid fa-search"></i>
           <input type="text" id="searchInput" placeholder="Buscar link…"/>
         </div>
-
-        <!-- Ordenação (links) -->
         <div class="sort-wrap" id="sortWrap">
           <label><i class="fa-solid fa-arrow-up-wide-short"></i></label>
           <select class="sort-select" id="sortSelect">
@@ -836,86 +330,57 @@ body {
             <option value="date_asc">Mais antigos</option>
           </select>
         </div>
-
-        <!-- Botão adicionar link -->
-        <button class="btn btn-primary" id="addLinkBtn">
-          <i class="fa-solid fa-plus"></i><span>Link</span>
-        </button>
-
-        <!-- Botão adicionar nota (oculto inicialmente) -->
-        <button class="btn btn-primary hide" id="addNoteBtn">
-          <i class="fa-solid fa-plus"></i><span>Nota</span>
-        </button>
-
-        <!-- Toggle Links ↔ Notas -->
-        <button class="btn btn-ghost" id="toggleBtn">
-          <i class="fa-solid fa-pen-to-square"></i><span>Notas</span>
-        </button>
+        <button class="btn btn-primary" id="addLinkBtn"><i class="fa-solid fa-plus"></i><span>Link</span></button>
+        <button class="btn btn-primary hide" id="addNoteBtn"><i class="fa-solid fa-plus"></i><span>Nota</span></button>
+        <button class="btn btn-ghost" id="toggleBtn"><i class="fa-solid fa-pen-to-square"></i><span>Notas</span></button>
       </div>
     </div>
-
-    <!-- Abas de categoria -->
     <div class="cat-scroll" id="catScroll">
       <nav id="catNav" class="cat-tabs"></nav>
     </div>
   </div>
 </div>
 
-<!-- ════════════════════════════════════
-     MAIN
-════════════════════════════════════ -->
 <div class="main">
-
-  <!-- ── View: Links ── -->
   <div id="linksView">
-    <div id="linksGrid" class="links-grid"></div>
+    <div id="linksSkeleton" class="skeleton-grid">
+      <div class="skeleton-card"></div><div class="skeleton-card"></div>
+      <div class="skeleton-card"></div><div class="skeleton-card"></div>
+      <div class="skeleton-card"></div><div class="skeleton-card"></div>
+    </div>
+    <div id="linksGrid" class="links-grid" style="display:none"></div>
     <div id="linksEmpty" class="empty-state" style="display:none">
-      <i class="fa-solid fa-folder-open"></i>
-      <p>Nenhum link encontrado.</p>
+      <i class="fa-solid fa-folder-open"></i><p>Nenhum link encontrado.</p>
     </div>
   </div>
 
-  <!-- ── View: Notas ── -->
   <div id="notesView" style="display:none">
-    <!-- Toolbar de pastas -->
     <div class="notes-toolbar">
       <div class="folder-strip" id="folderStrip"></div>
       <button class="btn-new-folder" id="newFolderBtn">
         <i class="fa-solid fa-folder-plus"></i> Nova pasta
       </button>
     </div>
-    <!-- Grid de notas -->
     <div id="notesGrid" class="notes-grid"></div>
     <div id="notesEmpty" class="empty-state" style="display:none">
-      <i class="fa-solid fa-note-sticky"></i>
-      <p>Nenhuma nota. Clique em "+ Nota" para criar.</p>
+      <i class="fa-solid fa-note-sticky"></i><p>Nenhuma nota. Clique em "+ Nota" para criar.</p>
     </div>
   </div>
-
 </div>
 
-<!-- ════════════════════════════════════
-     MODAL — ADICIONAR LINK
-════════════════════════════════════ -->
+<!-- Modal: Adicionar Link -->
 <div id="linkModal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-hdr">
       <h3><i class="fa-solid fa-link" style="color:var(--accent);margin-right:7px"></i>Adicionar Link</h3>
       <button class="modal-close" id="modalClose"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="form-row">
-      <label>URL</label>
-      <input id="urlInput" type="url" placeholder="https://…"/>
-    </div>
-    <div class="form-row">
-      <label>Nome</label>
-      <input id="titleInput" type="text" placeholder="Ex: GitHub"/>
-    </div>
+    <div class="form-row"><label>URL</label><input id="urlInput" type="url" placeholder="https://…"/></div>
+    <div class="form-row"><label>Nome</label><input id="titleInput" type="text" placeholder="Ex: GitHub"/></div>
     <div class="form-row">
       <label>Categoria</label>
       <select id="catSelect"></select>
-      <input id="newCatInput" type="text" placeholder="Nome da nova categoria…"
-             style="display:none;margin-top:8px"/>
+      <input id="newCatInput" type="text" placeholder="Nome da nova categoria…" style="display:none;margin-top:8px"/>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" id="modalCancel">Cancelar</button>
@@ -924,22 +389,17 @@ body {
   </div>
 </div>
 
-<!-- ════════════════════════════════════
-     MODAL — EXPANDIR NOTA
-════════════════════════════════════ -->
+<!-- Modal: Expandir Nota -->
 <div id="expandOverlay" class="expand-overlay">
   <div class="expand-box" id="expandBox">
     <div class="expand-topbar">
-      <div style="display:flex;align-items:center;gap:7px;flex:1">
-        <!-- Dots de cor injetados via JS -->
-        <span id="expDots"></span>
+      <div style="display:flex;align-items:center;gap:7px;flex:1;min-width:0">
+        <span id="expDots" style="display:flex;gap:4px;flex-shrink:0"></span>
         <input id="expTitle" class="expand-title" type="text" placeholder="Título da nota…"/>
       </div>
-      <div style="display:flex;align-items:center;gap:7px">
+      <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
         <select id="expFolder" class="note-folder-sel" style="max-width:130px"></select>
-        <button class="note-act-btn" id="expandClose" title="Fechar">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+        <button class="note-btn" id="expandClose"><i class="fa-solid fa-xmark"></i></button>
       </div>
     </div>
     <textarea id="expBody" class="expand-body" placeholder="Escreva à vontade…"></textarea>
@@ -952,738 +412,694 @@ body {
 
 <div id="toastWrap" class="toast-wrap"></div>
 
-<!-- ════════════════════════════════════
-     SCRIPT — Firebase + App
-════════════════════════════════════ -->
 <script type="module">
-import { initializeApp }     from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+/*
+  ═══════════════════════════════════════════════════════════════
+  POR QUE ESSA REFATORAÇÃO RESOLVE O PROBLEMA DE PERFORMANCE
+  ───────────────────────────────────────────────────────────────
+
+  PROBLEMA ANTERIOR — loop de re-render:
+  1. Usuário digita na textarea de uma nota
+  2. Debounce 900ms dispara → updateDoc() no Firestore
+  3. Firestore emite onSnapshot (porque o doc mudou)
+  4. allNotes = snap.docs.map(...) → recria o array inteiro
+  5. renderNotes() → G.innerHTML = '' → DESTRÓI TODOS OS CARDS
+  6. Recria todos os cards do zero, incluindo o que estava sendo editado
+  7. Perde o foco do input, perde o cursor, perde os timers de debounce
+
+  SOLUÇÃO — 3 pilares:
+
+  1. enableIndexedDbPersistence
+     ─────────────────────────
+     Firestore grava os dados no IndexedDB do browser.
+     Na próxima abertura: dados aparecem ANTES de ir à rede.
+     onSnapshot entrega primeiro do cache (fromCache=true),
+     depois sincroniza o delta da rede. Nenhum "spinner" visível.
+
+  2. docChanges() em vez de snap.docs
+     ──────────────────────────────────
+     snap.docChanges() retorna APENAS os documentos que mudaram
+     ('added', 'modified', 'removed') — não o conjunto completo.
+     Isso significa que se 1 doc de 200 mudou, processamos 1, não 200.
+     Atualizamos o Map apenas para esse documento.
+
+  3. Reconciliação de DOM (patch, não rebuild)
+     ──────────────────────────────────────────
+     linkDomMap / noteDomMap guardam referências vivas aos elementos.
+     Em vez de innerHTML = '', fazemos:
+     - Remover: apenas os elementos cujos IDs saíram da lista
+     - Criar: apenas para IDs novos (createLinkCard / createNoteCard)
+     - Atualizar: patchLinkCard / patchNoteCard — toca só o que mudou
+     - Reordenar: grid.appendChild(card) move sem recriar (DOM move)
+
+     patchNoteCard respeita o foco:
+       if (document.activeElement !== ta) ta.value = note.content
+     Se o usuário está digitando, não sobrescrevemos o campo.
+
+  4. Atualização local imediata (otimista)
+     ──────────────────────────────────────
+     Ao salvar cor, pasta, etc., atualizamos o Map local antes
+     do Firestore confirmar. Quando o onSnapshot chega, o patch
+     detecta que nada mudou e não toca o DOM.
+  ═══════════════════════════════════════════════════════════════
+*/
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, deleteDoc, doc,
-  query, orderBy, onSnapshot, serverTimestamp, updateDoc,
-  writeBatch, getDocs
+  getFirestore, enableIndexedDbPersistence,
+  collection, addDoc, deleteDoc, doc,
+  query, orderBy, onSnapshot,
+  serverTimestamp, updateDoc, writeBatch
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-/* ── Config Firebase ── */
-const cfg = {
+/* ── Config ── */
+const fbApp = initializeApp({
   apiKey:            "AIzaSyBc3ryOJEFBQlJIUpy835Anej0OulZqHEQ",
   authDomain:        "linksdrive-4012c.firebaseapp.com",
   projectId:         "linksdrive-4012c",
   storageBucket:     "linksdrive-4012c.firebasestorage.app",
   messagingSenderId: "91948654259",
   appId:             "1:91948654259:web:2b596baed6d1ab78cc5ac6"
-};
-const fbApp    = initializeApp(cfg);
-const db       = getFirestore(fbApp);
+});
+const db = getFirestore(fbApp);
+
+/*
+  enableIndexedDbPersistence:
+  Ativa o cache offline do Firestore no IndexedDB do browser.
+  failed-precondition → múltiplas abas abertas (só 1 suporta cache).
+  unimplemented → browser não suporta IndexedDB.
+*/
+enableIndexedDbPersistence(db).catch(err => {
+  if (err.code === 'failed-precondition')
+    console.warn('Cache offline: múltiplas abas abertas. Funciona apenas na aba principal.');
+  else if (err.code === 'unimplemented')
+    console.warn('Cache offline não suportado neste browser.');
+});
+
 const linksRef   = collection(db, "links");
 const notesRef   = collection(db, "notes");
 const foldersRef = collection(db, "note_folders");
 
-/* ── Estado global ── */
-let allLinks   = [];
-let allNotes   = [];
-let allFolders = [];
-let isNotes       = false;
-let activeCat     = "Todos";
-let activeFolder  = "all";
-let expandNoteId  = null;
-let currentSort   = "cat_asc";
+/* ─────────────────────────────────────────────
+   ESTADO — Maps para lookup O(1)
+   Arrays têm find/filter O(n); Maps têm get() O(1).
+   Com 200 links, a diferença é irrelevante, mas o
+   padrão é mais correto e escalável.
+───────────────────────────────────────────── */
+const linksMap   = new Map(); /* id → { id, title, url, category, timestamp } */
+const notesMap   = new Map(); /* id → { id, content, title, color, order, folder, ... } */
+const foldersMap = new Map(); /* id → { id, name } */
+let notesOrder   = [];        /* IDs na ordem do campo 'order' */
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   TOAST
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-/*
-  Exibe mensagens temporárias no canto inferior direito.
-  type: 'ok' → borda verde | 'err' → borda vermelha | padrão → azul
-  Desaparece automaticamente após 3 s com animação fadeOut.
-*/
+let isNotes      = false;
+let activeCat    = "Todos";
+let activeFolder = "all";
+let currentSort  = "cat_asc";
+let expandNoteId = null;
+let linksLoaded  = false;
+
+/* Maps de DOM — referências vivas aos elementos criados */
+const linkDomMap = new Map(); /* id → .link-card element */
+const noteDomMap = new Map(); /* id → .note-card element */
+
+const COLOR_MAP = { 1:'#fef9c3',2:'#dbeafe',3:'#dcfce7',4:'#ffedd5',5:'#f3e8ff',6:'#ffe4e6' };
+const TEXT_MAP  = { 1:'#1c1917',2:'#0f172a',3:'#052e16',4:'#1c0a00',5:'#1e0635',6:'#1c0a0a' };
+
+/* ─────────────────────────────────────────────
+   MONITOR DE CONEXÃO
+───────────────────────────────────────────── */
+const offlineBadge = document.getElementById('offlineBadge');
+const offlineLabel = document.getElementById('offlineLabel');
+function setConnectionBadge(online) {
+  offlineBadge.classList.add('visible');
+  offlineBadge.classList.toggle('online', online);
+  offlineLabel.textContent = online ? 'Online' : 'Offline — cache local';
+  if (online) setTimeout(() => offlineBadge.classList.remove('visible'), 3000);
+}
+window.addEventListener('online',  () => setConnectionBadge(true));
+window.addEventListener('offline', () => setConnectionBadge(false));
+if (!navigator.onLine) setConnectionBadge(false);
+
+/* ─────────────────────────────────────────────
+   UTILITÁRIOS
+───────────────────────────────────────────── */
 function toast(msg, type = '') {
   const w = document.getElementById('toastWrap');
   const t = document.createElement('div');
-  t.className = 'toast' + (type ? ' ' + type : '');
-  const icon = type === 'err'
-    ? 'fa-circle-exclamation'
-    : type === 'ok' ? 'fa-check-circle' : 'fa-circle-info';
+  t.className = 'toast' + (type ? ' '+type : '');
+  const icon = type==='err' ? 'fa-circle-exclamation' : type==='ok' ? 'fa-check-circle' : 'fa-circle-info';
   t.innerHTML = `<i class="fa-solid ${icon}"></i> ${msg}`;
   w.appendChild(t);
-  setTimeout(() => {
-    t.style.animation = 'fadeOut .28s forwards';
-    setTimeout(() => t.remove(), 280);
-  }, 3000);
+  setTimeout(() => { t.style.animation='fadeOut .28s forwards'; setTimeout(()=>t.remove(),280); }, 3000);
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   UTIL — formatar timestamp Firestore
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-/*
-  Converte o Timestamp do Firestore (objeto com .seconds)
-  em string legível no formato DD/MM/AA HH:MM.
-*/
 function fmtDate(ts) {
   if (!ts) return 'Agora';
   const d = new Date(ts.seconds * 1000);
-  return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' })
-       + ' ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})
+       + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   LINKS — escuta em tempo real
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 /*
-  onSnapshot: o Firestore envia atualizações em tempo real.
-  Cada vez que um doc é adicionado/editado/removido,
-  a callback dispara novamente e re-renderizamos.
-  Ordenamos por "category" no servidor para reduzir tráfego.
+  debounce(fn, ms) — factory reutilizável
+  Retorna uma função que atrasa a execução de fn em ms milissegundos.
+  Se chamada novamente antes do prazo, reinicia o contador.
+  Uso: const save = debounce(() => updateDoc(...), 900)
 */
-function startLinks() {
-  onSnapshot(query(linksRef, orderBy("category")), snap => {
-    allLinks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderCats();
-    renderLinks();
-  }, () => toast("Erro Firebase — verifique a conexão.", "err"));
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-/* ─── Ordenação local dos links ─── */
-/*
-  O Firestore não suporta ordenação por múltiplos critérios mistos
-  facilmente sem índices. Fazemos a ordenação no cliente (JS) depois
-  de receber os dados, o que é suficiente para uma lista pessoal.
-  currentSort é um valor do <select id="sortSelect">.
-*/
-function sortLinks(list) {
-  const arr = [...list];
-  switch (currentSort) {
-    case 'cat_asc':   return arr.sort((a,b) => a.category.localeCompare(b.category));
-    case 'cat_desc':  return arr.sort((a,b) => b.category.localeCompare(a.category));
-    case 'title_asc': return arr.sort((a,b) => a.title.localeCompare(b.title));
-    case 'title_desc':return arr.sort((a,b) => b.title.localeCompare(a.title));
-    case 'date_desc': return arr.sort((a,b) => {
-      const ta = a.timestamp?.seconds || 0;
-      const tb = b.timestamp?.seconds || 0;
-      return tb - ta;
-    });
-    case 'date_asc': return arr.sort((a,b) => {
-      const ta = a.timestamp?.seconds || 0;
-      const tb = b.timestamp?.seconds || 0;
-      return ta - tb;
-    });
-    default: return arr;
+function sortLinks(arr) {
+  const list = [...arr];
+  switch(currentSort) {
+    case 'cat_asc':   return list.sort((a,b)=>a.category.localeCompare(b.category));
+    case 'cat_desc':  return list.sort((a,b)=>b.category.localeCompare(a.category));
+    case 'title_asc': return list.sort((a,b)=>a.title.localeCompare(b.title));
+    case 'title_desc':return list.sort((a,b)=>b.title.localeCompare(a.title));
+    case 'date_desc': return list.sort((a,b)=>(b.timestamp?.seconds||0)-(a.timestamp?.seconds||0));
+    case 'date_asc':  return list.sort((a,b)=>(a.timestamp?.seconds||0)-(b.timestamp?.seconds||0));
+    default: return list;
   }
 }
 
-/* Renderiza abas de categoria */
-function renderCats() {
+/* ══════════════════════════════════════════
+   LINKS
+══════════════════════════════════════════ */
+function startLinks() {
+  onSnapshot(
+    query(linksRef, orderBy("category")),
+    snap => {
+      /*
+        docChanges() — só o que mudou.
+        Na primeira chamada retorna todos como 'added',
+        mas nas seguintes retorna apenas o delta.
+      */
+      snap.docChanges().forEach(change => {
+        if (change.type === 'removed') linksMap.delete(change.doc.id);
+        else linksMap.set(change.doc.id, { id: change.doc.id, ...change.doc.data() });
+      });
+      linksLoaded = true;
+      reconcileLinks();
+      reconcileCats();
+    },
+    () => toast("Erro Firebase — verifique a conexão.", "err")
+  );
+}
+
+/*
+  reconcileLinks — diff entre estado desejado e DOM atual.
+  1. Calcula lista filtrada + ordenada
+  2. Remove do DOM o que não deve estar mais
+  3. Cria o que é novo
+  4. Faz patch do que mudou
+  5. Reordena via appendChild (move sem recriar)
+*/
+function reconcileLinks() {
+  if (!linksLoaded) return;
+  const skeleton = document.getElementById('linksSkeleton');
+  const grid     = document.getElementById('linksGrid');
+  const empty    = document.getElementById('linksEmpty');
+  const q        = document.getElementById('searchInput').value.toLowerCase();
+
+  if (skeleton.style.display !== 'none') {
+    skeleton.style.display = 'none';
+    grid.style.display     = 'grid';
+  }
+
+  let filtered = [...linksMap.values()].filter(l =>
+    (activeCat === 'Todos' || l.category === activeCat)
+    && (l.title.toLowerCase().includes(q) || l.category.toLowerCase().includes(q))
+  );
+  filtered = sortLinks(filtered);
+
+  if (!filtered.length) {
+    empty.style.display = 'flex'; grid.style.display = 'none';
+    linkDomMap.forEach((el,id) => { el.remove(); linkDomMap.delete(id); });
+    return;
+  }
+  empty.style.display = 'none'; grid.style.display = 'grid';
+
+  const visibleIds = new Set(filtered.map(l => l.id));
+  /* Remove saídos */
+  linkDomMap.forEach((el,id) => { if (!visibleIds.has(id)) { el.remove(); linkDomMap.delete(id); } });
+
+  /* Cria ou patcha, respeitando ordem */
+  filtered.forEach(link => {
+    let card = linkDomMap.get(link.id);
+    if (!card) { card = createLinkCard(link); linkDomMap.set(link.id, card); }
+    else patchLinkCard(card, link);
+    grid.appendChild(card); /* move para posição correta */
+  });
+}
+
+function createLinkCard(link) {
+  let dom = 'google.com';
+  try { dom = new URL(link.url).hostname; } catch {}
+  const card = document.createElement('div');
+  card.className = 'link-card';
+  card.dataset.id = link.id;
+  card.onclick = e => { if (!e.target.closest('.link-del')) window.open(link.url, '_blank'); };
+  card.innerHTML = `
+    <img data-dom="${dom}" src="https://www.google.com/s2/favicons?domain=${dom}&sz=64"
+         onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
+    <span class="link-title">${link.title}</span>
+    <span class="link-cat-badge" style="${activeCat!=='Todos'?'display:none':''}">${link.category}</span>
+    <button class="link-del" title="Excluir"><i class="fa-solid fa-trash"></i></button>`;
+  card.querySelector('.link-del').onclick = async e => {
+    e.stopPropagation();
+    if (confirm(`Excluir "${link.title}"?`)) {
+      /* Optimistic: remove localmente antes da resposta do Firestore */
+      linksMap.delete(link.id); card.remove(); linkDomMap.delete(link.id);
+      reconcileCats();
+      try { await deleteDoc(doc(db,'links',link.id)); toast('Link excluído!','ok'); }
+      catch { toast('Erro ao excluir.','err'); }
+    }
+  };
+  return card;
+}
+
+function patchLinkCard(card, link) {
+  /* Só escreve no DOM se o valor mudou (evita reflow desnecessário) */
+  const t = card.querySelector('.link-title');
+  if (t.textContent !== link.title) t.textContent = link.title;
+  const b = card.querySelector('.link-cat-badge');
+  if (b.textContent !== link.category) b.textContent = link.category;
+  b.style.display = activeCat !== 'Todos' ? 'none' : '';
+  const img = card.querySelector('img');
+  let dom = 'google.com';
+  try { dom = new URL(link.url).hostname; } catch {}
+  if (img.dataset.dom !== dom) { img.dataset.dom = dom; img.src = `https://www.google.com/s2/favicons?domain=${dom}&sz=64`; }
+}
+
+function reconcileCats() {
   const nav = document.getElementById('catNav');
   const sel = document.getElementById('catSelect');
-  /*
-    new Set() remove duplicatas.
-    spread + sort ordena alfabeticamente.
-    "Todos" fica sempre primeiro.
-  */
-  const cats = ["Todos", ...new Set(allLinks.map(l => l.category))].sort((a, b) =>
-    a === 'Todos' ? -1 : b === 'Todos' ? 1 : a.localeCompare(b)
+  const all = [...linksMap.values()];
+  const cats = ["Todos", ...new Set(all.map(l=>l.category))].sort((a,b)=>
+    a==='Todos'?-1:b==='Todos'?1:a.localeCompare(b)
   );
-
-  nav.innerHTML = '';
-  sel.innerHTML = '';
-
+  nav.innerHTML = ''; sel.innerHTML = '';
   cats.forEach(c => {
-    const count = c === 'Todos' ? allLinks.length : allLinks.filter(l => l.category === c).length;
+    const count = c==='Todos' ? all.length : all.filter(l=>l.category===c).length;
     const b = document.createElement('button');
-    b.className = 'cat-tab' + (activeCat === c ? ' active' : '');
+    b.className = 'cat-tab'+(activeCat===c?' active':'');
     b.innerHTML = `${c}<span class="cat-count">${count}</span>`;
-    b.onclick = () => { activeCat = c; renderLinks(); renderCats(); };
+    b.onclick = () => { activeCat=c; reconcileLinks(); reconcileCats(); linkDomMap.forEach((card,id)=>{ const badge=card.querySelector('.link-cat-badge'); if(badge) badge.style.display=activeCat!=='Todos'?'none':''; }); };
     nav.appendChild(b);
-
-    if (c !== 'Todos') {
-      const o = document.createElement('option');
-      o.value = c; o.textContent = c;
-      sel.appendChild(o);
-    }
+    if (c!=='Todos') { const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); }
   });
   sel.innerHTML += `<option value="new">＋ Nova Categoria…</option>`;
 }
 
-/* Renderiza cards de link */
-function renderLinks() {
-  const G = document.getElementById('linksGrid');
-  const E = document.getElementById('linksEmpty');
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  G.innerHTML = '';
+/* Listeners de UI */
+document.getElementById('sortSelect').onchange = e => { currentSort=e.target.value; reconcileLinks(); };
+document.getElementById('searchInput').oninput  = () => reconcileLinks();
 
-  // Filtra por categoria e busca, depois ordena
-  let fl = allLinks.filter(l =>
-    (activeCat === 'Todos' || l.category === activeCat)
-    && (l.title.toLowerCase().includes(q) || l.category.toLowerCase().includes(q))
-  );
-  fl = sortLinks(fl);
-
-  if (!fl.length) { E.style.display = 'flex'; return; }
-  E.style.display = 'none';
-
-  fl.forEach(link => {
-    let dom = 'google.com';
-    try { dom = new URL(link.url).hostname; } catch {}
-
-    const c = document.createElement('div');
-    c.className = 'link-card';
-    /*
-      e.target.closest('.link-del') → verifica se o clique
-      foi no botão de deletar antes de abrir o link.
-      Isso evita abrir a URL ao tentar deletar.
-    */
-    c.onclick = e => { if (!e.target.closest('.link-del')) window.open(link.url, '_blank'); };
-    c.innerHTML = `
-      <img src="https://www.google.com/s2/favicons?domain=${dom}&sz=64"
-           onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
-      <span class="link-title">${link.title}</span>
-      ${activeCat === 'Todos' ? `<span class="link-cat-badge">${link.category}</span>` : ''}
-      <button class="link-del" title="Excluir link"><i class="fa-solid fa-trash"></i></button>`;
-    c.querySelector('.link-del').onclick = async e => {
-      e.stopPropagation();
-      if (confirm(`Excluir "${link.title}"?`))
-        try { await deleteDoc(doc(db,'links',link.id)); toast('Link excluído!','ok'); }
-        catch { toast('Erro ao excluir.','err'); }
-    };
-    G.appendChild(c);
-  });
-}
-
-/* ─── Listener de ordenação ─── */
-document.getElementById('sortSelect').onchange = e => {
-  currentSort = e.target.value;
-  renderLinks();
-};
-
-/* ── Modal de adicionar link ── */
 const linkModal = document.getElementById('linkModal');
-const openModal  = () => { linkModal.style.display = 'flex'; document.getElementById('urlInput').focus(); };
+const openModal  = () => { linkModal.style.display='flex'; document.getElementById('urlInput').focus(); };
 const closeModal = () => {
-  linkModal.style.display = 'none';
-  ['urlInput','titleInput','newCatInput'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('newCatInput').style.display = 'none';
+  linkModal.style.display='none';
+  ['urlInput','titleInput','newCatInput'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('newCatInput').style.display='none';
 };
-
-document.getElementById('addLinkBtn').onclick = openModal;
+document.getElementById('addLinkBtn').onclick  = openModal;
 document.getElementById('modalClose').onclick  = closeModal;
 document.getElementById('modalCancel').onclick = closeModal;
-window.addEventListener('click', e => { if (e.target === linkModal) closeModal(); });
-
-document.getElementById('catSelect').onchange = e =>
-  document.getElementById('newCatInput').style.display = e.target.value === 'new' ? 'block' : 'none';
-
-/* Auto-preenche título com hostname quando URL perde o foco */
-document.getElementById('urlInput').addEventListener('blur', e => {
-  const v = e.target.value;
-  const ti = document.getElementById('titleInput');
-  if (v.length > 8 && ti.value === '') {
-    try {
-      let h = new URL(v.startsWith('http') ? v : `https://${v}`).hostname;
-      let n = h.replace('www.','').split('.')[0];
-      ti.value = n.charAt(0).toUpperCase() + n.slice(1);
-    } catch {}
+window.addEventListener('click', e=>{ if(e.target===linkModal) closeModal(); });
+document.getElementById('catSelect').onchange  = e => document.getElementById('newCatInput').style.display=e.target.value==='new'?'block':'none';
+document.getElementById('urlInput').addEventListener('blur', e=>{
+  const v=e.target.value, ti=document.getElementById('titleInput');
+  if(v.length>8&&ti.value===''){
+    try{ let h=new URL(v.startsWith('http')?v:`https://${v}`).hostname; let n=h.replace('www.','').split('.')[0]; ti.value=n.charAt(0).toUpperCase()+n.slice(1); }catch{}
   }
 });
-
-/* Salvar link */
 document.getElementById('saveLink').onclick = async () => {
   const title = document.getElementById('titleInput').value.trim();
-  let   url   = document.getElementById('urlInput').value.trim();
-  let   cat   = document.getElementById('catSelect').value;
-  if (cat === 'new') cat = document.getElementById('newCatInput').value.trim();
-
-  if (!title || !url || !cat) return toast('Preencha todos os campos!','err');
-  if (!url.startsWith('http')) url = 'https://' + url;
-  if (allLinks.some(l => l.url.toLowerCase() === url.toLowerCase()))
-    return toast(`"${title}" já existe!`,'err');
-
-  const btn = document.getElementById('saveLink');
-  btn.textContent = 'Salvando…'; btn.disabled = true;
-  try {
-    await addDoc(linksRef, { title, url, category: cat, timestamp: new Date() });
-    toast('Link salvo!','ok');
-    closeModal();
-    activeCat = cat;
-    renderCats(); renderLinks();
-  } catch { toast('Falha ao salvar.','err'); }
-  finally { btn.textContent = 'Salvar'; btn.disabled = false; }
+  let url     = document.getElementById('urlInput').value.trim();
+  let cat     = document.getElementById('catSelect').value;
+  if(cat==='new') cat=document.getElementById('newCatInput').value.trim();
+  if(!title||!url||!cat) return toast('Preencha todos os campos!','err');
+  if(!url.startsWith('http')) url='https://'+url;
+  for(const l of linksMap.values()) if(l.url.toLowerCase()===url.toLowerCase()) return toast(`"${title}" já existe!`,'err');
+  const btn=document.getElementById('saveLink');
+  btn.textContent='Salvando…'; btn.disabled=true;
+  try{ await addDoc(linksRef,{title,url,category:cat,timestamp:new Date()}); toast('Link salvo!','ok'); closeModal(); activeCat=cat; reconcileCats(); }
+  catch{ toast('Falha ao salvar.','err'); }
+  finally{ btn.textContent='Salvar'; btn.disabled=false; }
 };
 
-document.getElementById('searchInput').oninput = renderLinks;
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* ══════════════════════════════════════════
    TOGGLE LINKS ↔ NOTAS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const toggleBtn  = document.getElementById('toggleBtn');
-const addNoteBtn = document.getElementById('addNoteBtn');
-const linksView  = document.getElementById('linksView');
-const notesView  = document.getElementById('notesView');
-const catScroll  = document.getElementById('catScroll');
-const addLinkBtn = document.getElementById('addLinkBtn');
-const searchWrap = document.getElementById('searchWrap');
-const sortWrap   = document.getElementById('sortWrap');
+══════════════════════════════════════════ */
+const toggleBtn=document.getElementById('toggleBtn'), addNoteBtn=document.getElementById('addNoteBtn'),
+      linksView=document.getElementById('linksView'), notesView=document.getElementById('notesView'),
+      catScroll=document.getElementById('catScroll'), addLinkBtn=document.getElementById('addLinkBtn'),
+      searchWrap=document.getElementById('searchWrap'), sortWrap=document.getElementById('sortWrap');
 
 toggleBtn.onclick = () => {
-  isNotes = !isNotes;
-  if (isNotes) {
-    linksView.style.display  = 'none';
-    notesView.style.display  = 'block';
-    catScroll.classList.add('hide');
-    addLinkBtn.classList.add('hide');
-    searchWrap.classList.add('hide');
-    sortWrap.classList.add('hide');
-    addNoteBtn.classList.remove('hide');
-    toggleBtn.innerHTML = '<i class="fa-solid fa-link"></i><span> Links</span>';
-    startNotes();
-  } else {
-    linksView.style.display  = 'block';
-    notesView.style.display  = 'none';
-    catScroll.classList.remove('hide');
-    addLinkBtn.classList.remove('hide');
-    searchWrap.classList.remove('hide');
-    sortWrap.classList.remove('hide');
-    addNoteBtn.classList.add('hide');
-    toggleBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i><span> Notas</span>';
-  }
+  isNotes=!isNotes;
+  linksView.style.display=isNotes?'none':'block'; notesView.style.display=isNotes?'block':'none';
+  [catScroll,addLinkBtn,searchWrap,sortWrap].forEach(el=>el.classList.toggle('hide',isNotes));
+  addNoteBtn.classList.toggle('hide',!isNotes);
+  toggleBtn.innerHTML=isNotes?'<i class="fa-solid fa-link"></i><span> Links</span>':'<i class="fa-solid fa-pen-to-square"></i><span> Notas</span>';
+  if(isNotes) startNotes();
 };
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   NOTAS — escuta em tempo real
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ══════════════════════════════════════════
+   NOTAS
+══════════════════════════════════════════ */
 let notesStarted = false;
 
 function startNotes() {
   /*
-    Evita registrar dois onSnapshot para a mesma coleção
-    quando o usuário alterna entre Links e Notas várias vezes.
-    onSnapshot já é um listener contínuo — basta registrar uma vez.
+    Guard flag — registra os listeners uma única vez.
+    Na segunda chamada (usuário volta para Notas), apenas
+    reconcilia o DOM com o estado já em memória.
   */
-  if (notesStarted) { renderNotes(); return; }
+  if (notesStarted) { reconcileNotes(); return; }
   notesStarted = true;
 
+  /* Pastas */
   onSnapshot(query(foldersRef, orderBy("name")), snap => {
-    allFolders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderFolderTabs();
+    snap.docChanges().forEach(c => {
+      if(c.type==='removed') foldersMap.delete(c.doc.id);
+      else foldersMap.set(c.doc.id,{id:c.doc.id,...c.doc.data()});
+    });
+    reconcileFolderTabs();
   });
 
+  /* Notas */
   onSnapshot(query(notesRef, orderBy("order","asc")), snap => {
-    allNotes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (allNotes.some(n => n.order === undefined)) fixOrders();
-    else renderNotes();
+    snap.docChanges().forEach(c => {
+      if(c.type==='removed') notesMap.delete(c.doc.id);
+      else notesMap.set(c.doc.id,{id:c.doc.id,...c.doc.data()});
+    });
+    /* Recalcula ordem */
+    notesOrder=[...notesMap.values()].sort((a,b)=>(a.order??0)-(b.order??0)).map(n=>n.id);
+    /* Corrige legado */
+    const noOrder=[...notesMap.values()].filter(n=>n.order===undefined);
+    if(noOrder.length){ fixOrders(); return; }
+    reconcileNotes();
+    reconcileFolderTabs();
   });
 }
 
-/* Corrige notas sem campo 'order' (dados legados) */
 async function fixOrders() {
-  for (let i = 0; i < allNotes.length; i++)
-    if (allNotes[i].order === undefined)
-      await updateDoc(doc(db,'notes',allNotes[i].id), { order: i });
+  const sorted=[...notesMap.values()].sort((a,b)=>(a.order??Infinity)-(b.order??Infinity));
+  for(let i=0;i<sorted.length;i++) if(sorted[i].order===undefined) await updateDoc(doc(db,'notes',sorted[i].id),{order:i});
 }
 
-/* ─── Renderizar abas de pasta ─── */
-/*
-  Cada pasta vira uma aba clicável.
-  .ftab-del aparece ao hover da aba para excluir a pasta.
-  Ao excluir: batch remove a pasta e desvincula suas notas.
-*/
-function renderFolderTabs() {
-  const strip = document.getElementById('folderStrip');
-  strip.innerHTML = '';
-
-  // Aba "Todas"
-  const all = document.createElement('button');
-  all.className = 'ftab' + (activeFolder === 'all' ? ' on' : '');
-  all.innerHTML = `Todas <span class="ftab-count">${allNotes.length}</span>`;
-  all.onclick = () => { activeFolder = 'all'; renderFolderTabs(); renderNotes(); };
+/* Pastas */
+function reconcileFolderTabs() {
+  const strip=document.getElementById('folderStrip');
+  strip.innerHTML='';
+  const all=document.createElement('button');
+  all.className='ftab'+(activeFolder==='all'?' on':'');
+  all.innerHTML=`Todas <span class="ftab-count">${notesMap.size}</span>`;
+  all.onclick=()=>{ activeFolder='all'; reconcileFolderTabs(); reconcileNotes(); };
   strip.appendChild(all);
-
-  allFolders.forEach(f => {
-    const cnt = allNotes.filter(n => n.folder === f.id).length;
-    const b = document.createElement('button');
-    b.className = 'ftab' + (activeFolder === f.id ? ' on' : '');
-    b.innerHTML = `<i class="fa-solid fa-folder" style="font-size:.72rem"></i>
-      ${f.name}
-      <span class="ftab-count">${cnt}</span>
-      <button class="ftab-del" title="Excluir pasta">✕</button>`;
-
-    b.onclick = e => {
-      if (e.target.classList.contains('ftab-del')) return;
-      activeFolder = f.id;
-      renderFolderTabs();
-      renderNotes();
-    };
-
-    b.querySelector('.ftab-del').onclick = async e => {
+  [...foldersMap.values()].forEach(f=>{
+    const cnt=[...notesMap.values()].filter(n=>n.folder===f.id).length;
+    const b=document.createElement('button');
+    b.className='ftab'+(activeFolder===f.id?' on':'');
+    b.innerHTML=`<i class="fa-solid fa-folder" style="font-size:.72rem"></i> ${f.name} <span class="ftab-count">${cnt}</span><button class="ftab-del">✕</button>`;
+    b.onclick=e=>{ if(e.target.classList.contains('ftab-del')) return; activeFolder=f.id; reconcileFolderTabs(); reconcileNotes(); };
+    b.querySelector('.ftab-del').onclick=async e=>{
       e.stopPropagation();
-      if (!confirm(`Excluir pasta "${f.name}"? As notas ficam sem pasta.`)) return;
+      if(!confirm(`Excluir pasta "${f.name}"? As notas ficam sem pasta.`)) return;
       /*
-        writeBatch: agrupa múltiplas escritas Firestore em uma
-        única transação atômica. Evita estados inconsistentes
-        onde a pasta foi deletada mas as notas ainda apontam para ela.
+        writeBatch: transação atômica — deleta pasta e
+        desvincula notas em uma única operação.
       */
-      const batch = writeBatch(db);
-      allNotes.filter(n => n.folder === f.id)
-              .forEach(n => batch.update(doc(db,'notes',n.id), { folder: '' }));
+      const batch=writeBatch(db);
+      notesMap.forEach(n=>{ if(n.folder===f.id) batch.update(doc(db,'notes',n.id),{folder:''}); });
       batch.delete(doc(db,'note_folders',f.id));
       await batch.commit();
-      if (activeFolder === f.id) activeFolder = 'all';
+      if(activeFolder===f.id) activeFolder='all';
     };
     strip.appendChild(b);
   });
 }
 
-/* Botão "Nova pasta" */
 document.getElementById('newFolderBtn').onclick = async () => {
-  const name = prompt('Nome da nova pasta:');
-  if (!name?.trim()) return;
-  await addDoc(foldersRef, { name: name.trim(), created: serverTimestamp() });
+  const name=prompt('Nome da nova pasta:');
+  if(!name?.trim()) return;
+  await addDoc(foldersRef,{name:name.trim(),created:serverTimestamp()});
   toast('Pasta criada!','ok');
 };
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   NOTAS — renderizar cards
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 /*
-  Mapa de cores: índice (1-6) → hex da cor de fundo.
-  Usado para aplicar tanto a classe CSS quanto o inline
-  style no modal expandido.
+  reconcileNotes — diff + patch cirúrgico.
+  Ordem é preservada usando notesOrder como fonte da verdade.
+  appendChild(card) em ordem move elementos existentes sem recriar.
 */
-const COLOR_MAP = {
-  1:'#fef9c3', 2:'#dbeafe', 3:'#dcfce7',
-  4:'#ffedd5', 5:'#f3e8ff', 6:'#ffe4e6'
-};
-const TEXT_MAP = {
-  1:'#1c1917', 2:'#0f172a', 3:'#052e16',
-  4:'#1c0a00', 5:'#1e0635', 6:'#1c0a0a'
-};
-
-function renderNotes() {
-  const G = document.getElementById('notesGrid');
-  const E = document.getElementById('notesEmpty');
-  G.innerHTML = '';
-
-  const visible = activeFolder === 'all'
-    ? allNotes
-    : allNotes.filter(n => n.folder === activeFolder);
-
-  if (!visible.length) { E.style.display = 'flex'; return; }
-  E.style.display = 'none';
-
-  visible.forEach((note, idx) => {
-    const card = document.createElement('div');
-    card.className = `note-card nc${note.color || 1}`;
-    card.draggable = true;
-    card.dataset.id  = note.id;
-    card.dataset.idx = idx;
-
-    /*
-      Restaura tamanho salvo:
-      width/height são strings CSS salvas no Firestore
-      (ex: "340px", "280px"). Aplicamos inline para sobrescrever
-      o tamanho padrão do grid.
-    */
-    if (note.width)  card.style.width  = note.width;
-    if (note.height) card.style.height = note.height;
-
-    // Opções de pasta para o <select> dentro do card
-    const folderOpts = allFolders.map(f =>
-      `<option value="${f.id}" ${note.folder === f.id ? 'selected':''}>📁 ${f.name}</option>`
-    ).join('');
-
-    card.innerHTML = `
-      <div class="note-topbar">
-        <div class="note-topbar-left">
-          <span class="note-drag" title="Arrastar"><i class="fa-solid fa-grip-vertical"></i></span>
-          <span class="cdot" style="background:#fef9c3" data-c="1"></span>
-          <span class="cdot" style="background:#dbeafe" data-c="2"></span>
-          <span class="cdot" style="background:#dcfce7" data-c="3"></span>
-          <span class="cdot" style="background:#ffedd5" data-c="4"></span>
-          <span class="cdot" style="background:#f3e8ff" data-c="5"></span>
-          <span class="cdot" style="background:#ffe4e6" data-c="6"></span>
-        </div>
-        <div class="note-topbar-right">
-          <button class="note-act-btn nexpand" title="Expandir">
-            <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
-          </button>
-          <button class="note-act-btn danger ndel" title="Excluir">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Título editável -->
-      <div class="note-title-wrap">
-        <input class="note-title-input" type="text"
-               placeholder="Título da nota…"
-               value="${(note.title || '').replace(/"/g,'&quot;')}"/>
-      </div>
-
-      <!-- Conteúdo -->
-      <textarea class="note-body" placeholder="Escreva algo…">${note.content || ''}</textarea>
-
-      <!-- Footer -->
-      <div class="note-footer">
-        <span class="note-ts">${fmtDate(note.createdAt || note.timestamp)}</span>
-        <span class="note-chars">${(note.content||'').length} car.</span>
-        <select class="note-folder-sel">
-          <option value="">Sem pasta</option>
-          ${folderOpts}
-        </select>
-      </div>`;
-
-    /* ── Drag & Drop ── */
-    card.addEventListener('dragstart', onDragStart);
-    card.addEventListener('dragover',  onDragOver);
-    card.addEventListener('drop',      onDrop);
-    card.addEventListener('dragend',   onDragEnd);
-
-    /*
-      Redimensionamento via ResizeObserver:
-      O browser aplica resize:both (CSS) ao card.
-      O ResizeObserver detecta mudanças de tamanho causadas
-      pelo handle nativo. Usamos debounce de 400ms para não
-      salvar no Firestore a cada pixel arrastado.
-    */
-    const ro = new ResizeObserver(() => {
-      clearTimeout(card._rt);
-      card._rt = setTimeout(() => {
-        const w = card.style.width;
-        const h = card.style.height;
-        if (w !== note.width || h !== note.height) {
-          updateDoc(doc(db,'notes',note.id), { width: w, height: h });
-          note.width = w; note.height = h;
-        }
-      }, 400);
-    });
-    ro.observe(card);
-
-    /* ── Troca de cor ── */
-    card.querySelectorAll('.cdot').forEach(d =>
-      d.onclick = () => {
-        const c = parseInt(d.dataset.c);
-        updateDoc(doc(db,'notes',note.id), { color: c });
-      }
-    );
-
-    /* ── Auto-save título (debounce 900ms) ── */
-    /*
-      Debounce: adiamos o salvamento para 900ms após o usuário
-      parar de digitar. Isso evita uma escrita Firestore por tecla,
-      reduzindo custo e latência.
-    */
-    const titleInput = card.querySelector('.note-title-input');
-    let titleTimer;
-    titleInput.oninput = () => {
-      clearTimeout(titleTimer);
-      titleTimer = setTimeout(() =>
-        updateDoc(doc(db,'notes',note.id), { title: titleInput.value }), 900
-      );
-      // Sync com modal expandido se estiver aberto
-      if (expandNoteId === note.id)
-        document.getElementById('expTitle').value = titleInput.value;
-    };
-
-    /* ── Auto-save conteúdo (debounce 900ms) ── */
-    const ta = card.querySelector('.note-body');
-    const charEl = card.querySelector('.note-chars');
-    let saveTimer;
-    ta.oninput = () => {
-      charEl.textContent = ta.value.length + ' car.';
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(() =>
-        updateDoc(doc(db,'notes',note.id), { content: ta.value }), 900
-      );
-      if (expandNoteId === note.id) {
-        document.getElementById('expBody').value = ta.value;
-        document.getElementById('expChars').textContent = ta.value.length + ' car.';
-      }
-    };
-
-    /* ── Excluir nota ── */
-    card.querySelector('.ndel').onclick = async () => {
-      if (confirm('Excluir nota?')) await deleteDoc(doc(db,'notes',note.id));
-    };
-
-    /* ── Mudar pasta ── */
-    card.querySelector('.note-folder-sel').onchange = e =>
-      updateDoc(doc(db,'notes',note.id), { folder: e.target.value });
-
-    /* ── Expandir nota ── */
-    card.querySelector('.nexpand').onclick = () => openExpandModal(note);
-
-    G.appendChild(card);
+function reconcileNotes() {
+  const grid=document.getElementById('notesGrid'), empty=document.getElementById('notesEmpty');
+  const visible=notesOrder.filter(id=>{ const n=notesMap.get(id); return n&&(activeFolder==='all'||n.folder===activeFolder); });
+  if(!visible.length){ empty.style.display='flex'; noteDomMap.forEach((el,id)=>{ el.remove(); noteDomMap.delete(id); }); return; }
+  empty.style.display='none';
+  const visSet=new Set(visible);
+  noteDomMap.forEach((el,id)=>{ if(!visSet.has(id)){ el.remove(); noteDomMap.delete(id); } });
+  visible.forEach(id=>{
+    const note=notesMap.get(id);
+    let card=noteDomMap.get(id);
+    if(!card){ card=createNoteCard(note); noteDomMap.set(id,card); }
+    else patchNoteCard(card,note);
+    grid.appendChild(card);
   });
-
-  renderFolderTabs();
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   MODAL EXPANDIR NOTA
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function openExpandModal(note) {
-  expandNoteId = note.id;
-  const overlay = document.getElementById('expandOverlay');
-  const box     = document.getElementById('expandBox');
-  const taExp   = document.getElementById('expBody');
-  const titleExp = document.getElementById('expTitle');
+function createNoteCard(note) {
+  const card=document.createElement('div');
+  card.className=`note-card nc${note.color||1}`;
+  card.draggable=true;
+  card.dataset.id=note.id;
+  if(note.width)  card.style.width=note.width;
+  if(note.height) card.style.height=note.height;
 
-  // Aplica cor da nota ao modal
-  box.style.background = COLOR_MAP[note.color || 1];
-  box.style.color      = TEXT_MAP[note.color || 1];
+  card.innerHTML=`
+    <div class="note-topbar">
+      <div class="note-tbl">
+        <span class="note-drag"><i class="fa-solid fa-grip-vertical"></i></span>
+        ${[1,2,3,4,5,6].map(c=>`<span class="cdot" style="background:${COLOR_MAP[c]}" data-c="${c}"></span>`).join('')}
+      </div>
+      <div class="note-tbr">
+        <button class="note-btn nexpand" title="Expandir"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
+        <button class="note-btn danger ndel" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </div>
+    <div class="note-title-wrap">
+      <input class="note-title-input" type="text" placeholder="Título da nota…" value="${(note.title||'').replace(/"/g,'&quot;')}"/>
+    </div>
+    <textarea class="note-body" placeholder="Escreva algo…">${note.content||''}</textarea>
+    <div class="note-footer">
+      <span class="note-ts">${fmtDate(note.createdAt||note.timestamp)}</span>
+      <span class="note-chars">${(note.content||'').length} car.</span>
+      <select class="note-folder-sel">
+        <option value="">Sem pasta</option>
+        ${[...foldersMap.values()].map(f=>`<option value="${f.id}" ${note.folder===f.id?'selected':''}>${f.name}</option>`).join('')}
+      </select>
+    </div>`;
 
-  titleExp.value = note.title || '';
-  taExp.value    = note.content || '';
-  document.getElementById('expTs').textContent    = fmtDate(note.createdAt || note.timestamp);
-  document.getElementById('expChars').textContent = (note.content||'').length + ' car.';
+  /* Drag & Drop */
+  card.addEventListener('dragstart', onDragStart);
+  card.addEventListener('dragover',  onDragOver);
+  card.addEventListener('dragleave', onDragLeave);
+  card.addEventListener('drop',      onDrop);
+  card.addEventListener('dragend',   onDragEnd);
 
-  // Popula color dots no modal
-  const dotsWrap = document.getElementById('expDots');
-  dotsWrap.innerHTML = '';
-  [1,2,3,4,5,6].forEach(c => {
-    const d = document.createElement('span');
-    d.className = 'cdot';
-    d.style.background = COLOR_MAP[c];
-    d.dataset.c = c;
-    d.onclick = () => {
-      updateDoc(doc(db,'notes',note.id), { color: c });
-      box.style.background = COLOR_MAP[c];
-      box.style.color      = TEXT_MAP[c];
-      note.color = c;
+  /* ResizeObserver com debounce 400ms */
+  const saveSize=debounce((w,h)=>{
+    updateDoc(doc(db,'notes',note.id),{width:w,height:h});
+    const n=notesMap.get(note.id); if(n){ n.width=w; n.height=h; }
+  },400);
+  new ResizeObserver(()=>{
+    const w=card.style.width, h=card.style.height;
+    const n=notesMap.get(note.id);
+    if(n&&(w!==n.width||h!==n.height)) saveSize(w,h);
+  }).observe(card);
+
+  /* Cor — atualização otimista local */
+  card.querySelectorAll('.cdot').forEach(d=>d.onclick=()=>{
+    const c=parseInt(d.dataset.c);
+    updateDoc(doc(db,'notes',note.id),{color:c});
+    const n=notesMap.get(note.id); if(n) n.color=c;
+    card.className=`note-card nc${c}`;
+    if(expandNoteId===note.id) applyExpandColor(c);
+  });
+
+  /* Título com debounce 900ms */
+  const titleInput=card.querySelector('.note-title-input');
+  const saveTitle=debounce(v=>{
+    updateDoc(doc(db,'notes',note.id),{title:v});
+    const n=notesMap.get(note.id); if(n) n.title=v;
+    if(expandNoteId===note.id) document.getElementById('expTitle').value=v;
+  },900);
+  titleInput.oninput=()=>saveTitle(titleInput.value);
+
+  /* Conteúdo com debounce 900ms */
+  const ta=card.querySelector('.note-body');
+  const charEl=card.querySelector('.note-chars');
+  const saveContent=debounce(v=>{
+    updateDoc(doc(db,'notes',note.id),{content:v});
+    const n=notesMap.get(note.id); if(n) n.content=v;
+    if(expandNoteId===note.id){
+      document.getElementById('expBody').value=v;
+      document.getElementById('expChars').textContent=v.length+' car.';
+    }
+  },900);
+  ta.oninput=()=>{ charEl.textContent=ta.value.length+' car.'; saveContent(ta.value); };
+
+  /* Excluir — otimista */
+  card.querySelector('.ndel').onclick=async()=>{
+    if(confirm('Excluir nota?')){
+      notesMap.delete(note.id); notesOrder=notesOrder.filter(id=>id!==note.id);
+      card.remove(); noteDomMap.delete(note.id); reconcileFolderTabs();
+      await deleteDoc(doc(db,'notes',note.id));
+    }
+  };
+
+  /* Pasta */
+  card.querySelector('.note-folder-sel').onchange=e=>{
+    updateDoc(doc(db,'notes',note.id),{folder:e.target.value});
+    const n=notesMap.get(note.id); if(n) n.folder=e.target.value;
+  };
+
+  /* Expandir */
+  card.querySelector('.nexpand').onclick=()=>openExpandModal(note.id);
+
+  return card;
+}
+
+/*
+  patchNoteCard — atualiza apenas o necessário.
+  Regra de ouro: se o elemento está focado, não mexemos no valor.
+  Isso protege o usuário que está digitando de perder o cursor.
+*/
+function patchNoteCard(card, note) {
+  const colorClass=`nc${note.color||1}`;
+  if(!card.classList.contains(colorClass)) card.className=`note-card ${colorClass}`;
+
+  const titleInput=card.querySelector('.note-title-input');
+  if(document.activeElement!==titleInput && titleInput.value!==(note.title||''))
+    titleInput.value=note.title||'';
+
+  const ta=card.querySelector('.note-body');
+  if(document.activeElement!==ta && ta.value!==(note.content||''))
+    ta.value=note.content||'';
+
+  const charEl=card.querySelector('.note-chars');
+  const cs=(note.content||'').length+' car.';
+  if(charEl.textContent!==cs) charEl.textContent=cs;
+
+  if(note.width  && card.style.width!==note.width)   card.style.width=note.width;
+  if(note.height && card.style.height!==note.height) card.style.height=note.height;
+
+  const fsel=card.querySelector('.note-folder-sel');
+  if(fsel.value!==(note.folder||'')) fsel.value=note.folder||'';
+}
+
+/* ── Modal expandir ── */
+function applyExpandColor(c){
+  const box=document.getElementById('expandBox');
+  box.style.background=COLOR_MAP[c]; box.style.color=TEXT_MAP[c];
+}
+
+function openExpandModal(noteId){
+  const note=notesMap.get(noteId); if(!note) return;
+  expandNoteId=noteId;
+  const taExp=document.getElementById('expBody'), titleExp=document.getElementById('expTitle');
+  applyExpandColor(note.color||1);
+  titleExp.value=note.title||''; taExp.value=note.content||'';
+  document.getElementById('expTs').textContent=fmtDate(note.createdAt||note.timestamp);
+  document.getElementById('expChars').textContent=(note.content||'').length+' car.';
+
+  const dotsWrap=document.getElementById('expDots');
+  dotsWrap.innerHTML='';
+  [1,2,3,4,5,6].forEach(c=>{
+    const d=document.createElement('span'); d.className='cdot'; d.style.background=COLOR_MAP[c];
+    d.onclick=()=>{
+      updateDoc(doc(db,'notes',noteId),{color:c});
+      const n=notesMap.get(noteId); if(n) n.color=c;
+      applyExpandColor(c);
+      const card=noteDomMap.get(noteId); if(card) card.className=`note-card nc${c}`;
     };
     dotsWrap.appendChild(d);
   });
 
-  // Folder select
-  const fsel = document.getElementById('expFolder');
-  fsel.innerHTML = `<option value="">Sem pasta</option>`
-    + allFolders.map(f =>
-        `<option value="${f.id}" ${note.folder===f.id?'selected':''}>${f.name}</option>`
-      ).join('');
-  fsel.onchange = e => updateDoc(doc(db,'notes',note.id), { folder: e.target.value });
+  const fsel=document.getElementById('expFolder');
+  fsel.innerHTML=`<option value="">Sem pasta</option>`
+    +[...foldersMap.values()].map(f=>`<option value="${f.id}" ${note.folder===f.id?'selected':''}>${f.name}</option>`).join('');
+  fsel.onchange=e=>{ updateDoc(doc(db,'notes',noteId),{folder:e.target.value}); const n=notesMap.get(noteId); if(n) n.folder=e.target.value; };
 
-  // Auto-save no modal expandido (título)
-  let expTitleTimer;
-  titleExp.oninput = () => {
-    clearTimeout(expTitleTimer);
-    expTitleTimer = setTimeout(() => {
-      updateDoc(doc(db,'notes',note.id), { title: titleExp.value });
-      // Sync com o card se visível
-      const card = document.querySelector(`.note-card[data-id="${note.id}"]`);
-      if (card) {
-        const inp = card.querySelector('.note-title-input');
-        if (inp) inp.value = titleExp.value;
-      }
-    }, 900);
-  };
+  /* Debounces recriados a cada abertura do modal */
+  const saveTitle=debounce(v=>{
+    updateDoc(doc(db,'notes',noteId),{title:v});
+    const n=notesMap.get(noteId); if(n) n.title=v;
+    const card=noteDomMap.get(noteId);
+    if(card){ const inp=card.querySelector('.note-title-input'); if(inp&&document.activeElement!==inp) inp.value=v; }
+  },900);
+  const saveContent=debounce(v=>{
+    updateDoc(doc(db,'notes',noteId),{content:v});
+    const n=notesMap.get(noteId); if(n) n.content=v;
+    const card=noteDomMap.get(noteId);
+    if(card){ const ta=card.querySelector('.note-body'),ch=card.querySelector('.note-chars'); if(ta&&document.activeElement!==ta) ta.value=v; if(ch) ch.textContent=v.length+' car.'; }
+  },900);
+  titleExp.oninput=()=>saveTitle(titleExp.value);
+  taExp.oninput=()=>{ document.getElementById('expChars').textContent=taExp.value.length+' car.'; saveContent(taExp.value); };
 
-  // Auto-save no modal expandido (conteúdo)
-  let expSaveTimer;
-  taExp.oninput = () => {
-    document.getElementById('expChars').textContent = taExp.value.length + ' car.';
-    clearTimeout(expSaveTimer);
-    expSaveTimer = setTimeout(() => {
-      updateDoc(doc(db,'notes',note.id), { content: taExp.value });
-      const card = document.querySelector(`.note-card[data-id="${note.id}"]`);
-      if (card) {
-        const ta = card.querySelector('.note-body');
-        const ch = card.querySelector('.note-chars');
-        if (ta) ta.value = taExp.value;
-        if (ch) ch.textContent = taExp.value.length + ' car.';
-      }
-    }, 900);
-  };
-
-  overlay.classList.add('open');
+  document.getElementById('expandOverlay').classList.add('open');
   taExp.focus();
 }
 
-function closeExpandModal() {
-  document.getElementById('expandOverlay').classList.remove('open');
-  expandNoteId = null;
-}
-document.getElementById('expandClose').onclick = closeExpandModal;
-document.getElementById('expandOverlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('expandOverlay')) closeExpandModal();
-});
+function closeExpandModal(){ document.getElementById('expandOverlay').classList.remove('open'); expandNoteId=null; }
+document.getElementById('expandClose').onclick=closeExpandModal;
+document.getElementById('expandOverlay').addEventListener('click',e=>{ if(e.target===document.getElementById('expandOverlay')) closeExpandModal(); });
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   DRAG & DROP das notas
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-let dragSrc = null;
+/* ── Drag & Drop ── */
+let dragSrcId=null;
+function onDragStart(e){ dragSrcId=this.dataset.id; this.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
+function onDragOver(e) { e.preventDefault(); this.classList.add('drag-over'); return false; }
+function onDragLeave()  { this.classList.remove('drag-over'); }
+function onDrop(e)      { e.stopPropagation(); this.classList.remove('drag-over'); if(dragSrcId&&dragSrcId!==this.dataset.id) reorderNotes(dragSrcId,this.dataset.id); return false; }
+function onDragEnd()    { this.classList.remove('dragging'); document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over')); }
 
-function onDragStart(e) { this.classList.add('dragging'); dragSrc = this; e.dataTransfer.effectAllowed = 'move'; }
-function onDragOver(e)  { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; }
-function onDrop(e) {
-  e.stopPropagation();
-  if (dragSrc !== this) reorderNotes(dragSrc.dataset.id, this.dataset.id);
-  return false;
-}
-function onDragEnd() { this.classList.remove('dragging'); }
-
-/*
-  Reordenar notas:
-  1. Encontra índices de origem (si) e destino (ti) em allNotes.
-  2. Remove do array e insere na nova posição (splice).
-  3. Salva apenas o intervalo afetado (s→e) para minimizar escritas.
-  4. Promise.all: executa todas as escritas em paralelo.
-*/
-async function reorderNotes(srcId, tgtId) {
-  const si = allNotes.findIndex(n => n.id === srcId);
-  const ti = allNotes.findIndex(n => n.id === tgtId);
-  if (si < 0 || ti < 0) return;
-
-  const arr = [...allNotes];
-  const [rm] = arr.splice(si, 1);
-  arr.splice(ti, 0, rm);
-
-  const s = Math.min(si, ti), e = Math.max(si, ti);
-  await Promise.all(
-    Array.from({ length: e - s + 1 }, (_, i) =>
-      updateDoc(doc(db,'notes',arr[s+i].id), { order: s+i })
-    )
-  );
+async function reorderNotes(srcId, tgtId){
+  /* Atualização otimista da ordem local antes de ir ao Firestore */
+  const si=notesOrder.indexOf(srcId), ti=notesOrder.indexOf(tgtId);
+  if(si<0||ti<0) return;
+  const arr=[...notesOrder]; const[rm]=arr.splice(si,1); arr.splice(ti,0,rm);
+  notesOrder=arr;
+  reconcileNotes(); /* reorganiza o DOM imediatamente */
+  /* Persiste apenas o range afetado — O(delta), não O(n) */
+  const s=Math.min(si,ti), e=Math.max(si,ti);
+  await Promise.all(Array.from({length:e-s+1},(_,i)=>updateDoc(doc(db,'notes',arr[s+i].id),{order:s+i})));
 }
 
-/* ── Adicionar nova nota ── */
-addNoteBtn.onclick = async () => {
-  await addDoc(notesRef, {
-    content:   '',
-    title:     '',
-    color:     Math.floor(Math.random() * 6) + 1,
-    order:     allNotes.length,
-    folder:    activeFolder === 'all' ? '' : activeFolder,
-    createdAt: serverTimestamp(),
-    timestamp: serverTimestamp()
-  });
+addNoteBtn.onclick=async()=>{
+  await addDoc(notesRef,{content:'',title:'',color:Math.floor(Math.random()*6)+1,order:notesOrder.length,folder:activeFolder==='all'?'':activeFolder,createdAt:serverTimestamp(),timestamp:serverTimestamp()});
 };
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   HELPERS DE CONSOLE (utilitários globais)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-/*
-  Expor funções no window permite chamá-las no DevTools:
-    importarLinksEmLote([{ title: "GitHub", url: "https://github.com", category: "Dev" }])
-    removerDuplicatas()
-*/
-window.importarLinksEmLote = async arr => {
-  let ok = 0, nok = 0;
-  for (const l of arr) {
-    if (allLinks.some(x => x.url.toLowerCase() === l.url.toLowerCase())) { nok++; continue; }
-    try { await addDoc(linksRef, { ...l, timestamp: new Date() }); ok++; }
-    catch { nok++; }
+/* ── Helpers de console ── */
+window.importarLinksEmLote=async arr=>{
+  let ok=0,nok=0;
+  for(const l of arr){
+    let dup=false;
+    for(const x of linksMap.values()) if(x.url.toLowerCase()===l.url.toLowerCase()){dup=true;break;}
+    if(dup){nok++;continue;}
+    try{await addDoc(linksRef,{...l,timestamp:new Date()});ok++;}catch{nok++;}
   }
   alert(`Importação: ✅ ${ok}  ❌ ${nok}`);
 };
-
-window.removerDuplicatas = async () => {
-  const seen = new Set(); let n = 0;
-  for (const l of allLinks) {
-    if (seen.has(l.url)) { await deleteDoc(doc(db,'links',l.id)); n++; }
-    else seen.add(l.url);
-  }
+window.removerDuplicatas=async()=>{
+  const seen=new Set();let n=0;
+  for(const l of linksMap.values()){if(seen.has(l.url)){await deleteDoc(doc(db,'links',l.id));n++;}else seen.add(l.url);}
   alert(`${n} duplicatas removidas.`);
 };
 
-/* ── Inicializa ── */
+/* Inicializa */
 startLinks();
 </script>
 </body>
