@@ -500,7 +500,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebas
 import {
   getFirestore, enableIndexedDbPersistence,
   collection, addDoc, deleteDoc, doc,
-  query, orderBy, onSnapshot,
+  query, orderBy, onSnapshot, getDocs,
   serverTimestamp, updateDoc, writeBatch
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
@@ -627,13 +627,54 @@ function sortLinks(arr) {
 /* ══════════════════════════════════════════
    LINKS
 ══════════════════════════════════════════ */
-function startLinks() {
-  /*
-    Escuta por campo 'order' (asc) em vez de 'category'.
-    Isso permite que o drag & drop persista a ordem do usuário.
-    Quando 'order' não existe num doc (links antigos), ele aparece
-    no início — fixOrders() corrige isso na primeira snapshot.
-  */
+
+/*
+  POR QUE O BUG ACONTECEU
+  ────────────────────────
+  O Firestore tem um comportamento importante: quando você usa
+  orderBy("order"), ele exclui silenciosamente do resultado todos
+  os documentos que NÃO possuem o campo "order".
+  Não dá erro — simplesmente não retorna esses docs.
+
+  Links antigos (criados antes do drag & drop) não tinham "order",
+  então a query orderBy("order") retornava zero documentos.
+  A fixLinkOrders() nunca era chamada porque os docs nunca chegavam.
+
+  A SOLUÇÃO — dois passos separados:
+  1. getDocs() sem orderBy — busca TODOS os docs,
+     independente de terem ou não o campo "order".
+  2. Se algum doc não tem "order", grava o campo em todos eles
+     (migração única, usando writeBatch para atomicidade).
+  3. Só depois liga o onSnapshot com orderBy("order") —
+     agora todos os docs têm o campo, a query funciona.
+*/
+async function startLinks() {
+  /* Passo 1: busca todos os links sem restrição de campo */
+  const allSnap = await getDocs(linksRef);
+  const allDocs = allSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  /* Passo 2: migração — se qualquer doc não tem 'order', grava em todos */
+  const needsMigration = allDocs.some(l => l.order === undefined);
+  if (needsMigration) {
+    /*
+      Ordena por categoria (critério original) para que a ordem
+      inicial faça sentido para o usuário, não seja aleatória.
+      writeBatch agrupa até 500 escritas numa transação atômica —
+      mais eficiente e seguro do que Promise.all de updateDoc's.
+    */
+    const sorted = [...allDocs].sort((a,b) =>
+      (a.category||'').localeCompare(b.category||'')
+    );
+    const batch = writeBatch(db);
+    sorted.forEach((l, i) => {
+      if (l.order === undefined)
+        batch.update(doc(db,'links',l.id), { order: i });
+    });
+    await batch.commit();
+    /* Não precisa chamar reconcile aqui — o onSnapshot abaixo vai disparar */
+  }
+
+  /* Passo 3: agora todos os docs têm 'order', a query funciona corretamente */
   onSnapshot(
     query(linksRef, orderBy("order", "asc")),
     snap => {
@@ -641,35 +682,14 @@ function startLinks() {
         if (change.type === 'removed') linksMap.delete(change.doc.id);
         else linksMap.set(change.doc.id, { id: change.doc.id, ...change.doc.data() });
       });
-      /* Recalcula a ordem linear a partir do campo 'order' */
       linksOrder = [...linksMap.values()]
-        .sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999))
+        .sort((a,b) => (a.order ?? 0) - (b.order ?? 0))
         .map(l => l.id);
-      /* Links antigos sem campo 'order' recebem índice automaticamente */
-      const noOrder = [...linksMap.values()].filter(l => l.order === undefined);
-      if (noOrder.length) { fixLinkOrders(); return; }
       linksLoaded = true;
       reconcileLinks();
       reconcileCats();
     },
     () => toast("Erro Firebase — verifique a conexão.", "err")
-  );
-}
-
-/*
-  fixLinkOrders — migração automática de links antigos.
-  Links que não têm o campo 'order' (criados antes do drag & drop)
-  recebem um índice sequencial para não ficarem "flutuando" na query.
-  Usa Promise.all para paralelizar as escritas.
-*/
-async function fixLinkOrders() {
-  const sorted = [...linksMap.values()].sort((a,b) =>
-    (a.order ?? Infinity) - (b.order ?? Infinity)
-  );
-  await Promise.all(
-    sorted
-      .filter(l => l.order === undefined)
-      .map((l, i) => updateDoc(doc(db,'links',l.id), { order: sorted.indexOf(l) }))
   );
 }
 
