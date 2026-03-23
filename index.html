@@ -116,10 +116,10 @@ body {
 /* MAIN */
 .main { max-width: 1500px; margin: 0 auto; padding: 1.2rem 1.4rem; }
 
-/* Skeleton */
-.skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 9px; }
+/* Skeleton — mesma coluna do links-grid para evitar salto de layout */
+.skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; }
 .skeleton-card {
-  height: 44px; border-radius: var(--r); background: var(--surface);
+  height: 30px; border-radius: 8px; background: var(--surface);
   border: 1px solid var(--border); overflow: hidden; position: relative;
 }
 .skeleton-card::after {
@@ -129,35 +129,65 @@ body {
 }
 @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 
-/* Links grid */
-.links-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 9px; }
-@media(max-width:480px){ .links-grid { grid-template-columns: 1fr 1fr; gap: 7px; } }
+/* Links grid
+   minmax menor (160px) → mais colunas na tela, cards mais compactos */
+.links-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; }
+@media(max-width:480px){ .links-grid { grid-template-columns: 1fr 1fr; gap: 5px; } }
+
+/*
+  .link-card — card compacto
+  padding reduzido (6px 8px), gap menor entre elementos.
+  cursor: default aqui pois o clique de abrir é no card inteiro,
+  mas o handle de drag usa cursor: grab explicitamente.
+*/
 .link-card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
-  padding: 10px 13px; display: flex; align-items: center; gap: 10px;
-  cursor: pointer; transition: all .2s cubic-bezier(.4,0,.2,1);
-  position: relative; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 8px; display: flex; align-items: center; gap: 7px;
+  cursor: default; transition: all .18s cubic-bezier(.4,0,.2,1);
+  position: relative; overflow: hidden; user-select: none;
 }
 .link-card::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  background: var(--accent); transform: scaleY(0); transition: transform .2s;
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  background: var(--accent); transform: scaleY(0); transition: transform .18s;
   border-radius: 2px 0 0 2px;
 }
 .link-card:hover::before { transform: scaleY(1); }
 .link-card:hover {
-  background: var(--surface2); border-color: rgba(59,130,246,.3);
-  transform: translateY(-2px); box-shadow: var(--shadow);
+  background: var(--surface2); border-color: rgba(59,130,246,.28);
+  transform: translateY(-1px); box-shadow: var(--shadow);
 }
+
+/* Estado de arraste — opacidade e escala reduzidas para feedback visual */
+.link-card.dragging { opacity: .35; transform: scale(.97); }
+
+/* Destino de drop — outline pontilhado indica onde o card vai cair */
+.link-card.drag-over { outline: 2px dashed var(--accent); outline-offset: -2px; }
+
+/* Handle de drag — ícone grip visível só no hover, flex-shrink:0 evita colapso */
+.link-drag {
+  color: var(--tx3); font-size: .65rem; cursor: grab; flex-shrink: 0;
+  opacity: 0; transition: opacity .15s; padding: 2px;
+}
+.link-card:hover .link-drag { opacity: 1; }
+.link-drag:active { cursor: grabbing; }
+
+/* Favicon menor: 16px × 16px, sem padding extra */
 .link-card img {
-  width: 22px; height: 22px; border-radius: 5px; object-fit: cover;
-  background: #fff; padding: 2px; flex-shrink: 0;
+  width: 16px; height: 16px; border-radius: 3px; object-fit: cover;
+  background: #fff; flex-shrink: 0;
 }
-.link-title { color: var(--tx); font-size: .84rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-.link-cat-badge { font-size: .62rem; color: var(--tx3); background: var(--bg2); border-radius: 4px; padding: 1px 5px; white-space: nowrap; flex-shrink: 0; }
+
+/* Título mais compacto */
+.link-title {
+  color: var(--tx); font-size: .78rem; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+  cursor: pointer; /* só o texto tem cursor pointer — clique abre o link */
+}
+.link-cat-badge { font-size: .58rem; color: var(--tx3); background: var(--bg2); border-radius: 3px; padding: 1px 4px; white-space: nowrap; flex-shrink: 0; }
 .link-del {
   background: transparent; border: none; color: var(--tx3); cursor: pointer;
-  width: 26px; height: 26px; border-radius: 5px; display: flex; align-items: center;
-  justify-content: center; opacity: 0; transition: .18s; flex-shrink: 0; font-size: .75rem;
+  width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center;
+  justify-content: center; opacity: 0; transition: .15s; flex-shrink: 0; font-size: .65rem;
 }
 .link-del:hover { background: rgba(239,68,68,.14); color: var(--danger); }
 .link-card:hover .link-del { opacity: 1; }
@@ -329,6 +359,7 @@ body {
             <option value="title_desc">Título Z→A</option>
             <option value="date_desc">Mais recentes</option>
             <option value="date_asc">Mais antigos</option>
+            <option value="manual">Personalizado ↕</option>
           </select>
         </div>
         <button class="btn btn-primary" id="addLinkBtn"><i class="fa-solid fa-plus"></i><span>Link</span></button>
@@ -507,10 +538,11 @@ const foldersRef = collection(db, "note_folders");
    Com 200 links, a diferença é irrelevante, mas o
    padrão é mais correto e escalável.
 ───────────────────────────────────────────── */
-const linksMap   = new Map(); /* id → { id, title, url, category, timestamp } */
+const linksMap   = new Map(); /* id → { id, title, url, category, order, timestamp } */
 const notesMap   = new Map(); /* id → { id, content, title, color, order, folder, ... } */
 const foldersMap = new Map(); /* id → { id, name } */
-let notesOrder   = [];        /* IDs na ordem do campo 'order' */
+let notesOrder   = [];        /* IDs na ordem do campo 'order' (notas) */
+let linksOrder   = [];        /* IDs na ordem do campo 'order' (links) — drag & drop */
 
 let isNotes      = false;
 let activeCat    = "Todos";
@@ -518,6 +550,7 @@ let activeFolder = "all";
 let currentSort  = "cat_asc";
 let expandNoteId = null;
 let linksLoaded  = false;
+let dragSrcLinkId = null;     /* ID do card de link sendo arrastado */
 
 /* Maps de DOM — referências vivas aos elementos criados */
 const linkDomMap = new Map(); /* id → .link-card element */
@@ -595,18 +628,26 @@ function sortLinks(arr) {
    LINKS
 ══════════════════════════════════════════ */
 function startLinks() {
+  /*
+    Escuta por campo 'order' (asc) em vez de 'category'.
+    Isso permite que o drag & drop persista a ordem do usuário.
+    Quando 'order' não existe num doc (links antigos), ele aparece
+    no início — fixOrders() corrige isso na primeira snapshot.
+  */
   onSnapshot(
-    query(linksRef, orderBy("category")),
+    query(linksRef, orderBy("order", "asc")),
     snap => {
-      /*
-        docChanges() — só o que mudou.
-        Na primeira chamada retorna todos como 'added',
-        mas nas seguintes retorna apenas o delta.
-      */
       snap.docChanges().forEach(change => {
         if (change.type === 'removed') linksMap.delete(change.doc.id);
         else linksMap.set(change.doc.id, { id: change.doc.id, ...change.doc.data() });
       });
+      /* Recalcula a ordem linear a partir do campo 'order' */
+      linksOrder = [...linksMap.values()]
+        .sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999))
+        .map(l => l.id);
+      /* Links antigos sem campo 'order' recebem índice automaticamente */
+      const noOrder = [...linksMap.values()].filter(l => l.order === undefined);
+      if (noOrder.length) { fixLinkOrders(); return; }
       linksLoaded = true;
       reconcileLinks();
       reconcileCats();
@@ -616,12 +657,35 @@ function startLinks() {
 }
 
 /*
+  fixLinkOrders — migração automática de links antigos.
+  Links que não têm o campo 'order' (criados antes do drag & drop)
+  recebem um índice sequencial para não ficarem "flutuando" na query.
+  Usa Promise.all para paralelizar as escritas.
+*/
+async function fixLinkOrders() {
+  const sorted = [...linksMap.values()].sort((a,b) =>
+    (a.order ?? Infinity) - (b.order ?? Infinity)
+  );
+  await Promise.all(
+    sorted
+      .filter(l => l.order === undefined)
+      .map((l, i) => updateDoc(doc(db,'links',l.id), { order: sorted.indexOf(l) }))
+  );
+}
+
+/*
   reconcileLinks — diff entre estado desejado e DOM atual.
-  1. Calcula lista filtrada + ordenada
-  2. Remove do DOM o que não deve estar mais
-  3. Cria o que é novo
-  4. Faz patch do que mudou
-  5. Reordena via appendChild (move sem recriar)
+
+  Quando currentSort === 'manual', a ordem vem de linksOrder
+  (que reflete o campo 'order' do Firestore — persistido pelo drag & drop).
+  Nos outros modos de sort, ordena normalmente e ignora linksOrder.
+
+  O restante do algoritmo é o mesmo de antes:
+  1. Filtra por categoria + busca
+  2. Remove do DOM o que saiu
+  3. Cria cards novos
+  4. Patcha cards existentes
+  5. Reordena via appendChild (move sem recriar o elemento)
 */
 function reconcileLinks() {
   if (!linksLoaded) return;
@@ -635,11 +699,23 @@ function reconcileLinks() {
     grid.style.display     = 'grid';
   }
 
-  let filtered = [...linksMap.values()].filter(l =>
-    (activeCat === 'Todos' || l.category === activeCat)
-    && (l.title.toLowerCase().includes(q) || l.category.toLowerCase().includes(q))
-  );
-  filtered = sortLinks(filtered);
+  /* Monta a lista na ordem correta conforme o modo de sort */
+  let filtered;
+  if (currentSort === 'manual') {
+    /* Modo drag: respeita linksOrder (campo 'order' do Firestore) */
+    filtered = linksOrder
+      .map(id => linksMap.get(id))
+      .filter(l => l
+        && (activeCat === 'Todos' || l.category === activeCat)
+        && (l.title.toLowerCase().includes(q) || l.category.toLowerCase().includes(q))
+      );
+  } else {
+    filtered = [...linksMap.values()].filter(l =>
+      (activeCat === 'Todos' || l.category === activeCat)
+      && (l.title.toLowerCase().includes(q) || l.category.toLowerCase().includes(q))
+    );
+    filtered = sortLinks(filtered);
+  }
 
   if (!filtered.length) {
     empty.style.display = 'flex'; grid.style.display = 'none';
@@ -649,15 +725,13 @@ function reconcileLinks() {
   empty.style.display = 'none'; grid.style.display = 'grid';
 
   const visibleIds = new Set(filtered.map(l => l.id));
-  /* Remove saídos */
   linkDomMap.forEach((el,id) => { if (!visibleIds.has(id)) { el.remove(); linkDomMap.delete(id); } });
 
-  /* Cria ou patcha, respeitando ordem */
   filtered.forEach(link => {
     let card = linkDomMap.get(link.id);
     if (!card) { card = createLinkCard(link); linkDomMap.set(link.id, card); }
     else patchLinkCard(card, link);
-    grid.appendChild(card); /* move para posição correta */
+    grid.appendChild(card);
   });
 }
 
@@ -666,25 +740,99 @@ function createLinkCard(link) {
   try { dom = new URL(link.url).hostname; } catch {}
   const card = document.createElement('div');
   card.className = 'link-card';
+  card.draggable = true;            /* necessário para a API de drag nativa */
   card.dataset.id = link.id;
-  card.onclick = e => { if (!e.target.closest('.link-del')) window.open(link.url, '_blank'); };
+
+  /*
+    O clique de abrir o link fica no card inteiro, mas ignoramos:
+    - clique no .link-del (excluir)
+    - clique no .link-drag (handle — só serve para arrastar)
+    Isso evita abrir o link ao clicar no handle ou no botão de excluir.
+  */
+  card.onclick = e => {
+    if (!e.target.closest('.link-del') && !e.target.closest('.link-drag'))
+      window.open(link.url, '_blank');
+  };
+
   card.innerHTML = `
+    <span class="link-drag" title="Arrastar"><i class="fa-solid fa-grip-vertical"></i></span>
     <img data-dom="${dom}" src="https://www.google.com/s2/favicons?domain=${dom}&sz=64"
          onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
     <span class="link-title">${link.title}</span>
     <span class="link-cat-badge" style="${activeCat!=='Todos'?'display:none':''}">${link.category}</span>
     <button class="link-del" title="Excluir"><i class="fa-solid fa-trash"></i></button>`;
+
+  /* ── Drag & Drop ── */
+  card.addEventListener('dragstart', e => {
+    dragSrcLinkId = link.id;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  card.addEventListener('dragover', e => {
+    e.preventDefault();                       /* necessário para aceitar o drop */
+    card.classList.add('drag-over');
+  });
+  card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+  card.addEventListener('drop', e => {
+    e.stopPropagation();
+    card.classList.remove('drag-over');
+    if (dragSrcLinkId && dragSrcLinkId !== link.id)
+      reorderLinks(dragSrcLinkId, link.id);
+  });
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    document.querySelectorAll('.link-card.drag-over')
+      .forEach(el => el.classList.remove('drag-over'));
+  });
+
   card.querySelector('.link-del').onclick = async e => {
     e.stopPropagation();
     if (confirm(`Excluir "${link.title}"?`)) {
-      /* Optimistic: remove localmente antes da resposta do Firestore */
-      linksMap.delete(link.id); card.remove(); linkDomMap.delete(link.id);
+      linksMap.delete(link.id);
+      linksOrder = linksOrder.filter(id => id !== link.id);
+      card.remove(); linkDomMap.delete(link.id);
       reconcileCats();
       try { await deleteDoc(doc(db,'links',link.id)); toast('Link excluído!','ok'); }
       catch { toast('Erro ao excluir.','err'); }
     }
   };
   return card;
+}
+
+/*
+  reorderLinks — mesmo padrão de reorderNotes.
+  1. Atualização otimista: muda linksOrder em memória imediatamente
+  2. reconcileLinks() reorganiza o DOM com appendChild (sem recriar nada)
+  3. Persiste só o intervalo afetado [min(si,ti)..max(si,ti)] no Firestore
+     — O(delta) em vez de O(n) para não escrever todos os docs.
+  
+  Importante: ao arrastar, o currentSort é trocado para 'manual'
+  para que reconcileLinks() use linksOrder (a ordem do usuário)
+  em vez de qualquer sort alfabético/por data.
+*/
+async function reorderLinks(srcId, tgtId) {
+  const si = linksOrder.indexOf(srcId);
+  const ti = linksOrder.indexOf(tgtId);
+  if (si < 0 || ti < 0) return;
+
+  /* Atualização otimista local */
+  const arr = [...linksOrder];
+  const [rm] = arr.splice(si, 1);
+  arr.splice(ti, 0, rm);
+  linksOrder = arr;
+
+  /* Muda para modo manual e redesenha imediatamente */
+  currentSort = 'manual';
+  document.getElementById('sortSelect').value = 'manual'; /* sincroniza o <select> */
+  reconcileLinks();
+
+  /* Persiste só o range afetado */
+  const s = Math.min(si, ti), e = Math.max(si, ti);
+  await Promise.all(
+    Array.from({ length: e - s + 1 }, (_, i) =>
+      updateDoc(doc(db,'links', arr[s + i]), { order: s + i })
+    )
+  );
 }
 
 function patchLinkCard(card, link) {
@@ -752,8 +900,14 @@ document.getElementById('saveLink').onclick = async () => {
   for(const l of linksMap.values()) if(l.url.toLowerCase()===url.toLowerCase()) return toast(`"${title}" já existe!`,'err');
   const btn=document.getElementById('saveLink');
   btn.textContent='Salvando…'; btn.disabled=true;
-  try{ await addDoc(linksRef,{title,url,category:cat,timestamp:new Date()}); toast('Link salvo!','ok'); closeModal(); activeCat=cat; reconcileCats(); }
-  catch{ toast('Falha ao salvar.','err'); }
+  try{
+    /*
+      Ao salvar, o novo link recebe order = tamanho atual do Map.
+      Isso coloca ele no final da lista quando o modo for 'manual'.
+    */
+    await addDoc(linksRef,{title,url,category:cat,timestamp:new Date(),order:linksMap.size});
+    toast('Link salvo!','ok'); closeModal(); activeCat=cat; reconcileCats();
+  }catch{ toast('Falha ao salvar.','err'); }
   finally{ btn.textContent='Salvar'; btn.disabled=false; }
 };
 
