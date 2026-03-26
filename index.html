@@ -465,12 +465,15 @@ body {
 */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
-  getFirestore, enableIndexedDbPersistence,
-  collection, addDoc, deleteDoc, doc,
-  query, orderBy, onSnapshot,
-  serverTimestamp, updateDoc, writeBatch
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+  getAuth,              // instância do serviço de autenticação
+  GoogleAuthProvider,   // provedor que representa "login com Google"
+  signInWithPopup,      // abre o popup do Google para o usuário escolher a conta
+  onAuthStateChanged,   // escuta mudanças de estado (logado/deslogado) em tempo real
+  signOut               // faz logout
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
 
 /* ── Config ── */
 const fbApp = initializeApp({
@@ -481,7 +484,12 @@ const fbApp = initializeApp({
   messagingSenderId: "91948654259",
   appId:             "1:91948654259:web:2b596baed6d1ab78cc5ac6"
 });
-const db = getFirestore(fbApp);
+
+const db   = getFirestore(fbApp);
+const auth = getAuth(fbApp);
+// GoogleAuthProvider é uma classe — cada instância representa uma configuração do provedor Google.
+// Podemos adicionar escopos aqui futuramente (ex: acesso ao Google Drive do usuário).
+const googleProvider = new GoogleAuthProvider();
 
 /*
   enableIndexedDbPersistence:
@@ -1100,7 +1108,94 @@ window.removerDuplicatas=async()=>{
 };
 
 /* Inicializa */
-startLinks();
+// ─── Autenticação ──────────────────────────────────────────────────────────
+
+const loginScreen = document.getElementById('loginScreen');
+
+/*
+  onAuthStateChanged é um LISTENER PERMANENTE — fica ativo enquanto a página estiver aberta.
+  Ele é chamado automaticamente em 3 situações:
+    1. Na carga inicial da página (com o usuário já logado ou não)
+    2. Após um login bem-sucedido
+    3. Após um logout
+  
+  O parâmetro `user` é null quando não há sessão, ou um objeto com dados do usuário quando logado.
+  Isso substitui qualquer verificação manual de "estou logado?".
+*/
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // Usuário logado: esconde a tela de login e inicializa o app
+    loginScreen.style.display = 'none';
+    
+    // SEGURANÇA EXTRA: verifica se o e-mail é o seu.
+    // Mesmo que alguém tente logar com outra conta Google, é bloqueado aqui.
+    // Troque "seuemail@gmail.com" pelo SEU e-mail real.
+    const SEU_EMAIL = 'seuemail@gmail.com';
+    if (user.email !== SEU_EMAIL) {
+      toast(`Acesso negado para ${user.email}.`, 'err');
+      signOut(auth); // faz logout imediatamente
+      loginScreen.style.display = 'flex';
+      return;
+    }
+    
+    startLinks(); // só inicializa o app se o e-mail for o seu
+    
+  } else {
+    // Usuário deslogado: mostra a tela de login
+    loginScreen.style.display = 'flex';
+  }
+});
+
+// Botão "Entrar com Google"
+document.getElementById('googleLoginBtn').onclick = async () => {
+  const btn = document.getElementById('googleLoginBtn');
+  const errEl = document.getElementById('loginError');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando…';
+  errEl.style.display = 'none';
+  
+  try {
+    /*
+      signInWithPopup abre uma janela do Google.
+      O usuário escolhe a conta e o Google devolve um token ao Firebase.
+      O Firebase valida o token e dispara o onAuthStateChanged acima automaticamente.
+      Não precisamos fazer nada no .then() — o listener cuida do resto.
+    */
+    await signInWithPopup(auth, googleProvider);
+  } catch (err) {
+    // Erros comuns:
+    // auth/popup-closed-by-user → usuário fechou o popup sem logar
+    // auth/popup-blocked → navegador bloqueou o popup
+    if (err.code !== 'auth/popup-closed-by-user') {
+      errEl.textContent = 'Erro ao entrar: ' + err.message;
+      errEl.style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-brands fa-google"></i> Entrar com Google';
+  }
+};
+
+// Botão de logout — adicione onde quiser no HTML (ex: no header)
+// Exemplo: <button onclick="fazerLogout()">Sair</button>
+window.fazerLogout = () => signOut(auth);
 </script>
+
+<!-- Tela de login — fica sobre tudo enquanto o usuário não está autenticado -->
+<div id="loginScreen" style="
+  position:fixed; inset:0; background:var(--bg);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  z-index:99999; gap:16px;
+">
+  <div class="logo-mark" style="width:48px;height:48px;font-size:1.4rem">
+    <i class="fa-solid fa-layer-group"></i>
+  </div>
+  <h2 style="font-size:1.2rem;font-weight:700;color:var(--tx)">MyDashboard</h2>
+  <p style="font-size:.85rem;color:var(--tx2)">Entre para acessar seus links e notas</p>
+  <button id="googleLoginBtn" class="btn btn-primary" style="gap:10px;padding:10px 20px">
+    <i class="fa-brands fa-google"></i>
+    <span>Entrar com Google</span>
+  </button>
+  <p id="loginError" style="font-size:.78rem;color:var(--danger);display:none"></p>
+</div>
 </body>
 </html>
