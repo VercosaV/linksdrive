@@ -101,27 +101,6 @@ function initDashboard() {
     if (e.target === changePwdModal) closeChangePasswordModal();
   });
 
-  // Nova pasta
-  document.getElementById("newFolderBtn").onclick = async () => {
-    const folderName = prompt("Nome da nova pasta:");
-    if (!folderName || !folderName.trim()) return;
-    const trimmed = folderName.trim();
-    
-    // Cria uma nota temporária com essa pasta
-    const { addNote } = await import("./notes.js");
-    await addNote();
-    // Após criar, a nota terá pasta "Geral" por padrão. Precisamos atualizá-la.
-    // Como a nota é criada assincronamente e pode não estar em allNotes ainda,
-    // usamos um pequeno delay ou observamos a mudança. Uma forma simples:
-    setTimeout(() => {
-      const lastNote = allNotes[allNotes.length - 1];
-      if (lastNote) {
-        updateNote(lastNote.id, { folder: trimmed, title: `📁 ${trimmed}`, content: "Pasta criada automaticamente" });
-      }
-    }, 100);
-    showToast(`Pasta "${trimmed}" criada.`, "success");
-  };
-
   // Carregar dados do Firebase
   subscribeLinks();
   subscribeNotes();
@@ -189,3 +168,7 @@ window.removerDuplicatas = async () => {
   }
   alert(`Limpeza concluída! ${removidos} links duplicados removidos.`);
 };
+
+// No final do main.js, após initDashboard ou onde for adequado
+window.getAllLinks = () => allLinks;
+window.getAllNotes = () => allNotes;

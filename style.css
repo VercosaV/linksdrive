@@ -35,8 +35,8 @@ body {
 
 /* HEADER */
 .hdr {
-  background: rgba(0,0,0,.92); backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 300;
+  background: rgba(255,255,255,.92);
+  border-bottom: 1px solid var(--border);
 }
 .hdr-inner { max-width: 1500px; margin: 0 auto; padding: .9rem 1.4rem 0; }
 .hdr-top {
