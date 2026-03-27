@@ -1,11 +1,22 @@
 :root {
-  --bg: #000000; --bg2: #050505; --surface: #0a0f1a; --surface2: #0f1825;
-  --border: #1a2640; --border2: #202f48;
-  --tx: #e8edf5; --tx2: #8496b0; --tx3: #4d6080;
-  --accent: #3b82f6; --accent2: #2563eb; --accent-glow: rgba(59,130,246,.18);
-  --danger: #ef4444; --success: #22c55e;
-  --r: 10px; --r2: 14px;
-  --shadow: 0 4px 24px rgba(0,0,0,.4); --shadow2: 0 8px 40px rgba(0,0,0,.55);
+  --bg: #f8fafc;          /* fundo geral claro */
+  --bg2: #ffffff;         /* fundo secundário branco */
+  --surface: #ffffff;     /* cartões, inputs */
+  --surface2: #f1f5f9;    /* elementos hover */
+  --border: #e2e8f0;      /* bordas suaves */
+  --border2: #cbd5e1;
+  --tx: #0f172a;          /* texto principal escuro */
+  --tx2: #334155;         /* texto secundário */
+  --tx3: #64748b;         /* texto terciário */
+  --accent: #3b82f6;
+  --accent2: #2563eb;
+  --accent-glow: rgba(59,130,246,.12);
+  --danger: #ef4444;
+  --success: #22c55e;
+  --r: 10px;
+  --r2: 14px;
+  --shadow: 0 4px 12px rgba(0,0,0,.05);
+  --shadow2: 0 8px 24px rgba(0,0,0,.08);
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; overflow-x: hidden; }
