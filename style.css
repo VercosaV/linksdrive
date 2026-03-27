@@ -1,13 +1,13 @@
 :root {
-  --bg: #f8fafc;          /* fundo geral claro */
-  --bg2: #ffffff;         /* fundo secundário branco */
-  --surface: #ffffff;     /* cartões, inputs */
-  --surface2: #f1f5f9;    /* elementos hover */
-  --border: #e2e8f0;      /* bordas suaves */
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --surface: #ffffff;
+  --surface2: #f1f5f9;
+  --border: #e2e8f0;
   --border2: #cbd5e1;
-  --tx: #0f172a;          /* texto principal escuro */
-  --tx2: #334155;         /* texto secundário */
-  --tx3: #64748b;         /* texto terciário */
+  --tx: #0f172a;
+  --tx2: #334155;
+  --tx3: #64748b;
   --accent: #3b82f6;
   --accent2: #2563eb;
   --accent-glow: rgba(59,130,246,.12);

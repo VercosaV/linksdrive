@@ -4,6 +4,7 @@ import { showToast, escapeHtml } from "./ui.js";
 import { allLinks, activeCategory, searchTerm, sortValue, setAllLinks, renderAll } from "./state.js";
 import { query, orderBy, onSnapshot } from "firebase/firestore";
 
+
 // Inscrição nos links do Firestore
 export function subscribeLinks() {
   const q = query(linksRef, orderBy("category"));
