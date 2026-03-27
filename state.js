@@ -1,26 +1,22 @@
-// Dados principais
-export let allLinks = [];
-export let allNotes = [];
+// state.js
+export const state = {
+  allLinks: [],
+  allNotes: [],
+  activeCategory: "Todos",
+  searchTerm: "",
+  sortValue: "manual",
+  isNotesView: false,
+  activeFolder: "Todas"
+};
 
-// Estado da UI
-export let activeCategory = "Todos";
-export let searchTerm = "";
-export let sortValue = "manual";
-export let isNotesView = false;
-export let activeFolder = "Todas";
-
-// Funções para atualizar os dados (chamadas pelos listeners)
 export function setAllLinks(links) {
-  allLinks = links;
+  state.allLinks = links;
 }
-
 export function setAllNotes(notes) {
-  allNotes = notes;
+  state.allNotes = notes;
 }
 
-// Re-renderização global – será sobrescrita pelo main.js
 export let renderAll = () => {};
-
 export function setRenderAll(fn) {
   renderAll = fn;
 }
