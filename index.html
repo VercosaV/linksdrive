@@ -1,411 +1,179 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>MyDashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-<style>
-:root {
-  --bg: #000000; --bg2: #050505; --surface: #0a0f1a; --surface2: #0f1825;
-  --border: #1a2640; --border2: #202f48;
-  --tx: #e8edf5; --tx2: #8496b0; --tx3: #4d6080;
-  --accent: #3b82f6; --accent2: #2563eb; --accent-glow: rgba(59,130,246,.18);
-  --danger: #ef4444; --success: #22c55e;
-  --r: 10px; --r2: 14px;
-  --shadow: 0 4px 24px rgba(0,0,0,.4); --shadow2: 0 8px 40px rgba(0,0,0,.55);
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; overflow-x: hidden; }
-body {
-  background: var(--bg); color: var(--tx);
-  font-family: 'Space Grotesk', system-ui, sans-serif; min-height: 100vh;
-  background-image:
-    linear-gradient(rgba(59,130,246,.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59,130,246,.025) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--tx3); }
-
-/* HEADER */
-.hdr {
-  background: rgba(0,0,0,.92); backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 300;
-}
-.hdr-inner { max-width: 1500px; margin: 0 auto; padding: .9rem 1.4rem 0; }
-.hdr-top {
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: .75rem; margin-bottom: .9rem;
-}
-.logo {
-  display: flex; align-items: center; gap: 10px;
-  font-weight: 700; font-size: 1.1rem; letter-spacing: -.4px; color: var(--tx);
-}
-.logo-mark {
-  width: 32px; height: 32px; background: var(--accent); border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: .9rem; box-shadow: 0 0 14px rgba(59,130,246,.45);
-}
-.offline-badge {
-  display: none; align-items: center; gap: 5px; font-size: .72rem;
-  color: var(--tx3); background: var(--surface2); border: 1px solid var(--border);
-  padding: 3px 9px; border-radius: 20px;
-}
-.offline-badge.visible { display: flex; }
-.offline-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--tx3); }
-.offline-badge.online .offline-dot { background: var(--success); }
-.hdr-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-.search-wrap { position: relative; display: flex; align-items: center; }
-.search-wrap i { position: absolute; left: 11px; color: var(--tx3); font-size: .78rem; pointer-events: none; }
-.search-wrap input {
-  background: var(--surface); border: 1px solid var(--border); color: var(--tx);
-  padding: 7px 10px 7px 32px; border-radius: 8px; outline: none;
-  font-family: 'Space Grotesk', sans-serif; font-size: .83rem; width: 190px; transition: .2s;
-}
-.search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-@media(max-width:500px){ .search-wrap input { width: 130px; } }
-
-.sort-wrap { display: flex; align-items: center; gap: 6px; }
-.sort-wrap label { font-size: .75rem; color: var(--tx3); }
-.sort-select {
-  background: var(--surface); border: 1px solid var(--border); color: var(--tx2);
-  padding: 6px 10px; border-radius: 8px; font-family: 'Space Grotesk', sans-serif;
-  font-size: .8rem; outline: none; cursor: pointer;
-}
-.sort-select:focus { border-color: var(--accent); }
-
-.btn {
-  border: none; padding: 7px 14px; border-radius: 8px; cursor: pointer;
-  font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: .82rem;
-  display: flex; align-items: center; gap: 6px; transition: .18s; white-space: nowrap;
-}
-.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 0 10px rgba(59,130,246,.3); }
-.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
-.btn-ghost { background: var(--surface2); color: var(--tx2); border: 1px solid var(--border); }
-.btn-ghost:hover { background: var(--surface); color: var(--tx); transform: translateY(-1px); }
-@media(max-width:450px){ .btn span { display: none; } }
-
-.cat-scroll { overflow-x: auto; padding-bottom: 8px; }
-.cat-tabs { display: flex; gap: 4px; }
-.cat-tab {
-  background: transparent; border: 1px solid transparent; color: var(--tx3);
-  padding: 5px 14px; border-radius: 20px; font-family: 'Space Grotesk', sans-serif;
-  font-size: .82rem; font-weight: 500; cursor: pointer; transition: .18s; white-space: nowrap;
-}
-.cat-tab:hover { color: var(--tx); background: rgba(255,255,255,.04); }
-.cat-tab.active { background: var(--accent-glow); color: var(--accent); border-color: rgba(59,130,246,.35); }
-.cat-count {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 18px; height: 18px; border-radius: 50%; background: rgba(59,130,246,.13);
-  color: var(--accent); font-size: .65rem; font-weight: 700; margin-left: 4px;
-}
-.hide { display: none !important; }
-
-.main { max-width: 1500px; margin: 0 auto; padding: 1.2rem 1.4rem; }
-
-.skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; }
-.skeleton-card {
-  height: 30px; border-radius: 8px; background: var(--surface);
-  border: 1px solid var(--border); overflow: hidden; position: relative;
-}
-.skeleton-card::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.04) 50%, transparent 100%);
-  animation: shimmer 1.4s infinite;
-}
-@keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-
-.links-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; }
-@media(max-width:480px){ .links-grid { grid-template-columns: 1fr 1fr; gap: 5px; } }
-
-.link-card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-  padding: 6px 8px; display: flex; align-items: center; gap: 7px;
-  cursor: default; transition: all .18s cubic-bezier(.4,0,.2,1);
-  position: relative; overflow: hidden; user-select: none;
-}
-.link-card::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
-  background: var(--accent); transform: scaleY(0); transition: transform .18s;
-  border-radius: 2px 0 0 2px;
-}
-.link-card:hover::before { transform: scaleY(1); }
-.link-card:hover {
-  background: var(--surface2); border-color: rgba(59,130,246,.28);
-  transform: translateY(-1px); box-shadow: var(--shadow);
-}
-.link-card.dragging { opacity: .35; transform: scale(.97); }
-.link-card.drag-over { outline: 2px dashed var(--accent); outline-offset: -2px; }
-.link-drag {
-  color: var(--tx3); font-size: .65rem; cursor: grab; flex-shrink: 0;
-  opacity: 0; transition: opacity .15s; padding: 2px;
-}
-.link-card:hover .link-drag { opacity: 1; }
-.link-drag:active { cursor: grabbing; }
-.link-card img {
-  width: 16px; height: 16px; border-radius: 3px; object-fit: cover;
-  background: #fff; flex-shrink: 0;
-}
-.link-title {
-  color: var(--tx); font-size: .78rem; font-weight: 500;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
-  cursor: pointer;
-}
-.link-cat-badge { font-size: .58rem; color: var(--tx3); background: var(--bg2); border-radius: 3px; padding: 1px 4px; white-space: nowrap; flex-shrink: 0; }
-.link-del {
-  background: transparent; border: none; color: var(--tx3); cursor: pointer;
-  width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center;
-  justify-content: center; opacity: 0; transition: .15s; flex-shrink: 0; font-size: .65rem;
-}
-.link-del:hover { background: rgba(239,68,68,.14); color: var(--danger); }
-.link-card:hover .link-del { opacity: 1; }
-@media(max-width:640px){ .link-del { opacity: 1; } }
-
-.empty-state {
-  text-align: center; color: var(--tx3); padding: 3rem;
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-}
-.empty-state i { font-size: 2.2rem; opacity: .35; }
-.empty-state p { font-size: .9rem; }
-
-.notes-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-.folder-strip { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
-.ftab {
-  display: inline-flex; align-items: center; gap: 5px; padding: 5px 13px;
-  border-radius: 20px; border: 1px solid var(--border); background: rgba(255,255,255,.03);
-  color: var(--tx3); font-size: .8rem; font-weight: 500; font-family: 'Space Grotesk', sans-serif;
-  cursor: pointer; transition: .18s;
-}
-.ftab:hover { border-color: var(--accent); color: var(--accent); }
-.ftab.on { background: var(--accent-glow); border-color: rgba(59,130,246,.4); color: var(--accent); }
-.ftab-count { font-size: .64rem; opacity: .6; }
-.ftab-del {
-  margin-left: 2px; font-size: .65rem; color: inherit; background: none; border: none;
-  cursor: pointer; opacity: 0; transition: .15s; padding: 0 2px; line-height: 1;
-}
-.ftab:hover .ftab-del { opacity: .7; }
-.ftab-del:hover { opacity: 1 !important; color: var(--danger) !important; }
-.btn-new-folder {
-  display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px;
-  border-radius: 20px; border: 1px dashed var(--border2); background: transparent;
-  color: var(--tx3); font-size: .78rem; font-family: 'Space Grotesk', sans-serif;
-  cursor: pointer; transition: .18s;
-}
-.btn-new-folder:hover { border-color: var(--accent); color: var(--accent); }
-
-.notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; align-items: start; }
-
-.note-card {
-  border-radius: var(--r2); min-height: 220px; min-width: 200px;
-  display: flex; flex-direction: column;
-  box-shadow: 0 2px 12px rgba(0,0,0,.18);
-  transition: transform .2s, box-shadow .2s;
-  position: relative; resize: both; overflow: hidden;
-}
-.note-card:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(0,0,0,.28); }
-.note-card.dragging { opacity: .4; transform: scale(.96) rotate(1.5deg); }
-.note-card.drag-over { outline: 2px dashed rgba(0,0,0,.3); outline-offset: -3px; }
-
-.nc1{background:#FFD600;color:#3D2E00}
-.nc2{background:#1E90FF;color:#ffffff}
-.nc3{background:#00C853;color:#ffffff}
-.nc4{background:#FF6B00;color:#ffffff}
-.nc5{background:#9C27B0;color:#ffffff}
-.nc6{background:#F50057;color:#ffffff}
-
-.note-topbar { display: flex; justify-content: space-between; align-items: center; padding: 9px 11px 5px; flex-shrink: 0; }
-.note-tbl { display: flex; align-items: center; gap: 5px; }
-.note-tbr { display: flex; align-items: center; gap: 3px; }
-.note-drag { cursor: grab; color: rgba(0,0,0,.22); font-size: .78rem; padding: 2px 4px; border-radius: 4px; transition: .15s; }
-.note-drag:hover { color: rgba(0,0,0,.5); background: rgba(0,0,0,.07); }
-.note-drag:active { cursor: grabbing; }
-.cdot { width: 11px; height: 11px; border-radius: 50%; cursor: pointer; border: 1.5px solid rgba(0,0,0,.12); transition: transform .12s; flex-shrink: 0; }
-.cdot:hover { transform: scale(1.45); }
-.note-btn { background: transparent; border: none; color: rgba(0,0,0,.28); cursor: pointer; width: 26px; height: 26px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: .75rem; transition: .15s; }
-.note-btn:hover { color: rgba(0,0,0,.65); background: rgba(0,0,0,.09); }
-.note-btn.danger:hover { color: #ef4444; background: rgba(239,68,68,.12); }
-
-.note-title-wrap { padding: 2px 12px 4px; flex-shrink: 0; }
-.note-title-input {
-  width: 100%; background: transparent; border: none; border-bottom: 1px solid transparent;
-  color: inherit; font-family: 'Space Grotesk', sans-serif; font-size: .85rem; font-weight: 700;
-  outline: none; padding: 2px 0; transition: border-color .18s; letter-spacing: -.2px;
-}
-.note-title-input::placeholder { color: rgba(0,0,0,.22); font-weight: 500; }
-.note-title-input:focus { border-bottom-color: rgba(0,0,0,.22); }
-
-.note-body {
-  flex: 1; min-height: 0; background: transparent; border: none; color: inherit;
-  font-family: 'Space Grotesk', sans-serif; font-size: .87rem; line-height: 1.58;
-  resize: none; outline: none; padding: 0 12px 6px; overflow-y: auto;
-}
-.note-body::placeholder { color: rgba(0,0,0,.22); }
-
-.note-footer { display: flex; justify-content: space-between; align-items: center; padding: 5px 11px 9px; flex-shrink: 0; gap: 6px; }
-.note-ts { font-size: .6rem; color: rgba(0,0,0,.28); white-space: nowrap; flex-shrink: 0; }
-.note-folder-sel { font-size: .67rem; background: rgba(0,0,0,.08); border: none; border-radius: 5px; color: rgba(0,0,0,.38); padding: 2px 5px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; max-width: 100px; flex-shrink: 0; }
-.note-folder-sel:focus { outline: none; }
-.note-chars { font-size: .6rem; color: rgba(0,0,0,.26); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
-
-.expand-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(8px);
-  display: none; justify-content: center; align-items: center; z-index: 99998; padding: 20px;
-}
-.expand-overlay.open { display: flex; }
-.expand-box {
-  width: 100%; max-width: 780px; height: min(82vh, 700px); border-radius: 16px;
-  display: flex; flex-direction: column; box-shadow: 0 40px 80px rgba(0,0,0,.65);
-  animation: slideUp .22s ease-out; overflow: hidden;
-}
-.expand-topbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; flex-shrink: 0; border-bottom: 1px solid rgba(0,0,0,.1); gap: 10px; }
-.expand-title { flex: 1; background: transparent; border: none; color: inherit; font-family: 'Space Grotesk', sans-serif; font-size: 1rem; font-weight: 700; outline: none; }
-.expand-title::placeholder { color: rgba(0,0,0,.28); }
-.expand-body { flex: 1; background: transparent; border: none; color: inherit; font-family: 'Space Grotesk', sans-serif; font-size: .97rem; line-height: 1.68; resize: none; outline: none; padding: 16px 22px; overflow-y: auto; }
-.expand-body::placeholder { color: rgba(0,0,0,.28); }
-.expand-footer { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px 12px; flex-shrink: 0; border-top: 1px solid rgba(0,0,0,.08); }
-
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 99999; padding: 16px; }
-.modal-box { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--r2); padding: 22px; width: 100%; max-width: min(400px, calc(100vw - 32px)); box-shadow: var(--shadow2); animation: slideUp .22s ease-out; }
-.modal-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-.modal-hdr h3 { font-size: .95rem; font-weight: 700; color: var(--tx); }
-.modal-close { background: transparent; border: none; color: var(--tx3); font-size: 1rem; cursor: pointer; transition: .15s; }
-.modal-close:hover { color: var(--tx); }
-.form-row { margin-bottom: 13px; }
-.form-row label { display: block; font-size: .75rem; font-weight: 600; color: var(--tx3); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
-.form-row input, .form-row select { width: 100%; padding: 9px 11px; background: var(--bg2); border: 1px solid var(--border); color: var(--tx); border-radius: 8px; outline: none; font-family: 'Space Grotesk', sans-serif; font-size: max(.86rem, 16px); transition: .18s; }
-.form-row input:focus, .form-row select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
-.btn-cancel { background: transparent; border: none; color: var(--tx3); font-family: 'Space Grotesk', sans-serif; font-size: .85rem; font-weight: 500; cursor: pointer; padding: 8px 12px; border-radius: 7px; transition: .15s; }
-.btn-cancel:hover { background: var(--surface2); color: var(--tx); }
-
-.toast-wrap { position: fixed; bottom: 18px; right: 18px; z-index: 99999; display: flex; flex-direction: column; gap: 8px; max-width: calc(100vw - 36px); }
-.toast { background: var(--surface2); border: 1px solid var(--border2); color: var(--tx); padding: 9px 16px; border-radius: 9px; border-left: 4px solid var(--accent); box-shadow: var(--shadow); font-size: .82rem; font-weight: 500; animation: slideInR .24s ease-out forwards; display: flex; align-items: center; gap: 8px; }
-.toast.err { border-left-color: var(--danger); }
-.toast.ok  { border-left-color: var(--success); }
-
-@keyframes slideUp  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
-@keyframes slideInR { from{opacity:0;transform:translateX(110%)} to{opacity:1;transform:translateX(0)} }
-@keyframes fadeOut  { to{opacity:0;transform:translateY(8px)} }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyDashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="hdr">
-  <div class="hdr-inner">
-    <div class="hdr-top">
-      <div class="logo">
-        <div class="logo-mark"><i class="fa-solid fa-layer-group"></i></div>
-        <span>MyDashboard</span>
-        <div class="offline-badge" id="offlineBadge">
-          <span class="offline-dot"></span>
-          <span id="offlineLabel">Cache</span>
+<!-- TELA DE LOGIN -->
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-box">
+    <div class="login-icon"><i class="fa-solid fa-lock"></i></div>
+    <h2>Acesso Restrito</h2>
+    <p>Digite a senha para acessar o dashboard</p>
+    <input type="password" id="loginPassword" placeholder="Senha" autocomplete="off">
+    <button id="loginBtn" class="btn-login">Entrar</button>
+    <div id="loginError" class="login-error"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD (conteúdo principal) -->
+<div id="dashboard" style="display: none;">
+  <div class="hdr">
+    <div class="hdr-inner">
+      <div class="hdr-top">
+        <div class="logo">
+          <div class="logo-mark"><i class="fa-solid fa-layer-group"></i></div>
+          <span>MyDashboard</span>
+          <div class="offline-badge" id="offlineBadge">
+            <span class="offline-dot"></span>
+            <span id="offlineLabel">Cache</span>
+          </div>
+        </div>
+        <div class="hdr-actions">
+          <div class="search-wrap" id="searchWrap">
+            <i class="fa-solid fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Buscar link…">
+          </div>
+          <div class="sort-wrap" id="sortWrap">
+            <label><i class="fa-solid fa-arrow-up-wide-short"></i></label>
+            <select class="sort-select" id="sortSelect">
+              <option value="cat_asc">Categoria A→Z</option>
+              <option value="cat_desc">Categoria Z→A</option>
+              <option value="title_asc">Título A→Z</option>
+              <option value="title_desc">Título Z→A</option>
+              <option value="date_desc">Mais recentes</option>
+              <option value="date_asc">Mais antigos</option>
+              <option value="manual">Personalizado ↕</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="addLinkBtn"><i class="fa-solid fa-plus"></i><span>Link</span></button>
+          <button class="btn btn-primary hide" id="addNoteBtn"><i class="fa-solid fa-plus"></i><span>Nota</span></button>
+          <button class="btn btn-ghost" id="toggleBtn"><i class="fa-solid fa-pen-to-square"></i><span>Notas</span></button>
+          <button class="btn btn-ghost" id="changePasswordBtn"><i class="fa-solid fa-key"></i><span>Alterar Senha</span></button>
+          <button class="btn btn-ghost" id="logoutBtn"><i class="fa-solid fa-sign-out-alt"></i><span>Sair</span></button>
         </div>
       </div>
-      <div class="hdr-actions">
-        <div class="search-wrap" id="searchWrap">
-          <i class="fa-solid fa-search"></i>
-          <input type="text" id="searchInput" placeholder="Buscar link…"/>
+      <div class="cat-scroll" id="catScroll">
+        <nav id="catNav" class="cat-tabs"></nav>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- VIEW LINKS -->
+    <div id="linksView">
+      <div id="linksSkeleton" class="skeleton-grid">
+        <div class="skeleton-card"></div><div class="skeleton-card"></div>
+        <div class="skeleton-card"></div><div class="skeleton-card"></div>
+        <div class="skeleton-card"></div><div class="skeleton-card"></div>
+      </div>
+      <div id="linksGrid" class="links-grid" style="display:none"></div>
+      <div id="linksEmpty" class="empty-state" style="display:none">
+        <i class="fa-solid fa-folder-open"></i><p>Nenhum link encontrado.</p>
+      </div>
+    </div>
+
+    <!-- VIEW NOTAS -->
+    <div id="notesView" style="display:none">
+      <div class="notes-toolbar">
+        <div class="folder-strip" id="folderStrip"></div>
+        <button class="btn-new-folder" id="newFolderBtn">
+          <i class="fa-solid fa-folder-plus"></i> Nova pasta
+        </button>
+      </div>
+      <div id="notesGrid" class="notes-grid"></div>
+      <div id="notesEmpty" class="empty-state" style="display:none">
+        <i class="fa-solid fa-note-sticky"></i><p>Nenhuma nota. Clique em "+ Nota" para criar.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADICIONAR LINK -->
+  <div id="linkModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-hdr">
+        <h3><i class="fa-solid fa-link" style="color:var(--accent);margin-right:7px"></i>Adicionar Link</h3>
+        <button class="modal-close" id="modalClose"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="form-row"><label>URL</label><input id="urlInput" type="url" placeholder="https://…"></div>
+      <div class="form-row"><label>Nome</label><input id="titleInput" type="text" placeholder="Ex: GitHub"></div>
+      <div class="form-row">
+        <label>Categoria</label>
+        <select id="catSelect"></select>
+        <input id="newCatInput" type="text" placeholder="Nome da nova categoria…" style="display:none;margin-top:8px">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="modalCancel">Cancelar</button>
+        <button class="btn btn-primary" id="saveLink">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EXPANDIR NOTA -->
+  <div id="expandOverlay" class="expand-overlay">
+    <div class="expand-box" id="expandBox">
+      <div class="expand-topbar">
+        <div style="display:flex;align-items:center;gap:7px;flex:1;min-width:0">
+          <span id="expDots" style="display:flex;gap:4px;flex-shrink:0"></span>
+          <input id="expTitle" class="expand-title" type="text" placeholder="Título da nota…">
         </div>
-        <div class="sort-wrap" id="sortWrap">
-          <label><i class="fa-solid fa-arrow-up-wide-short"></i></label>
-          <select class="sort-select" id="sortSelect">
-            <option value="cat_asc">Categoria A→Z</option>
-            <option value="cat_desc">Categoria Z→A</option>
-            <option value="title_asc">Título A→Z</option>
-            <option value="title_desc">Título Z→A</option>
-            <option value="date_desc">Mais recentes</option>
-            <option value="date_asc">Mais antigos</option>
-            <option value="manual">Personalizado ↕</option>
-          </select>
+        <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
+          <select id="expFolder" class="note-folder-sel" style="max-width:130px"></select>
+          <button class="note-btn" id="expandClose"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <button class="btn btn-primary" id="addLinkBtn"><i class="fa-solid fa-plus"></i><span>Link</span></button>
-        <button class="btn btn-primary hide" id="addNoteBtn"><i class="fa-solid fa-plus"></i><span>Nota</span></button>
-        <button class="btn btn-ghost" id="toggleBtn"><i class="fa-solid fa-pen-to-square"></i><span>Notas</span></button>
+      </div>
+      <textarea id="expBody" class="expand-body" placeholder="Escreva à vontade…"></textarea>
+      <div class="expand-footer">
+        <span class="note-ts" id="expTs"></span>
+        <span class="note-chars" id="expChars">0 car.</span>
       </div>
     </div>
-    <div class="cat-scroll" id="catScroll">
-      <nav id="catNav" class="cat-tabs"></nav>
-    </div>
-  </div>
-</div>
-
-<div class="main">
-  <div id="linksView">
-    <div id="linksSkeleton" class="skeleton-grid">
-      <div class="skeleton-card"></div><div class="skeleton-card"></div>
-      <div class="skeleton-card"></div><div class="skeleton-card"></div>
-      <div class="skeleton-card"></div><div class="skeleton-card"></div>
-    </div>
-    <div id="linksGrid" class="links-grid" style="display:none"></div>
-    <div id="linksEmpty" class="empty-state" style="display:none">
-      <i class="fa-solid fa-folder-open"></i><p>Nenhum link encontrado.</p>
-    </div>
   </div>
 
-  <div id="notesView" style="display:none">
-    <div class="notes-toolbar">
-      <div class="folder-strip" id="folderStrip"></div>
-      <button class="btn-new-folder" id="newFolderBtn">
-        <i class="fa-solid fa-folder-plus"></i> Nova pasta
-      </button>
-    </div>
-    <div id="notesGrid" class="notes-grid"></div>
-    <div id="notesEmpty" class="empty-state" style="display:none">
-      <i class="fa-solid fa-note-sticky"></i><p>Nenhuma nota. Clique em "+ Nota" para criar.</p>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Adicionar Link -->
-<div id="linkModal" class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-hdr">
-      <h3><i class="fa-solid fa-link" style="color:var(--accent);margin-right:7px"></i>Adicionar Link</h3>
-      <button class="modal-close" id="modalClose"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="form-row"><label>URL</label><input id="urlInput" type="url" placeholder="https://…"/></div>
-    <div class="form-row"><label>Nome</label><input id="titleInput" type="text" placeholder="Ex: GitHub"/></div>
-    <div class="form-row">
-      <label>Categoria</label>
-      <select id="catSelect"></select>
-      <input id="newCatInput" type="text" placeholder="Nome da nova categoria…" style="display:none;margin-top:8px"/>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" id="modalCancel">Cancelar</button>
-      <button class="btn btn-primary" id="saveLink">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Expandir Nota -->
-<div id="expandOverlay" class="expand-overlay">
-  <div class="expand-box" id="expandBox">
-    <div class="expand-topbar">
-      <div style="display:flex;align-items:center;gap:7px;flex:1;min-width:0">
-        <span id="expDots" style="display:flex;gap:4px;flex-shrink:0"></span>
-        <input id="expTitle" class="expand-title" type="text" placeholder="Título da nota…"/>
+  <!-- MODAL: ALTERAR SENHA -->
+  <div id="changePasswordModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-hdr">
+        <h3><i class="fa-solid fa-key" style="color:var(--accent);margin-right:7px"></i>Alterar Senha</h3>
+        <button class="modal-close" id="changePasswordClose"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
-        <select id="expFolder" class="note-folder-sel" style="max-width:130px"></select>
-        <button class="note-btn" id="expandClose"><i class="fa-solid fa-xmark"></i></button>
+      <div class="form-row">
+        <label>Senha Atual</label>
+        <input type="password" id="currentPassword" placeholder="Digite sua senha atual">
+      </div>
+      <div class="form-row">
+        <label>Nova Senha</label>
+        <input type="password" id="newPassword" placeholder="Nova senha">
+      </div>
+      <div class="form-row">
+        <label>Confirmar Nova Senha</label>
+        <input type="password" id="confirmPassword" placeholder="Confirme a nova senha">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="changePasswordCancel">Cancelar</button>
+        <button class="btn btn-primary" id="saveNewPassword">Salvar</button>
       </div>
     </div>
-    <textarea id="expBody" class="expand-body" placeholder="Escreva à vontade…"></textarea>
-    <div class="expand-footer">
-      <span class="note-ts" id="expTs"></span>
-      <span class="note-chars" id="expChars">0 car.</span>
-    </div>
   </div>
+
+  <div id="toastWrap" class="toast-wrap"></div>
 </div>
 
-<div id="toastWrap" class="toast-wrap"></div>
-
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js",
+      "firebase/firestore": "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"
+    }
+  }
+</script>
 <script type="module" src="script.js"></script>
 </body>
 </html>

@@ -1,811 +1,742 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import {
-  getFirestore, enableIndexedDbPersistence,
-  collection, addDoc, deleteDoc, doc,
-  query, orderBy, onSnapshot, getDocs,
-  serverTimestamp, updateDoc, writeBatch
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 
-/* ── Config ── */
-const fbApp = initializeApp({
-  apiKey:            "AIzaSyBc3ryOJEFBQlJIUpy835Anej0OulZqHEQ",
-  authDomain:        "linksdrive-4012c.firebaseapp.com",
-  projectId:         "linksdrive-4012c",
-  storageBucket:     "linksdrive-4012c.firebasestorage.app",
+// Configuração do Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyBc3ryOJEFBQlJIUpy835Anej0OulZqHEQ",
+  authDomain: "linksdrive-4012c.firebaseapp.com",
+  projectId: "linksdrive-4012c",
+  storageBucket: "linksdrive-4012c.firebasestorage.app",
   messagingSenderId: "91948654259",
-  appId:             "1:91948654259:web:2b596baed6d1ab78cc5ac6"
-});
-const db = getFirestore(fbApp);
+  appId: "1:91948654259:web:2b596baed6d1ab78cc5ac6",
+  measurementId: "G-V1EZDLJQ2K"
+};
 
-/*
-  enableIndexedDbPersistence:
-  Ativa o cache offline do Firestore no IndexedDB do browser.
-  Na próxima abertura os dados aparecem ANTES de ir à rede.
-  failed-precondition → múltiplas abas abertas (só 1 suporta cache).
-  unimplemented       → browser não suporta IndexedDB.
-*/
-enableIndexedDbPersistence(db).catch(err => {
-  if (err.code === 'failed-precondition')
-    console.warn('Cache offline: múltiplas abas abertas. Funciona apenas na aba principal.');
-  else if (err.code === 'unimplemented')
-    console.warn('Cache offline não suportado neste browser.');
-});
+// Inicialização
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const linksRef = collection(db, "links");
+const notesRef = collection(db, "notes");
 
-const linksRef   = collection(db, "links");
-const notesRef   = collection(db, "notes");
-const foldersRef = collection(db, "note_folders");
+// Estado global
+let allLinks = [];
+let allNotes = [];
+let isNotesView = false;
+let activeCategory = "Todos";
+let searchTerm = "";
+let sortValue = "manual";
+let activeFolder = "Todas";
+let currentEditNoteId = null;
 
-/* ─────────────────────────────────────────────
-   ESTADO
-   Maps para lookup O(1) — mais eficiente que arrays com find/filter.
-───────────────────────────────────────────── */
-const linksMap   = new Map(); // id → { id, title, url, category, order, timestamp }
-const notesMap   = new Map(); // id → { id, content, title, color, order, folder, ... }
-const foldersMap = new Map(); // id → { id, name }
-let notesOrder   = [];        // IDs na ordem do campo 'order' (notas)
-let linksOrder   = [];        // IDs na ordem do campo 'order' (links)
+// --- Gerenciamento de senha (localStorage) ---
+const PASSWORD_KEY = 'dashboard_password';
+const DEFAULT_PASSWORD = 'admin123';
 
-let isNotes       = false;
-let activeCat     = "Todos";
-let activeFolder  = "all";
-let currentSort   = "cat_asc";
-let expandNoteId  = null;
-let linksLoaded   = false;
-let dragSrcLinkId = null;
-
-/* Maps de DOM — referências vivas aos elementos criados, evitam recriar o DOM */
-const linkDomMap = new Map(); // id → .link-card element
-const noteDomMap = new Map(); // id → .note-card element
-
-/*
-  COLOR_MAP: cor de fundo de cada opção de nota (índice 1–6)
-  TEXT_MAP:  cor do texto correspondente para garantir contraste legível
-  O amarelo (#FFD600) usa texto escuro porque é claro demais para branco.
-*/
-const COLOR_MAP = { 1:'#FFD600',2:'#1E90FF',3:'#00C853',4:'#FF6B00',5:'#9C27B0',6:'#F50057' };
-const TEXT_MAP  = { 1:'#3D2E00',2:'#ffffff',3:'#ffffff',4:'#ffffff',5:'#ffffff',6:'#ffffff' };
-
-/* ─────────────────────────────────────────────
-   MONITOR DE CONEXÃO
-───────────────────────────────────────────── */
-const offlineBadge = document.getElementById('offlineBadge');
-const offlineLabel = document.getElementById('offlineLabel');
-function setConnectionBadge(online) {
-  offlineBadge.classList.add('visible');
-  offlineBadge.classList.toggle('online', online);
-  offlineLabel.textContent = online ? 'Online' : 'Offline — cache local';
-  if (online) setTimeout(() => offlineBadge.classList.remove('visible'), 3000);
-}
-window.addEventListener('online',  () => setConnectionBadge(true));
-window.addEventListener('offline', () => setConnectionBadge(false));
-if (!navigator.onLine) setConnectionBadge(false);
-
-/* ─────────────────────────────────────────────
-   UTILITÁRIOS
-───────────────────────────────────────────── */
-function toast(msg, type = '') {
-  const w = document.getElementById('toastWrap');
-  const t = document.createElement('div');
-  t.className = 'toast' + (type ? ' '+type : '');
-  const icon = type==='err' ? 'fa-circle-exclamation' : type==='ok' ? 'fa-check-circle' : 'fa-circle-info';
-  t.innerHTML = `<i class="fa-solid ${icon}"></i> ${msg}`;
-  w.appendChild(t);
-  setTimeout(() => { t.style.animation='fadeOut .28s forwards'; setTimeout(()=>t.remove(),280); }, 3000);
+// Inicializa a senha no localStorage se não existir
+if (!localStorage.getItem(PASSWORD_KEY)) {
+  localStorage.setItem(PASSWORD_KEY, DEFAULT_PASSWORD);
 }
 
-function fmtDate(ts) {
-  if (!ts) return 'Agora';
-  const d = new Date(ts.seconds * 1000);
-  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})
-       + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+function getStoredPassword() {
+  return localStorage.getItem(PASSWORD_KEY);
 }
 
-/*
-  debounce(fn, ms) — atrasa a execução de fn em ms milissegundos.
-  Se chamada de novo antes do prazo, reinicia o contador.
-  Usado para salvar no Firestore só após o usuário parar de digitar.
-*/
-function debounce(fn, ms) {
-  let t;
-  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+function checkPassword(inputPassword) {
+  return inputPassword === getStoredPassword();
 }
 
-function sortLinks(arr) {
-  const list = [...arr];
-  switch(currentSort) {
-    case 'cat_asc':   return list.sort((a,b)=>a.category.localeCompare(b.category));
-    case 'cat_desc':  return list.sort((a,b)=>b.category.localeCompare(a.category));
-    case 'title_asc': return list.sort((a,b)=>a.title.localeCompare(b.title));
-    case 'title_desc':return list.sort((a,b)=>b.title.localeCompare(a.title));
-    case 'date_desc': return list.sort((a,b)=>(b.timestamp?.seconds||0)-(a.timestamp?.seconds||0));
-    case 'date_asc':  return list.sort((a,b)=>(a.timestamp?.seconds||0)-(b.timestamp?.seconds||0));
-    default: return list;
+function updatePassword(newPassword) {
+  localStorage.setItem(PASSWORD_KEY, newPassword);
+  showToast("Senha alterada com sucesso!", "success");
+}
+
+// Helper: Toast
+function showToast(message, type = "success") {
+  const container = document.getElementById("toastWrap");
+  if (!container) return;
+  const toast = document.createElement("div");
+  toast.className = `toast ${type === "error" ? "err" : "ok"}`;
+  const icon = type === "error" ? "fa-circle-exclamation" : "fa-check-circle";
+  toast.innerHTML = `<i class="fa-solid ${icon}"></i> ${message}`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.animation = "fadeOut 0.3s ease-out forwards";
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// --- LINKS ---
+function subscribeLinks(callback) {
+  const q = query(linksRef, orderBy("category"));
+  return onSnapshot(q, (snapshot) => {
+    allLinks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    callback(allLinks);
+  }, (error) => {
+    console.error("Erro no Firebase:", error);
+    showToast("Erro ao conectar com o banco de dados.", "error");
+  });
+}
+
+async function addLink(linkData) {
+  try {
+    await addDoc(linksRef, { ...linkData, timestamp: serverTimestamp() });
+    showToast("Link salvo com sucesso!");
+  } catch (error) {
+    console.error("Erro ao adicionar link:", error);
+    showToast("Erro ao salvar link.", "error");
+    throw error;
   }
 }
 
-/* ══════════════════════════════════════════
-   LINKS
-══════════════════════════════════════════ */
+async function deleteLink(linkId) {
+  try {
+    await deleteDoc(doc(db, "links", linkId));
+    showToast("Link excluído com sucesso!");
+  } catch (error) {
+    console.error("Erro ao excluir link:", error);
+    showToast("Erro ao excluir o link.", "error");
+  }
+}
 
-/*
-  startLinks — 2 passos:
-  1. getDocs() sem orderBy busca TODOS os docs (mesmo sem campo 'order').
-     O orderBy exclui silenciosamente docs sem o campo — esse era o bug original.
-  2. Se algum doc não tem 'order', grava em todos via writeBatch (transação atômica).
-  3. Só então liga o onSnapshot com orderBy — agora todos têm o campo.
-*/
-async function startLinks() {
-  const allSnap = await getDocs(linksRef);
-  const allDocs = allSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+// --- NOTAS ---
+function subscribeNotes(callback) {
+  const q = query(notesRef, orderBy("order", "asc"));
+  return onSnapshot(q, (snapshot) => {
+    allNotes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    callback(allNotes);
+  }, (error) => {
+    console.error("Erro ao carregar notas:", error);
+    showToast("Erro ao carregar notas.", "error");
+  });
+}
 
-  const needsMigration = allDocs.some(l => l.order === undefined);
-  if (needsMigration) {
-    const sorted = [...allDocs].sort((a,b) =>
-      (a.category||'').localeCompare(b.category||'')
-    );
-    const batch = writeBatch(db);
-    sorted.forEach((l, i) => {
-      if (l.order === undefined)
-        batch.update(doc(db,'links',l.id), { order: i });
+async function addNote() {
+  try {
+    const color = Math.floor(Math.random() * 6) + 1;
+    const order = allNotes.length;
+    await addDoc(notesRef, {
+      content: "",
+      color: color,
+      order: order,
+      timestamp: serverTimestamp()
     });
-    await batch.commit();
+  } catch (error) {
+    console.error("Erro ao criar nota:", error);
+    showToast("Erro ao criar nota.", "error");
   }
-
-  onSnapshot(
-    query(linksRef, orderBy("order", "asc")),
-    snap => {
-      /*
-        docChanges() retorna apenas os documentos que mudaram ('added', 'modified', 'removed').
-        Isso evita reprocessar todos os 200 docs quando só 1 mudou.
-      */
-      snap.docChanges().forEach(change => {
-        if (change.type === 'removed') linksMap.delete(change.doc.id);
-        else linksMap.set(change.doc.id, { id: change.doc.id, ...change.doc.data() });
-      });
-      linksOrder = [...linksMap.values()]
-        .sort((a,b) => (a.order ?? 0) - (b.order ?? 0))
-        .map(l => l.id);
-      linksLoaded = true;
-      reconcileLinks();
-      reconcileCats();
-    },
-    () => toast("Erro Firebase — verifique a conexão.", "err")
-  );
 }
 
-/*
-  reconcileLinks — diff entre estado desejado e DOM atual.
-  Em vez de innerHTML = '', faz patch cirúrgico:
-  - Remove do DOM apenas os cards que saíram da lista filtrada
-  - Cria cards novos apenas para IDs que não existem no DOM
-  - Patcha cards existentes (só toca o que mudou)
-  - Reordena via appendChild (move sem recriar o elemento)
-*/
-function reconcileLinks() {
-  if (!linksLoaded) return;
-  const skeleton = document.getElementById('linksSkeleton');
-  const grid     = document.getElementById('linksGrid');
-  const empty    = document.getElementById('linksEmpty');
-  const q        = document.getElementById('searchInput').value.toLowerCase();
+async function deleteNote(noteId) {
+  try {
+    await deleteDoc(doc(db, "notes", noteId));
+    showToast("Nota excluída");
+  } catch (error) {
+    console.error("Erro ao excluir nota:", error);
+    showToast("Erro ao excluir nota.", "error");
+  }
+}
 
-  if (skeleton.style.display !== 'none') {
-    skeleton.style.display = 'none';
-    grid.style.display     = 'grid';
+async function updateNote(noteId, updates) {
+  try {
+    await updateDoc(doc(db, "notes", noteId), updates);
+  } catch (error) {
+    console.error("Erro ao atualizar nota:", error);
+    showToast("Erro ao atualizar nota.", "error");
+  }
+}
+
+async function updateNoteOrder(sourceId, targetId) {
+  const sourceIndex = allNotes.findIndex(n => n.id === sourceId);
+  const targetIndex = allNotes.findIndex(n => n.id === targetId);
+  if (sourceIndex === -1 || targetIndex === -1) return;
+
+  const newNotes = [...allNotes];
+  const [removed] = newNotes.splice(sourceIndex, 1);
+  newNotes.splice(targetIndex, 0, removed);
+
+  const start = Math.min(sourceIndex, targetIndex);
+  const end = Math.max(sourceIndex, targetIndex);
+
+  try {
+    const updates = [];
+    for (let i = start; i <= end; i++) {
+      updates.push(updateDoc(doc(db, "notes", newNotes[i].id), { order: i }));
+    }
+    await Promise.all(updates);
+  } catch (error) {
+    console.error("Erro ao atualizar ordem das notas:", error);
+    showToast("Erro ao reordenar notas.", "error");
+  }
+}
+
+// --- UI: Links ---
+function renderCategories() {
+  const nav = document.getElementById("catNav");
+  const select = document.getElementById("catSelect");
+  if (!nav || !select) return;
+
+  const categories = ["Todos", ...new Set(allLinks.map(l => l.category))].sort();
+  nav.innerHTML = "";
+  select.innerHTML = "";
+
+  categories.forEach(cat => {
+    const btn = document.createElement("button");
+    btn.className = `cat-tab ${activeCategory === cat ? 'active' : ''}`;
+    btn.innerText = cat;
+    btn.onclick = () => {
+      activeCategory = cat;
+      renderAll();
+    };
+    nav.appendChild(btn);
+
+    if (cat !== "Todos") {
+      const opt = document.createElement("option");
+      opt.value = cat;
+      opt.innerText = cat;
+      select.appendChild(opt);
+    }
+  });
+  select.innerHTML += `<option value="new">+ Nova Categoria...</option>`;
+}
+
+function renderLinks() {
+  const grid = document.getElementById("linksGrid");
+  const empty = document.getElementById("linksEmpty");
+  const skeleton = document.getElementById("linksSkeleton");
+  if (!grid || !empty || !skeleton) return;
+
+  let filtered = allLinks.filter(link => {
+    const matchCat = activeCategory === "Todos" || link.category === activeCategory;
+    const matchSearch = link.title.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchCat && matchSearch;
+  });
+
+  // Ordenação
+  switch (sortValue) {
+    case "cat_asc": filtered.sort((a,b) => a.category.localeCompare(b.category)); break;
+    case "cat_desc": filtered.sort((a,b) => b.category.localeCompare(a.category)); break;
+    case "title_asc": filtered.sort((a,b) => a.title.localeCompare(b.title)); break;
+    case "title_desc": filtered.sort((a,b) => b.title.localeCompare(a.title)); break;
+    case "date_desc": filtered.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)); break;
+    case "date_asc": filtered.sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0)); break;
+    default: break;
   }
 
-  let filtered;
-  if (currentSort === 'manual') {
-    filtered = linksOrder
-      .map(id => linksMap.get(id))
-      .filter(l => l
-        && (activeCat === 'Todos' || l.category === activeCat)
-        && (l.title.toLowerCase().includes(q) || l.category.toLowerCase().includes(q))
-      );
-  } else {
-    filtered = [...linksMap.values()].filter(l =>
-      (activeCat === 'Todos' || l.category === activeCat)
-      && (l.title.toLowerCase().includes(q) || l.category.toLowerCase().includes(q))
-    );
-    filtered = sortLinks(filtered);
-  }
+  skeleton.style.display = "none";
+  grid.style.display = "grid";
+  grid.innerHTML = "";
 
-  if (!filtered.length) {
-    empty.style.display = 'flex'; grid.style.display = 'none';
-    linkDomMap.forEach((el,id) => { el.remove(); linkDomMap.delete(id); });
+  if (filtered.length === 0) {
+    empty.style.display = "flex";
+    grid.style.display = "none";
     return;
   }
-  empty.style.display = 'none'; grid.style.display = 'grid';
-
-  const visibleIds = new Set(filtered.map(l => l.id));
-  linkDomMap.forEach((el,id) => { if (!visibleIds.has(id)) { el.remove(); linkDomMap.delete(id); } });
+  empty.style.display = "none";
 
   filtered.forEach(link => {
-    let card = linkDomMap.get(link.id);
-    if (!card) { card = createLinkCard(link); linkDomMap.set(link.id, card); }
-    else patchLinkCard(card, link);
-    grid.appendChild(card); // move sem recriar se já existe
-  });
-}
-
-function createLinkCard(link) {
-  let dom = 'google.com';
-  try { dom = new URL(link.url).hostname; } catch {}
-  const card = document.createElement('div');
-  card.className = 'link-card';
-  card.draggable = true;
-  card.dataset.id = link.id;
-
-  /*
-    O clique abre o link em nova aba, exceto quando:
-    - clique no .link-del (excluir)
-    - clique no .link-drag (handle de arraste)
-  */
-  card.onclick = e => {
-    if (!e.target.closest('.link-del') && !e.target.closest('.link-drag'))
-      window.open(link.url, '_blank');
-  };
-
-  card.innerHTML = `
-    <span class="link-drag" title="Arrastar"><i class="fa-solid fa-grip-vertical"></i></span>
-    <img data-dom="${dom}" src="https://www.google.com/s2/favicons?domain=${dom}&sz=64"
-         onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
-    <span class="link-title">${link.title}</span>
-    <span class="link-cat-badge" style="${activeCat!=='Todos'?'display:none':''}">${link.category}</span>
-    <button class="link-del" title="Excluir"><i class="fa-solid fa-trash"></i></button>`;
-
-  /* Drag & Drop */
-  card.addEventListener('dragstart', e => {
-    dragSrcLinkId = link.id;
-    card.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-  });
-  card.addEventListener('dragover', e => {
-    e.preventDefault(); // necessário para aceitar o drop
-    card.classList.add('drag-over');
-  });
-  card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
-  card.addEventListener('drop', e => {
-    e.stopPropagation();
-    card.classList.remove('drag-over');
-    if (dragSrcLinkId && dragSrcLinkId !== link.id)
-      reorderLinks(dragSrcLinkId, link.id);
-  });
-  card.addEventListener('dragend', () => {
-    card.classList.remove('dragging');
-    document.querySelectorAll('.link-card.drag-over')
-      .forEach(el => el.classList.remove('drag-over'));
-  });
-
-  card.querySelector('.link-del').onclick = async e => {
-    e.stopPropagation();
-    if (confirm(`Excluir "${link.title}"?`)) {
-      // Remoção otimista: atualiza UI antes da confirmação do Firestore
-      linksMap.delete(link.id);
-      linksOrder = linksOrder.filter(id => id !== link.id);
-      card.remove(); linkDomMap.delete(link.id);
-      reconcileCats();
-      try { await deleteDoc(doc(db,'links',link.id)); toast('Link excluído!','ok'); }
-      catch { toast('Erro ao excluir.','err'); }
-    }
-  };
-  return card;
-}
-
-/*
-  reorderLinks — ao arrastar:
-  1. Atualiza linksOrder em memória imediatamente (otimista)
-  2. Muda sort para 'manual' e redesenha o DOM via appendChild
-  3. Persiste só o range afetado [min(si,ti)..max(si,ti)] no Firestore
-     — O(delta) em vez de O(n) para não escrever todos os docs
-*/
-async function reorderLinks(srcId, tgtId) {
-  const si = linksOrder.indexOf(srcId);
-  const ti = linksOrder.indexOf(tgtId);
-  if (si < 0 || ti < 0) return;
-
-  const arr = [...linksOrder];
-  const [rm] = arr.splice(si, 1);
-  arr.splice(ti, 0, rm);
-  linksOrder = arr;
-
-  currentSort = 'manual';
-  document.getElementById('sortSelect').value = 'manual';
-  reconcileLinks();
-
-  const s = Math.min(si, ti), e = Math.max(si, ti);
-  await Promise.all(
-    Array.from({ length: e - s + 1 }, (_, i) =>
-      updateDoc(doc(db,'links', arr[s + i]), { order: s + i })
-    )
-  );
-}
-
-/*
-  patchLinkCard — atualiza apenas o que mudou no DOM.
-  Evita reflow desnecessário comparando antes de escrever.
-*/
-function patchLinkCard(card, link) {
-  const t = card.querySelector('.link-title');
-  if (t.textContent !== link.title) t.textContent = link.title;
-  const b = card.querySelector('.link-cat-badge');
-  if (b.textContent !== link.category) b.textContent = link.category;
-  b.style.display = activeCat !== 'Todos' ? 'none' : '';
-  const img = card.querySelector('img');
-  let dom = 'google.com';
-  try { dom = new URL(link.url).hostname; } catch {}
-  if (img.dataset.dom !== dom) { img.dataset.dom = dom; img.src = `https://www.google.com/s2/favicons?domain=${dom}&sz=64`; }
-}
-
-function reconcileCats() {
-  const nav = document.getElementById('catNav');
-  const sel = document.getElementById('catSelect');
-  const all = [...linksMap.values()];
-  const cats = ["Todos", ...new Set(all.map(l=>l.category))].sort((a,b)=>
-    a==='Todos'?-1:b==='Todos'?1:a.localeCompare(b)
-  );
-  nav.innerHTML = ''; sel.innerHTML = '';
-  cats.forEach(c => {
-    const count = c==='Todos' ? all.length : all.filter(l=>l.category===c).length;
-    const b = document.createElement('button');
-    b.className = 'cat-tab'+(activeCat===c?' active':'');
-    b.innerHTML = `${c}<span class="cat-count">${count}</span>`;
-    b.onclick = () => {
-      activeCat=c;
-      reconcileLinks();
-      reconcileCats();
-      linkDomMap.forEach((card) => {
-        const badge=card.querySelector('.link-cat-badge');
-        if(badge) badge.style.display=activeCat!=='Todos'?'none':'';
-      });
+    let domain = "google.com";
+    try { domain = new URL(link.url).hostname; } catch(e) {}
+    const card = document.createElement("div");
+    card.className = "link-card";
+    card.onclick = (e) => {
+      if (!e.target.closest('.link-del')) window.open(link.url, '_blank');
     };
-    nav.appendChild(b);
-    if (c!=='Todos') {
-      const o=document.createElement('option');
-      o.value=c; o.textContent=c;
-      sel.appendChild(o);
-    }
-  });
-  sel.innerHTML += `<option value="new">＋ Nova Categoria…</option>`;
-}
-
-/* Listeners de UI */
-document.getElementById('sortSelect').onchange = e => { currentSort=e.target.value; reconcileLinks(); };
-document.getElementById('searchInput').oninput  = () => reconcileLinks();
-
-const linkModal = document.getElementById('linkModal');
-const openModal  = () => { linkModal.style.display='flex'; document.getElementById('urlInput').focus(); };
-const closeModal = () => {
-  linkModal.style.display='none';
-  ['urlInput','titleInput','newCatInput'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('newCatInput').style.display='none';
-};
-document.getElementById('addLinkBtn').onclick  = openModal;
-document.getElementById('modalClose').onclick  = closeModal;
-document.getElementById('modalCancel').onclick = closeModal;
-window.addEventListener('click', e=>{ if(e.target===linkModal) closeModal(); });
-document.getElementById('catSelect').onchange  = e =>
-  document.getElementById('newCatInput').style.display=e.target.value==='new'?'block':'none';
-
-document.getElementById('urlInput').addEventListener('blur', e=>{
-  const v=e.target.value, ti=document.getElementById('titleInput');
-  if(v.length>8&&ti.value===''){
-    try{
-      let h=new URL(v.startsWith('http')?v:`https://${v}`).hostname;
-      let n=h.replace('www.','').split('.')[0];
-      ti.value=n.charAt(0).toUpperCase()+n.slice(1);
-    }catch{}
-  }
-});
-
-document.getElementById('saveLink').onclick = async () => {
-  const title = document.getElementById('titleInput').value.trim();
-  let url     = document.getElementById('urlInput').value.trim();
-  let cat     = document.getElementById('catSelect').value;
-  if(cat==='new') cat=document.getElementById('newCatInput').value.trim();
-  if(!title||!url||!cat) return toast('Preencha todos os campos!','err');
-  if(!url.startsWith('http')) url='https://'+url;
-  for(const l of linksMap.values())
-    if(l.url.toLowerCase()===url.toLowerCase()) return toast(`"${title}" já existe!`,'err');
-  const btn=document.getElementById('saveLink');
-  btn.textContent='Salvando…'; btn.disabled=true;
-  try{
-    await addDoc(linksRef,{title,url,category:cat,timestamp:new Date(),order:linksMap.size});
-    toast('Link salvo!','ok'); closeModal(); activeCat=cat; reconcileCats();
-  }catch{ toast('Falha ao salvar.','err'); }
-  finally{ btn.textContent='Salvar'; btn.disabled=false; }
-};
-
-/* ══════════════════════════════════════════
-   TOGGLE LINKS ↔ NOTAS
-══════════════════════════════════════════ */
-const toggleBtn  = document.getElementById('toggleBtn');
-const addNoteBtn = document.getElementById('addNoteBtn');
-const linksView  = document.getElementById('linksView');
-const notesView  = document.getElementById('notesView');
-const catScroll  = document.getElementById('catScroll');
-const addLinkBtn = document.getElementById('addLinkBtn');
-const searchWrap = document.getElementById('searchWrap');
-const sortWrap   = document.getElementById('sortWrap');
-
-toggleBtn.onclick = () => {
-  isNotes=!isNotes;
-  linksView.style.display=isNotes?'none':'block';
-  notesView.style.display=isNotes?'block':'none';
-  [catScroll,addLinkBtn,searchWrap,sortWrap].forEach(el=>el.classList.toggle('hide',isNotes));
-  addNoteBtn.classList.toggle('hide',!isNotes);
-  toggleBtn.innerHTML=isNotes
-    ?'<i class="fa-solid fa-link"></i><span> Links</span>'
-    :'<i class="fa-solid fa-pen-to-square"></i><span> Notas</span>';
-  if(isNotes) startNotes();
-};
-
-/* ══════════════════════════════════════════
-   NOTAS
-══════════════════════════════════════════ */
-let notesStarted = false;
-
-function startNotes() {
-  /*
-    Guard flag — registra os listeners uma única vez.
-    Na segunda vez que o usuário abre Notas, apenas reconcilia o DOM.
-  */
-  if (notesStarted) { reconcileNotes(); return; }
-  notesStarted = true;
-
-  onSnapshot(query(foldersRef, orderBy("name")), snap => {
-    snap.docChanges().forEach(c => {
-      if(c.type==='removed') foldersMap.delete(c.doc.id);
-      else foldersMap.set(c.doc.id,{id:c.doc.id,...c.doc.data()});
-    });
-    reconcileFolderTabs();
-  });
-
-  onSnapshot(query(notesRef, orderBy("order","asc")), snap => {
-    snap.docChanges().forEach(c => {
-      if(c.type==='removed') notesMap.delete(c.doc.id);
-      else notesMap.set(c.doc.id,{id:c.doc.id,...c.doc.data()});
-    });
-    notesOrder=[...notesMap.values()].sort((a,b)=>(a.order??0)-(b.order??0)).map(n=>n.id);
-    const noOrder=[...notesMap.values()].filter(n=>n.order===undefined);
-    if(noOrder.length){ fixOrders(); return; }
-    reconcileNotes();
-    reconcileFolderTabs();
-  });
-}
-
-async function fixOrders() {
-  const sorted=[...notesMap.values()].sort((a,b)=>(a.order??Infinity)-(b.order??Infinity));
-  for(let i=0;i<sorted.length;i++)
-    if(sorted[i].order===undefined)
-      await updateDoc(doc(db,'notes',sorted[i].id),{order:i});
-}
-
-function reconcileFolderTabs() {
-  const strip=document.getElementById('folderStrip');
-  strip.innerHTML='';
-  const all=document.createElement('button');
-  all.className='ftab'+(activeFolder==='all'?' on':'');
-  all.innerHTML=`Todas <span class="ftab-count">${notesMap.size}</span>`;
-  all.onclick=()=>{ activeFolder='all'; reconcileFolderTabs(); reconcileNotes(); };
-  strip.appendChild(all);
-  [...foldersMap.values()].forEach(f=>{
-    const cnt=[...notesMap.values()].filter(n=>n.folder===f.id).length;
-    const b=document.createElement('button');
-    b.className='ftab'+(activeFolder===f.id?' on':'');
-    b.innerHTML=`<i class="fa-solid fa-folder" style="font-size:.72rem"></i> ${f.name} <span class="ftab-count">${cnt}</span><button class="ftab-del">✕</button>`;
-    b.onclick=e=>{ if(e.target.classList.contains('ftab-del')) return; activeFolder=f.id; reconcileFolderTabs(); reconcileNotes(); };
-    b.querySelector('.ftab-del').onclick=async e=>{
+    card.innerHTML = `
+      <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=64" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
+      <span class="link-title">${escapeHtml(link.title)}</span>
+      <span class="link-cat-badge">${escapeHtml(link.category)}</span>
+      <button class="link-del" aria-label="Deletar"><i class="fa-solid fa-trash"></i></button>
+    `;
+    const delBtn = card.querySelector('.link-del');
+    delBtn.onclick = async (e) => {
       e.stopPropagation();
-      if(!confirm(`Excluir pasta "${f.name}"? As notas ficam sem pasta.`)) return;
-      const batch=writeBatch(db);
-      notesMap.forEach(n=>{ if(n.folder===f.id) batch.update(doc(db,'notes',n.id),{folder:''}); });
-      batch.delete(doc(db,'note_folders',f.id));
-      await batch.commit();
-      if(activeFolder===f.id) activeFolder='all';
+      if (confirm(`Excluir "${link.title}"?`)) {
+        await deleteLink(link.id);
+      }
     };
-    strip.appendChild(b);
-  });
-}
-
-document.getElementById('newFolderBtn').onclick = async () => {
-  const name=prompt('Nome da nova pasta:');
-  if(!name?.trim()) return;
-  await addDoc(foldersRef,{name:name.trim(),created:serverTimestamp()});
-  toast('Pasta criada!','ok');
-};
-
-/*
-  reconcileNotes — diff + patch cirúrgico.
-  notesOrder é a fonte da verdade para ordenação.
-  appendChild move elementos existentes sem recriar.
-*/
-function reconcileNotes() {
-  const grid=document.getElementById('notesGrid');
-  const empty=document.getElementById('notesEmpty');
-  const visible=notesOrder.filter(id=>{
-    const n=notesMap.get(id);
-    return n&&(activeFolder==='all'||n.folder===activeFolder);
-  });
-  if(!visible.length){
-    empty.style.display='flex';
-    noteDomMap.forEach((el,id)=>{ el.remove(); noteDomMap.delete(id); });
-    return;
-  }
-  empty.style.display='none';
-  const visSet=new Set(visible);
-  noteDomMap.forEach((el,id)=>{ if(!visSet.has(id)){ el.remove(); noteDomMap.delete(id); } });
-  visible.forEach(id=>{
-    const note=notesMap.get(id);
-    let card=noteDomMap.get(id);
-    if(!card){ card=createNoteCard(note); noteDomMap.set(id,card); }
-    else patchNoteCard(card,note);
     grid.appendChild(card);
   });
 }
 
-function createNoteCard(note) {
-  const card=document.createElement('div');
-  card.className=`note-card nc${note.color||1}`;
-  card.draggable=true;
-  card.dataset.id=note.id;
-  if(note.width)  card.style.width=note.width;
-  if(note.height) card.style.height=note.height;
+// --- UI: Notas ---
+function renderNotes() {
+  const grid = document.getElementById("notesGrid");
+  const empty = document.getElementById("notesEmpty");
+  if (!grid || !empty) return;
 
-  card.innerHTML=`
-    <div class="note-topbar">
-      <div class="note-tbl">
-        <span class="note-drag"><i class="fa-solid fa-grip-vertical"></i></span>
-        ${[1,2,3,4,5,6].map(c=>`<span class="cdot" style="background:${COLOR_MAP[c]}" data-c="${c}"></span>`).join('')}
-      </div>
-      <div class="note-tbr">
-        <button class="note-btn nexpand" title="Expandir"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
-        <button class="note-btn danger ndel" title="Excluir"><i class="fa-solid fa-trash"></i></button>
-      </div>
-    </div>
-    <div class="note-title-wrap">
-      <input class="note-title-input" type="text" placeholder="Título da nota…" value="${(note.title||'').replace(/"/g,'&quot;')}"/>
-    </div>
-    <textarea class="note-body" placeholder="Escreva algo…">${note.content||''}</textarea>
-    <div class="note-footer">
-      <span class="note-ts">${fmtDate(note.createdAt||note.timestamp)}</span>
-      <span class="note-chars">${(note.content||'').length} car.</span>
-      <select class="note-folder-sel">
-        <option value="">Sem pasta</option>
-        ${[...foldersMap.values()].map(f=>`<option value="${f.id}" ${note.folder===f.id?'selected':''}>${f.name}</option>`).join('')}
-      </select>
-    </div>`;
-
-  card.addEventListener('dragstart', onDragStart);
-  card.addEventListener('dragover',  onDragOver);
-  card.addEventListener('dragleave', onDragLeave);
-  card.addEventListener('drop',      onDrop);
-  card.addEventListener('dragend',   onDragEnd);
-
-  /*
-    ResizeObserver com debounce 400ms — salva largura/altura só após
-    o usuário parar de redimensionar, evitando rafaga de escritas no Firestore.
-  */
-  const saveSize=debounce((w,h)=>{
-    updateDoc(doc(db,'notes',note.id),{width:w,height:h});
-    const n=notesMap.get(note.id); if(n){ n.width=w; n.height=h; }
-  },400);
-  new ResizeObserver(()=>{
-    const w=card.style.width, h=card.style.height;
-    const n=notesMap.get(note.id);
-    if(n&&(w!==n.width||h!==n.height)) saveSize(w,h);
-  }).observe(card);
-
-  /* Cor — atualização otimista: muda localmente antes do Firestore confirmar */
-  card.querySelectorAll('.cdot').forEach(d=>d.onclick=()=>{
-    const c=parseInt(d.dataset.c);
-    updateDoc(doc(db,'notes',note.id),{color:c});
-    const n=notesMap.get(note.id); if(n) n.color=c;
-    card.className=`note-card nc${c}`;
-    if(expandNoteId===note.id) applyExpandColor(c);
-  });
-
-  const titleInput=card.querySelector('.note-title-input');
-  const saveTitle=debounce(v=>{
-    updateDoc(doc(db,'notes',note.id),{title:v});
-    const n=notesMap.get(note.id); if(n) n.title=v;
-    if(expandNoteId===note.id) document.getElementById('expTitle').value=v;
-  },900);
-  titleInput.oninput=()=>saveTitle(titleInput.value);
-
-  const ta=card.querySelector('.note-body');
-  const charEl=card.querySelector('.note-chars');
-  const saveContent=debounce(v=>{
-    updateDoc(doc(db,'notes',note.id),{content:v});
-    const n=notesMap.get(note.id); if(n) n.content=v;
-    if(expandNoteId===note.id){
-      document.getElementById('expBody').value=v;
-      document.getElementById('expChars').textContent=v.length+' car.';
-    }
-  },900);
-  ta.oninput=()=>{ charEl.textContent=ta.value.length+' car.'; saveContent(ta.value); };
-
-  card.querySelector('.ndel').onclick=async()=>{
-    if(confirm('Excluir nota?')){
-      notesMap.delete(note.id);
-      notesOrder=notesOrder.filter(id=>id!==note.id);
-      card.remove(); noteDomMap.delete(note.id);
-      reconcileFolderTabs();
-      await deleteDoc(doc(db,'notes',note.id));
-    }
-  };
-
-  card.querySelector('.note-folder-sel').onchange=e=>{
-    updateDoc(doc(db,'notes',note.id),{folder:e.target.value});
-    const n=notesMap.get(note.id); if(n) n.folder=e.target.value;
-  };
-
-  card.querySelector('.nexpand').onclick=()=>openExpandModal(note.id);
-
-  return card;
-}
-
-/*
-  patchNoteCard — regra de ouro: se o elemento está focado, não mexemos no valor.
-  Isso protege o usuário que está digitando de perder o cursor ou o foco.
-*/
-function patchNoteCard(card, note) {
-  const colorClass=`nc${note.color||1}`;
-  if(!card.classList.contains(colorClass)) card.className=`note-card ${colorClass}`;
-
-  const titleInput=card.querySelector('.note-title-input');
-  if(document.activeElement!==titleInput && titleInput.value!==(note.title||''))
-    titleInput.value=note.title||'';
-
-  const ta=card.querySelector('.note-body');
-  if(document.activeElement!==ta && ta.value!==(note.content||''))
-    ta.value=note.content||'';
-
-  const charEl=card.querySelector('.note-chars');
-  const cs=(note.content||'').length+' car.';
-  if(charEl.textContent!==cs) charEl.textContent=cs;
-
-  if(note.width  && card.style.width!==note.width)   card.style.width=note.width;
-  if(note.height && card.style.height!==note.height) card.style.height=note.height;
-
-  const fsel=card.querySelector('.note-folder-sel');
-  if(fsel.value!==(note.folder||'')) fsel.value=note.folder||'';
-}
-
-/* ── Modal expandir nota ── */
-function applyExpandColor(c){
-  const box=document.getElementById('expandBox');
-  box.style.background=COLOR_MAP[c];
-  box.style.color=TEXT_MAP[c];
-}
-
-function openExpandModal(noteId){
-  const note=notesMap.get(noteId); if(!note) return;
-  expandNoteId=noteId;
-  const taExp=document.getElementById('expBody');
-  const titleExp=document.getElementById('expTitle');
-  applyExpandColor(note.color||1);
-  titleExp.value=note.title||'';
-  taExp.value=note.content||'';
-  document.getElementById('expTs').textContent=fmtDate(note.createdAt||note.timestamp);
-  document.getElementById('expChars').textContent=(note.content||'').length+' car.';
-
-  const dotsWrap=document.getElementById('expDots');
-  dotsWrap.innerHTML='';
-  [1,2,3,4,5,6].forEach(c=>{
-    const d=document.createElement('span'); d.className='cdot'; d.style.background=COLOR_MAP[c];
-    d.onclick=()=>{
-      updateDoc(doc(db,'notes',noteId),{color:c});
-      const n=notesMap.get(noteId); if(n) n.color=c;
-      applyExpandColor(c);
-      const card=noteDomMap.get(noteId); if(card) card.className=`note-card nc${c}`;
-    };
-    dotsWrap.appendChild(d);
-  });
-
-  const fsel=document.getElementById('expFolder');
-  fsel.innerHTML=`<option value="">Sem pasta</option>`
-    +[...foldersMap.values()].map(f=>`<option value="${f.id}" ${note.folder===f.id?'selected':''}>${f.name}</option>`).join('');
-  fsel.onchange=e=>{
-    updateDoc(doc(db,'notes',noteId),{folder:e.target.value});
-    const n=notesMap.get(noteId); if(n) n.folder=e.target.value;
-  };
-
-  const saveTitle=debounce(v=>{
-    updateDoc(doc(db,'notes',noteId),{title:v});
-    const n=notesMap.get(noteId); if(n) n.title=v;
-    const card=noteDomMap.get(noteId);
-    if(card){ const inp=card.querySelector('.note-title-input'); if(inp&&document.activeElement!==inp) inp.value=v; }
-  },900);
-  const saveContent=debounce(v=>{
-    updateDoc(doc(db,'notes',noteId),{content:v});
-    const n=notesMap.get(noteId); if(n) n.content=v;
-    const card=noteDomMap.get(noteId);
-    if(card){
-      const ta=card.querySelector('.note-body');
-      const ch=card.querySelector('.note-chars');
-      if(ta&&document.activeElement!==ta) ta.value=v;
-      if(ch) ch.textContent=v.length+' car.';
-    }
-  },900);
-  titleExp.oninput=()=>saveTitle(titleExp.value);
-  taExp.oninput=()=>{
-    document.getElementById('expChars').textContent=taExp.value.length+' car.';
-    saveContent(taExp.value);
-  };
-
-  document.getElementById('expandOverlay').classList.add('open');
-  taExp.focus();
-}
-
-function closeExpandModal(){
-  document.getElementById('expandOverlay').classList.remove('open');
-  expandNoteId=null;
-}
-document.getElementById('expandClose').onclick=closeExpandModal;
-document.getElementById('expandOverlay').addEventListener('click',e=>{
-  if(e.target===document.getElementById('expandOverlay')) closeExpandModal();
-});
-
-/* ── Drag & Drop notas ── */
-let dragSrcId=null;
-function onDragStart(e){ dragSrcId=this.dataset.id; this.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
-function onDragOver(e) { e.preventDefault(); this.classList.add('drag-over'); return false; }
-function onDragLeave()  { this.classList.remove('drag-over'); }
-function onDrop(e)      { e.stopPropagation(); this.classList.remove('drag-over'); if(dragSrcId&&dragSrcId!==this.dataset.id) reorderNotes(dragSrcId,this.dataset.id); return false; }
-function onDragEnd()    { this.classList.remove('dragging'); document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over')); }
-
-async function reorderNotes(srcId, tgtId){
-  const si=notesOrder.indexOf(srcId), ti=notesOrder.indexOf(tgtId);
-  if(si<0||ti<0) return;
-  const arr=[...notesOrder];
-  const[rm]=arr.splice(si,1);
-  arr.splice(ti,0,rm);
-  notesOrder=arr;
-  reconcileNotes();
-  const s=Math.min(si,ti), e=Math.max(si,ti);
-  await Promise.all(
-    Array.from({length:e-s+1},(_,i)=>
-      updateDoc(doc(db,'notes',arr[s+i]),{order:s+i})
-    )
-  );
-}
-
-addNoteBtn.onclick=async()=>{
-  await addDoc(notesRef,{
-    content:'', title:'',
-    color:Math.floor(Math.random()*6)+1,
-    order:notesOrder.length,
-    folder:activeFolder==='all'?'':activeFolder,
-    createdAt:serverTimestamp(),
-    timestamp:serverTimestamp()
-  });
-};
-
-/* ── Helpers de console ── */
-window.importarLinksEmLote=async arr=>{
-  let ok=0,nok=0;
-  for(const l of arr){
-    let dup=false;
-    for(const x of linksMap.values())
-      if(x.url.toLowerCase()===l.url.toLowerCase()){dup=true;break;}
-    if(dup){nok++;continue;}
-    try{await addDoc(linksRef,{...l,timestamp:new Date()});ok++;}catch{nok++;}
+  // Atualizar pasta strip
+  const folders = ["Todas", ...new Set(allNotes.map(n => n.folder || "Geral"))];
+  const folderStrip = document.getElementById("folderStrip");
+  if (folderStrip) {
+    folderStrip.innerHTML = "";
+    folders.forEach(f => {
+      const btn = document.createElement("button");
+      btn.className = `ftab ${activeFolder === f ? 'on' : ''}`;
+      btn.innerHTML = `<span>${f}</span> <span class="ftab-count">(${allNotes.filter(n => (n.folder || "Geral") === f).length})</span>`;
+      if (f !== "Todas") {
+        const del = document.createElement("span");
+        del.className = "ftab-del";
+        del.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+        del.onclick = (e) => {
+          e.stopPropagation();
+          if (confirm(`Excluir pasta "${f}" e mover notas para "Geral"?`)) {
+            allNotes.forEach(n => {
+              if ((n.folder || "Geral") === f) {
+                updateNote(n.id, { folder: "Geral" });
+              }
+            });
+          }
+        };
+        btn.appendChild(del);
+      }
+      btn.onclick = () => {
+        activeFolder = f;
+        renderAll();
+      };
+      folderStrip.appendChild(btn);
+    });
   }
-  alert(`Importação: ✅ ${ok}  ❌ ${nok}`);
+
+  let notesToShow = allNotes.filter(n => {
+    if (activeFolder === "Todas") return true;
+    return (n.folder || "Geral") === activeFolder;
+  });
+
+  if (notesToShow.length === 0) {
+    empty.style.display = "flex";
+    grid.style.display = "none";
+    return;
+  }
+  empty.style.display = "none";
+  grid.style.display = "grid";
+  grid.innerHTML = "";
+
+  notesToShow.forEach(note => {
+    const card = document.createElement("div");
+    card.className = `note-card nc${note.color || 1}`;
+    card.draggable = true;
+    card.dataset.id = note.id;
+    if (note.width) card.style.width = note.width;
+    if (note.height) card.style.height = note.height;
+
+    const date = note.timestamp ? new Date(note.timestamp.seconds * 1000).toLocaleString() : "Agora";
+
+    card.innerHTML = `
+      <div class="note-topbar">
+        <div class="note-tbl">
+          <div class="note-drag"><i class="fa-solid fa-grip-vertical"></i></div>
+          ${[1,2,3,4,5,6].map(c => `<div class="cdot" data-color="${c}" style="background:${getColorCode(c)}"></div>`).join('')}
+        </div>
+        <div class="note-tbr">
+          <button class="note-btn expand-note" title="Expandir"><i class="fa-solid fa-expand"></i></button>
+          <button class="note-btn danger delete-note" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+      <div class="note-title-wrap">
+        <input class="note-title-input" type="text" placeholder="Título" value="${escapeHtml(note.title || '')}">
+      </div>
+      <textarea class="note-body" placeholder="Escreva algo...">${escapeHtml(note.content || '')}</textarea>
+      <div class="note-footer">
+        <span class="note-ts">${date}</span>
+        <select class="note-folder-sel">
+          <option value="Geral">Geral</option>
+          ${[...new Set(allNotes.map(n => n.folder || "Geral"))].filter(f => f !== "Geral").map(f => `<option value="${f}" ${(note.folder || "Geral") === f ? 'selected' : ''}>${f}</option>`).join('')}
+        </select>
+        <span class="note-chars">${(note.content || '').length} car.</span>
+      </div>
+    `;
+
+    // Eventos de drag & drop
+    card.addEventListener('dragstart', (e) => {
+      card.classList.add('dragging');
+      dragSrc = card;
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+    card.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (dragSrc !== card) {
+        updateNoteOrder(dragSrc.dataset.id, card.dataset.id);
+      }
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+    });
+
+    // Troca de cor
+    card.querySelectorAll('.cdot').forEach(dot => {
+      dot.addEventListener('click', (e) => {
+        e.stopPropagation();
+        updateNote(note.id, { color: parseInt(dot.dataset.color) });
+      });
+    });
+
+    // Título
+    const titleInput = card.querySelector('.note-title-input');
+    let titleTimeout;
+    titleInput.addEventListener('input', () => {
+      clearTimeout(titleTimeout);
+      titleTimeout = setTimeout(() => {
+        updateNote(note.id, { title: titleInput.value });
+      }, 500);
+    });
+
+    // Conteúdo
+    const bodyText = card.querySelector('.note-body');
+    let bodyTimeout;
+    bodyText.addEventListener('input', () => {
+      clearTimeout(bodyTimeout);
+      bodyTimeout = setTimeout(() => {
+        updateNote(note.id, { content: bodyText.value });
+        card.querySelector('.note-chars').innerText = `${bodyText.value.length} car.`;
+      }, 500);
+    });
+
+    // Pasta
+    const folderSel = card.querySelector('.note-folder-sel');
+    folderSel.addEventListener('change', () => {
+      updateNote(note.id, { folder: folderSel.value });
+    });
+
+    // Expandir
+    card.querySelector('.expand-note').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openExpandNote(note.id);
+    });
+
+    // Excluir
+    card.querySelector('.delete-note').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (confirm("Excluir esta nota?")) await deleteNote(note.id);
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+function openExpandNote(noteId) {
+  const note = allNotes.find(n => n.id === noteId);
+  if (!note) return;
+  currentEditNoteId = noteId;
+  const overlay = document.getElementById("expandOverlay");
+  const titleInput = document.getElementById("expTitle");
+  const body = document.getElementById("expBody");
+  const folderSel = document.getElementById("expFolder");
+  const tsSpan = document.getElementById("expTs");
+  const charsSpan = document.getElementById("expChars");
+
+  titleInput.value = note.title || "";
+  body.value = note.content || "";
+  const date = note.timestamp ? new Date(note.timestamp.seconds * 1000).toLocaleString() : "Agora";
+  tsSpan.innerText = date;
+  charsSpan.innerText = `${(note.content || '').length} car.`;
+
+  // Preencher pastas
+  const folders = ["Geral", ...new Set(allNotes.map(n => n.folder || "Geral"))];
+  folderSel.innerHTML = folders.map(f => `<option value="${f}" ${(note.folder || "Geral") === f ? 'selected' : ''}>${f}</option>`).join('');
+
+  overlay.classList.add("open");
+
+  // Salvamento automático
+  let timeout;
+  const save = () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      updateNote(noteId, {
+        title: titleInput.value,
+        content: body.value,
+        folder: folderSel.value
+      });
+      charsSpan.innerText = `${body.value.length} car.`;
+    }, 500);
+  };
+  titleInput.oninput = save;
+  body.oninput = save;
+  folderSel.onchange = save;
+}
+
+// --- UI Geral ---
+function renderAll() {
+  if (isNotesView) {
+    renderNotes();
+  } else {
+    renderCategories();
+    renderLinks();
+  }
+}
+
+// --- MODAL DE LINK ---
+function openLinkModal() {
+  const modal = document.getElementById("linkModal");
+  modal.style.display = "flex";
+  document.getElementById("urlInput").focus();
+  // Atualizar select de categorias
+  const select = document.getElementById("catSelect");
+  const categories = ["Todos", ...new Set(allLinks.map(l => l.category))].sort();
+  select.innerHTML = "";
+  categories.forEach(cat => {
+    if (cat !== "Todos") {
+      const opt = document.createElement("option");
+      opt.value = cat;
+      opt.innerText = cat;
+      select.appendChild(opt);
+    }
+  });
+  select.innerHTML += `<option value="new">+ Nova Categoria...</option>`;
+}
+
+function closeLinkModal() {
+  document.getElementById("linkModal").style.display = "none";
+  document.getElementById("urlInput").value = "";
+  document.getElementById("titleInput").value = "";
+  document.getElementById("newCatInput").style.display = "none";
+  document.getElementById("newCatInput").value = "";
+}
+
+async function saveLinkHandler() {
+  let title = document.getElementById("titleInput").value.trim();
+  let url = document.getElementById("urlInput").value.trim();
+  let category = document.getElementById("catSelect").value;
+  if (category === "new") category = document.getElementById("newCatInput").value.trim();
+
+  if (!title || !url || !category) {
+    showToast("Preencha todos os campos!", "error");
+    return;
+  }
+  if (!url.startsWith("http")) url = `https://${url}`;
+
+  // Verificar duplicata
+  if (allLinks.some(l => l.url.toLowerCase() === url.toLowerCase())) {
+    showToast("Este link já existe!", "error");
+    return;
+  }
+
+  try {
+    await addLink({ title, url, category });
+    closeLinkModal();
+    activeCategory = category;
+    renderAll();
+  } catch (err) {
+    showToast("Erro ao salvar link", "error");
+  }
+}
+
+// --- MODAL ALTERAR SENHA ---
+function openChangePasswordModal() {
+  const modal = document.getElementById("changePasswordModal");
+  modal.style.display = "flex";
+  document.getElementById("currentPassword").value = "";
+  document.getElementById("newPassword").value = "";
+  document.getElementById("confirmPassword").value = "";
+  document.getElementById("currentPassword").focus();
+}
+
+function closeChangePasswordModal() {
+  document.getElementById("changePasswordModal").style.display = "none";
+}
+
+async function saveNewPassword() {
+  const current = document.getElementById("currentPassword").value;
+  const newPwd = document.getElementById("newPassword").value;
+  const confirm = document.getElementById("confirmPassword").value;
+
+  if (!current || !newPwd || !confirm) {
+    showToast("Preencha todos os campos!", "error");
+    return;
+  }
+  if (newPwd !== confirm) {
+    showToast("As senhas não coincidem!", "error");
+    return;
+  }
+  if (newPwd.length < 4) {
+    showToast("A nova senha deve ter pelo menos 4 caracteres!", "error");
+    return;
+  }
+
+  // Verifica senha atual
+  if (!checkPassword(current)) {
+    showToast("Senha atual incorreta!", "error");
+    return;
+  }
+
+  // Atualiza senha
+  updatePassword(newPwd);
+  closeChangePasswordModal();
+}
+
+// --- TOGGLE VIEW ---
+function toggleView() {
+  isNotesView = !isNotesView;
+  const linksView = document.getElementById("linksView");
+  const notesView = document.getElementById("notesView");
+  const addLinkBtn = document.getElementById("addLinkBtn");
+  const addNoteBtn = document.getElementById("addNoteBtn");
+  const searchWrap = document.getElementById("searchWrap");
+  const sortWrap = document.getElementById("sortWrap");
+  const toggleBtn = document.getElementById("toggleBtn");
+
+  if (isNotesView) {
+    linksView.style.display = "none";
+    notesView.style.display = "block";
+    addLinkBtn.classList.add("hide");
+    addNoteBtn.classList.remove("hide");
+    searchWrap.classList.add("hide");
+    sortWrap.classList.add("hide");
+    toggleBtn.innerHTML = `<i class="fa-solid fa-link"></i><span>Links</span>`;
+    renderAll();
+  } else {
+    linksView.style.display = "block";
+    notesView.style.display = "none";
+    addLinkBtn.classList.remove("hide");
+    addNoteBtn.classList.add("hide");
+    searchWrap.classList.remove("hide");
+    sortWrap.classList.remove("hide");
+    toggleBtn.innerHTML = `<i class="fa-solid fa-pen-to-square"></i><span>Notas</span>`;
+    renderAll();
+  }
+}
+
+// --- AUTENTICAÇÃO ---
+const AUTH_KEY = 'dashboard_auth';
+
+function checkAuth() {
+  return localStorage.getItem(AUTH_KEY) === 'true';
+}
+
+function login(password) {
+  if (checkPassword(password)) {
+    localStorage.setItem(AUTH_KEY, 'true');
+    return true;
+  }
+  return false;
+}
+
+function logout() {
+  localStorage.removeItem(AUTH_KEY);
+  window.location.reload();
+}
+
+// --- INICIALIZAÇÃO APÓS LOGIN ---
+function initDashboard() {
+  document.getElementById("dashboard").style.display = "block";
+  document.getElementById("loginOverlay").style.display = "none";
+
+  // Event listeners
+  document.getElementById("addLinkBtn").onclick = openLinkModal;
+  document.getElementById("addNoteBtn").onclick = addNote;
+  document.getElementById("toggleBtn").onclick = toggleView;
+  document.getElementById("logoutBtn").onclick = logout;
+  document.getElementById("changePasswordBtn").onclick = openChangePasswordModal;
+  document.getElementById("searchInput").oninput = (e) => { searchTerm = e.target.value; renderAll(); };
+  document.getElementById("sortSelect").onchange = (e) => { sortValue = e.target.value; renderAll(); };
+  document.getElementById("saveLink").onclick = saveLinkHandler;
+  document.getElementById("modalClose").onclick = closeLinkModal;
+  document.getElementById("modalCancel").onclick = closeLinkModal;
+  document.getElementById("catSelect").onchange = (e) => {
+    document.getElementById("newCatInput").style.display = e.target.value === "new" ? "block" : "none";
+  };
+
+  // Expand overlay close
+  const expandOverlay = document.getElementById("expandOverlay");
+  document.getElementById("expandClose").onclick = () => expandOverlay.classList.remove("open");
+  expandOverlay.addEventListener("click", (e) => {
+    if (e.target === expandOverlay) expandOverlay.classList.remove("open");
+  });
+
+  // Modal de alterar senha
+  const changePwdModal = document.getElementById("changePasswordModal");
+  document.getElementById("changePasswordClose").onclick = closeChangePasswordModal;
+  document.getElementById("changePasswordCancel").onclick = closeChangePasswordModal;
+  document.getElementById("saveNewPassword").onclick = saveNewPassword;
+  changePwdModal.addEventListener("click", (e) => {
+    if (e.target === changePwdModal) closeChangePasswordModal();
+  });
+
+  // Nova pasta (apenas para interface, pois as pastas são criadas dinamicamente)
+  document.getElementById("newFolderBtn").onclick = () => {
+    const folderName = prompt("Nome da nova pasta:");
+    if (folderName && folderName.trim()) {
+      showToast(`Pasta "${folderName}" disponível para notas.`);
+      renderAll(); // re-renderiza para atualizar selects
+    }
+  };
+
+  // Carregar dados
+  subscribeLinks(() => renderAll());
+  subscribeNotes(() => renderAll());
+}
+
+// --- EVENTO DE LOGIN ---
+document.getElementById("loginBtn").onclick = () => {
+  const pwd = document.getElementById("loginPassword").value;
+  if (login(pwd)) {
+    initDashboard();
+  } else {
+    document.getElementById("loginError").innerText = "Senha incorreta!";
+  }
 };
 
-window.removerDuplicatas=async()=>{
-  const seen=new Set(); let n=0;
-  for(const l of linksMap.values()){
-    if(seen.has(l.url)){
-      await deleteDoc(doc(db,'links',l.id));
-      n++;
+// Verificar autenticação inicial
+if (checkAuth()) {
+  initDashboard();
+} else {
+  document.getElementById("loginOverlay").style.display = "flex";
+}
+
+// --- FUNÇÕES UTILITÁRIAS (console) ---
+window.importarLinksEmLote = async (linksArray) => {
+  let salvos = 0;
+  let naoSalvos = 0;
+  for (const link of linksArray) {
+    if (allLinks.some(l => l.url.toLowerCase() === link.url.toLowerCase())) {
+      console.warn(`❌ NÃO SALVO (Já existe): ${link.title}`);
+      naoSalvos++;
+      continue;
+    }
+    try {
+      await addLink(link);
+      salvos++;
+    } catch (error) {
+      console.error(`❌ Erro ao salvar: ${link.title}`, error);
+      naoSalvos++;
+    }
+  }
+  alert(`Importação concluída!\n✅ Sucessos: ${salvos}\n❌ Não salvos: ${naoSalvos}`);
+};
+
+window.removerDuplicatas = async () => {
+  const seen = new Set();
+  let removidos = 0;
+  for (const link of allLinks) {
+    if (seen.has(link.url)) {
+      await deleteLink(link.id);
+      removidos++;
     } else {
-      seen.add(l.url);
+      seen.add(link.url);
     }
   }
-  alert(`${n} duplicatas removidas.`);
+  alert(`Limpeza concluída! ${removidos} links duplicados removidos.`);
 };
 
-/* Inicializa */
-startLinks();
+// Helper de escape
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
+
+function getColorCode(colorNum) {
+  const colors = {
+    1: '#FFD600', 2: '#1E90FF', 3: '#00C853', 4: '#FF6B00', 5: '#9C27B0', 6: '#F50057'
+  };
+  return colors[colorNum] || '#FFD600';
+}
+
+let dragSrc = null; // para drag & drop de notas
