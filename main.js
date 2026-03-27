@@ -4,12 +4,22 @@ import { renderLinks, renderCategories, openLinkModal, closeLinkModal, saveLinkH
 import { renderNotes, addNote, openExpandNote } from "./notes.js";
 import { login, logout, checkAuth, openChangePasswordModal, closeChangePasswordModal, saveNewPassword } from "./auth.js";
 import { showToast } from "./ui.js";
-import { updateNote } from "./notes.js";
 import {
   allLinks, allNotes,
   activeCategory, searchTerm, sortValue, isNotesView, activeFolder,
   setAllLinks, setAllNotes, setRenderAll
 } from "./state.js";
+
+import { updateNote } from "./notes.js";
+import { createFolder } from "./notes.js";
+
+// Dentro de initDashboard
+document.getElementById("newFolderBtn").onclick = async () => {
+  const folderName = prompt("Nome da nova pasta:");
+  if (folderName && folderName.trim()) {
+    await createFolder(folderName.trim());
+  }
+};
 
 // Injeção da função renderAll
 setRenderAll(renderAll);

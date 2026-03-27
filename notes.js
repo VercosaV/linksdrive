@@ -237,6 +237,26 @@ export function renderNotes() {
   });
 }
 
+export async function createFolder(folderName) {
+  try {
+    const color = Math.floor(Math.random() * 6) + 1;
+    const order = allNotes.length;
+    const newNote = await addDoc(notesRef, {
+      title: `📁 ${folderName}`,
+      content: "Pasta criada automaticamente",
+      folder: folderName,
+      color: color,
+      order: order,
+      timestamp: serverTimestamp()
+    });
+    showToast(`Pasta "${folderName}" criada!`, "success");
+    return newNote.id;
+  } catch (error) {
+    console.error("Erro ao criar pasta:", error);
+    showToast("Erro ao criar pasta.", "error");
+  }
+}
+
 // Expandir nota (modal grande)
 let currentEditNoteId = null;
 
