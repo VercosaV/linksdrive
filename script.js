@@ -14,11 +14,13 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const linksRef = db.collection("links");
 const notesRef = db.collection("notes");
+const foldersRef = db.collection("folders");
 
 // ==================== ESTADO GLOBAL ====================
 const state = {
   allLinks: [],
   allNotes: [],
+  allFolders: [],
   activeCategory: "Todos",
   searchTerm: "",
   sortValue: "manual",
@@ -56,14 +58,20 @@ function escapeHtml(str) {
   });
 }
 
+// Cores pastel suaves para notas
 function getColorCode(colorNum) {
   const colors = {
-    1: '#FFD600', 2: '#1E90FF', 3: '#00C853', 4: '#FF6B00', 5: '#9C27B0', 6: '#F50057'
+    1: '#FFE4E0',
+    2: '#E0F2FE',
+    3: '#E0F2E9',
+    4: '#FFF3E0',
+    5: '#F3E8FF',
+    6: '#FFE4F0'
   };
-  return colors[colorNum] || '#FFD600';
+  return colors[colorNum] || '#FFE4E0';
 }
 
-// ==================== AUTENTICAÇÃO ====================
+// ==================== AUTENTICAÇÃO (PBKDF2) ====================
 const SALT_KEY = "dashboard_salt";
 const HASH_KEY = "dashboard_hash";
 const AUTH_KEY = "dashboard_auth";
@@ -212,10 +220,25 @@ async function deleteLink(linkId) {
   }
 }
 
+async function changeLinkCategory(linkId, newCategory) {
+  try {
+    await db.collection("links").doc(linkId).update({ category: newCategory });
+    showToast("Categoria atualizada!", "success");
+  } catch (error) {
+    console.error("Erro ao mudar categoria:", error);
+    showToast("Erro ao atualizar categoria.", "error");
+  }
+}
+
 function renderCategories() {
   const nav = document.getElementById("catNav");
   const select = document.getElementById("catSelect");
   if (!nav || !select) return;
+
+  const categoryCount = {};
+  state.allLinks.forEach(link => {
+    categoryCount[link.category] = (categoryCount[link.category] || 0) + 1;
+  });
 
   const categories = ["Todos", ...new Set(state.allLinks.map(l => l.category))].sort();
   nav.innerHTML = "";
@@ -223,8 +246,9 @@ function renderCategories() {
 
   categories.forEach(cat => {
     const btn = document.createElement("button");
+    const count = cat === "Todos" ? state.allLinks.length : (categoryCount[cat] || 0);
     btn.className = `cat-tab ${state.activeCategory === cat ? 'active' : ''}`;
-    btn.innerText = cat;
+    btn.innerText = `${cat} (${count})`;
     btn.onclick = () => {
       state.activeCategory = cat;
       renderAll();
@@ -253,15 +277,8 @@ function renderLinks() {
     return matchCat && matchSearch;
   });
 
-  switch (state.sortValue) {
-    case "cat_asc": filtered.sort((a,b) => a.category.localeCompare(b.category)); break;
-    case "cat_desc": filtered.sort((a,b) => b.category.localeCompare(a.category)); break;
-    case "title_asc": filtered.sort((a,b) => a.title.localeCompare(b.title)); break;
-    case "title_desc": filtered.sort((a,b) => b.title.localeCompare(a.title)); break;
-    case "date_desc": filtered.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)); break;
-    case "date_asc": filtered.sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0)); break;
-    default: break;
-  }
+  // Ordenação fixa alfabética por título
+  filtered.sort((a, b) => a.title.localeCompare(b.title));
 
   skeleton.style.display = "none";
   grid.style.display = "grid";
@@ -288,6 +305,7 @@ function renderLinks() {
       <span class="link-cat-badge">${escapeHtml(link.category)}</span>
       <button class="link-del" aria-label="Deletar"><i class="fa-solid fa-trash"></i></button>
     `;
+
     const delBtn = card.querySelector('.link-del');
     delBtn.onclick = async (e) => {
       e.stopPropagation();
@@ -295,69 +313,102 @@ function renderLinks() {
         await deleteLink(link.id);
       }
     };
+
+    // Ícone de editar categoria (lápis) – abre modal
+    const catSpan = card.querySelector('.link-cat-badge');
+    const editIcon = document.createElement("i");
+    editIcon.className = "fa-solid fa-pencil";
+    editIcon.style.cssText = "font-size: 0.65rem; margin-left: 6px; cursor: pointer; opacity: 0.6;";
+    editIcon.onclick = async (e) => {
+      e.stopPropagation();
+      openEditCatModal(link.id, link.category);
+    };
+    catSpan.appendChild(editIcon);
+
     grid.appendChild(card);
   });
 }
 
-function openLinkModal() {
-  const modal = document.getElementById("linkModal");
-  if (!modal) return;
-  modal.style.display = "flex";
-  const urlInput = document.getElementById("urlInput");
-  if (urlInput) urlInput.focus();
-  const select = document.getElementById("catSelect");
-  if (!select) return;
-  const categories = ["Todos", ...new Set(state.allLinks.map(l => l.category))].sort();
+// ==================== MODAL EDITAR CATEGORIA ====================
+let currentEditLinkId = null;
+
+function openEditCatModal(linkId, currentCat) {
+  currentEditLinkId = linkId;
+  const modal = document.getElementById("editCatModal");
+  const select = document.getElementById("editCatSelect");
+  const newCatInput = document.getElementById("editNewCatInput");
+
+  if (!modal || !select) return;
+
+  // Preencher select com categorias existentes
+  const categories = [...new Set(state.allLinks.map(l => l.category))].sort();
   select.innerHTML = "";
   categories.forEach(cat => {
-    if (cat !== "Todos") {
-      const opt = document.createElement("option");
-      opt.value = cat;
-      opt.innerText = cat;
-      select.appendChild(opt);
-    }
+    const opt = document.createElement("option");
+    opt.value = cat;
+    opt.innerText = cat;
+    if (cat === currentCat) opt.selected = true;
+    select.appendChild(opt);
   });
   select.innerHTML += `<option value="new">+ Nova Categoria...</option>`;
+
+  // Esconder input de nova categoria
+  if (newCatInput) newCatInput.style.display = "none";
+  modal.style.display = "flex";
 }
 
-function closeLinkModal() {
-  const modal = document.getElementById("linkModal");
+function closeEditCatModal() {
+  const modal = document.getElementById("editCatModal");
   if (modal) modal.style.display = "none";
-  const urlInput = document.getElementById("urlInput");
-  const titleInput = document.getElementById("titleInput");
-  const newCatInput = document.getElementById("newCatInput");
-  if (urlInput) urlInput.value = "";
-  if (titleInput) titleInput.value = "";
-  if (newCatInput) {
-    newCatInput.style.display = "none";
-    newCatInput.value = "";
+  currentEditLinkId = null;
+}
+
+async function saveEditCategory() {
+  if (!currentEditLinkId) return;
+  const select = document.getElementById("editCatSelect");
+  let newCategory = select?.value;
+  if (newCategory === "new") {
+    newCategory = document.getElementById("editNewCatInput")?.value.trim();
+  }
+  if (!newCategory) {
+    showToast("Digite o nome da categoria!", "error");
+    return;
+  }
+  await changeLinkCategory(currentEditLinkId, newCategory);
+  closeEditCatModal();
+}
+
+// ==================== PASTAS SEPARADAS ====================
+function subscribeFolders() {
+  return foldersRef.onSnapshot((snapshot) => {
+    state.allFolders = snapshot.docs.map(doc => doc.id);
+    renderAll();
+  }, (error) => {
+    console.error("Erro ao carregar pastas:", error);
+  });
+}
+
+async function addFolder(folderName) {
+  try {
+    await foldersRef.doc(folderName).set({ name: folderName, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    showToast(`Pasta "${folderName}" criada!`, "success");
+  } catch (error) {
+    console.error("Erro ao criar pasta:", error);
+    showToast("Erro ao criar pasta.", "error");
   }
 }
 
-async function saveLinkHandler() {
-  let title = document.getElementById("titleInput")?.value.trim();
-  let url = document.getElementById("urlInput")?.value.trim();
-  let category = document.getElementById("catSelect")?.value;
-  if (category === "new") category = document.getElementById("newCatInput")?.value.trim();
-
-  if (!title || !url || !category) {
-    showToast("Preencha todos os campos!", "error");
-    return;
-  }
-  if (!url.startsWith("http")) url = `https://${url}`;
-
-  if (state.allLinks.some(l => l.url.toLowerCase() === url.toLowerCase())) {
-    showToast("Este link já existe!", "error");
-    return;
-  }
-
+async function deleteFolder(folderName) {
   try {
-    await addLink({ title, url, category });
-    closeLinkModal();
-    state.activeCategory = category;
-    renderAll();
-  } catch (err) {
-    showToast("Erro ao salvar link", "error");
+    const notesInFolder = state.allNotes.filter(n => (n.folder || "Geral") === folderName);
+    for (const note of notesInFolder) {
+      await updateNote(note.id, { folder: "Geral" });
+    }
+    await foldersRef.doc(folderName).delete();
+    showToast(`Pasta "${folderName}" excluída. Notas movidas para "Geral".`, "success");
+  } catch (error) {
+    console.error("Erro ao excluir pasta:", error);
+    showToast("Erro ao excluir pasta.", "error");
   }
 }
 
@@ -440,26 +491,23 @@ function renderNotes() {
   const empty = document.getElementById("notesEmpty");
   if (!grid || !empty) return;
 
-  const folders = ["Todas", ...new Set(state.allNotes.map(n => n.folder || "Geral"))];
+  const folders = ["Todas", ...state.allFolders];
   const folderStrip = document.getElementById("folderStrip");
   if (folderStrip) {
     folderStrip.innerHTML = "";
     folders.forEach(f => {
       const btn = document.createElement("button");
       btn.className = `ftab ${state.activeFolder === f ? 'on' : ''}`;
-      btn.innerHTML = `<span>${f}</span> <span class="ftab-count">(${state.allNotes.filter(n => (n.folder || "Geral") === f).length})</span>`;
+      const count = state.allNotes.filter(n => (n.folder || "Geral") === f).length;
+      btn.innerHTML = `<span>${f}</span> <span class="ftab-count">(${count})</span>`;
       if (f !== "Todas") {
         const del = document.createElement("span");
         del.className = "ftab-del";
         del.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
         del.onclick = (e) => {
           e.stopPropagation();
-          if (confirm(`Excluir pasta "${f}" e mover notas para "Geral"?`)) {
-            state.allNotes.forEach(n => {
-              if ((n.folder || "Geral") === f) {
-                updateNote(n.id, { folder: "Geral" });
-              }
-            });
+          if (confirm(`Excluir pasta "${f}"? Todas as notas serão movidas para "Geral".`)) {
+            deleteFolder(f);
           }
         };
         btn.appendChild(del);
@@ -515,12 +563,13 @@ function renderNotes() {
         <span class="note-ts">${date}</span>
         <select class="note-folder-sel">
           <option value="Geral">Geral</option>
-          ${[...new Set(state.allNotes.map(n => n.folder || "Geral"))].filter(f => f !== "Geral").map(f => `<option value="${f}" ${(note.folder || "Geral") === f ? 'selected' : ''}>${f}</option>`).join('')}
+          ${[...state.allFolders].map(f => `<option value="${f}" ${(note.folder || "Geral") === f ? 'selected' : ''}>${f}</option>`).join('')}
         </select>
         <span class="note-chars">${(note.content || '').length} car.</span>
       </div>
     `;
 
+    // Drag & drop
     card.addEventListener('dragstart', (e) => {
       card.classList.add('dragging');
       dragSrc = card;
@@ -540,6 +589,7 @@ function renderNotes() {
       card.classList.remove('dragging');
     });
 
+    // Troca de cor
     card.querySelectorAll('.cdot').forEach(dot => {
       dot.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -547,6 +597,7 @@ function renderNotes() {
       });
     });
 
+    // Título
     const titleInput = card.querySelector('.note-title-input');
     let titleTimeout;
     titleInput.addEventListener('input', () => {
@@ -556,6 +607,7 @@ function renderNotes() {
       }, 500);
     });
 
+    // Conteúdo
     const bodyText = card.querySelector('.note-body');
     let bodyTimeout;
     bodyText.addEventListener('input', () => {
@@ -566,16 +618,19 @@ function renderNotes() {
       }, 500);
     });
 
+    // Pasta
     const folderSel = card.querySelector('.note-folder-sel');
     folderSel.addEventListener('change', () => {
       updateNote(note.id, { folder: folderSel.value });
     });
 
+    // Expandir
     card.querySelector('.expand-note').addEventListener('click', (e) => {
       e.stopPropagation();
       openExpandNote(note.id);
     });
 
+    // Excluir
     card.querySelector('.delete-note').addEventListener('click', async (e) => {
       e.stopPropagation();
       if (confirm("Excluir esta nota?")) await deleteNote(note.id);
@@ -603,7 +658,7 @@ function openExpandNote(noteId) {
   tsSpan.innerText = date;
   charsSpan.innerText = `${(note.content || '').length} car.`;
 
-  const folders = ["Geral", ...new Set(state.allNotes.map(n => n.folder || "Geral"))];
+  const folders = ["Geral", ...state.allFolders];
   folderSel.innerHTML = folders.map(f => `<option value="${f}" ${(note.folder || "Geral") === f ? 'selected' : ''}>${f}</option>`).join('');
 
   overlay.classList.add("open");
@@ -623,25 +678,6 @@ function openExpandNote(noteId) {
   titleInput.oninput = save;
   body.oninput = save;
   folderSel.onchange = save;
-}
-
-async function createFolder(folderName) {
-  try {
-    const color = Math.floor(Math.random() * 6) + 1;
-    const order = state.allNotes.length;
-    await notesRef.add({
-      title: `📁 ${folderName}`,
-      content: "Pasta criada automaticamente",
-      folder: folderName,
-      color: color,
-      order: order,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    showToast(`Pasta "${folderName}" criada!`, "success");
-  } catch (error) {
-    console.error("Erro ao criar pasta:", error);
-    showToast("Erro ao criar pasta.", "error");
-  }
 }
 
 // ==================== TOGGLE VIEW ====================
@@ -678,6 +714,69 @@ function toggleView() {
   }
 }
 
+// ==================== MODAL ADICIONAR LINK ====================
+function openLinkModal() {
+  const modal = document.getElementById("linkModal");
+  if (!modal) return;
+  modal.style.display = "flex";
+  const urlInput = document.getElementById("urlInput");
+  if (urlInput) urlInput.focus();
+  const select = document.getElementById("catSelect");
+  if (!select) return;
+  const categories = ["Todos", ...new Set(state.allLinks.map(l => l.category))].sort();
+  select.innerHTML = "";
+  categories.forEach(cat => {
+    if (cat !== "Todos") {
+      const opt = document.createElement("option");
+      opt.value = cat;
+      opt.innerText = cat;
+      select.appendChild(opt);
+    }
+  });
+  select.innerHTML += `<option value="new">+ Nova Categoria...</option>`;
+}
+
+function closeLinkModal() {
+  const modal = document.getElementById("linkModal");
+  if (modal) modal.style.display = "none";
+  const urlInput = document.getElementById("urlInput");
+  const titleInput = document.getElementById("titleInput");
+  const newCatInput = document.getElementById("newCatInput");
+  if (urlInput) urlInput.value = "";
+  if (titleInput) titleInput.value = "";
+  if (newCatInput) {
+    newCatInput.style.display = "none";
+    newCatInput.value = "";
+  }
+}
+
+async function saveLinkHandler() {
+  let title = document.getElementById("titleInput")?.value.trim();
+  let url = document.getElementById("urlInput")?.value.trim();
+  let category = document.getElementById("catSelect")?.value;
+  if (category === "new") category = document.getElementById("newCatInput")?.value.trim();
+
+  if (!title || !url || !category) {
+    showToast("Preencha todos os campos!", "error");
+    return;
+  }
+  if (!url.startsWith("http")) url = `https://${url}`;
+
+  if (state.allLinks.some(l => l.url.toLowerCase() === url.toLowerCase())) {
+    showToast("Este link já existe!", "error");
+    return;
+  }
+
+  try {
+    await addLink({ title, url, category });
+    closeLinkModal();
+    state.activeCategory = category;
+    renderAll();
+  } catch (err) {
+    showToast("Erro ao salvar link", "error");
+  }
+}
+
 // ==================== INICIALIZAÇÃO ====================
 function initDashboard() {
   const dashboard = document.getElementById("dashboard");
@@ -685,42 +784,59 @@ function initDashboard() {
   if (dashboard) dashboard.style.display = "block";
   if (loginOverlay) loginOverlay.style.display = "none";
 
-  // Event listeners com verificação de existência
+  // Event listeners
   const addLinkBtn = document.getElementById("addLinkBtn");
   if (addLinkBtn) addLinkBtn.onclick = openLinkModal;
-  
+
   const addNoteBtn = document.getElementById("addNoteBtn");
   if (addNoteBtn) addNoteBtn.onclick = addNote;
-  
+
   const toggleBtn = document.getElementById("toggleBtn");
   if (toggleBtn) toggleBtn.onclick = toggleView;
-  
+
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) logoutBtn.onclick = logout;
-  
+
   const changePasswordBtn = document.getElementById("changePasswordBtn");
   if (changePasswordBtn) changePasswordBtn.onclick = openChangePasswordModal;
-  
+
   const searchInput = document.getElementById("searchInput");
   if (searchInput) searchInput.oninput = (e) => { state.searchTerm = e.target.value; renderAll(); };
-  
+
   const sortSelect = document.getElementById("sortSelect");
   if (sortSelect) sortSelect.onchange = (e) => { state.sortValue = e.target.value; renderAll(); };
-  
+
   const saveLink = document.getElementById("saveLink");
   if (saveLink) saveLink.onclick = saveLinkHandler;
-  
+
   const modalClose = document.getElementById("modalClose");
   if (modalClose) modalClose.onclick = closeLinkModal;
-  
+
   const modalCancel = document.getElementById("modalCancel");
   if (modalCancel) modalCancel.onclick = closeLinkModal;
-  
+
   const catSelect = document.getElementById("catSelect");
   if (catSelect) catSelect.onchange = (e) => {
     const newCatInput = document.getElementById("newCatInput");
     if (newCatInput) newCatInput.style.display = e.target.value === "new" ? "block" : "none";
   };
+
+  // Modal editar categoria
+  const editCatClose = document.getElementById("editCatClose");
+  if (editCatClose) editCatClose.onclick = closeEditCatModal;
+  const editCatCancel = document.getElementById("editCatCancel");
+  if (editCatCancel) editCatCancel.onclick = closeEditCatModal;
+  const saveEditCat = document.getElementById("saveEditCat");
+  if (saveEditCat) saveEditCat.onclick = saveEditCategory;
+  const editCatSelect = document.getElementById("editCatSelect");
+  if (editCatSelect) editCatSelect.onchange = (e) => {
+    const newCatInput = document.getElementById("editNewCatInput");
+    if (newCatInput) newCatInput.style.display = e.target.value === "new" ? "block" : "none";
+  };
+  const editCatModal = document.getElementById("editCatModal");
+  if (editCatModal) editCatModal.addEventListener("click", (e) => {
+    if (e.target === editCatModal) closeEditCatModal();
+  });
 
   const expandOverlay = document.getElementById("expandOverlay");
   const expandClose = document.getElementById("expandClose");
@@ -731,13 +847,13 @@ function initDashboard() {
 
   const changePasswordClose = document.getElementById("changePasswordClose");
   if (changePasswordClose) changePasswordClose.onclick = closeChangePasswordModal;
-  
+
   const changePasswordCancel = document.getElementById("changePasswordCancel");
   if (changePasswordCancel) changePasswordCancel.onclick = closeChangePasswordModal;
-  
+
   const saveNewPassword = document.getElementById("saveNewPassword");
   if (saveNewPassword) saveNewPassword.onclick = saveNewPassword;
-  
+
   const changePwdModal = document.getElementById("changePasswordModal");
   if (changePwdModal) changePwdModal.addEventListener("click", (e) => {
     if (e.target === changePwdModal) closeChangePasswordModal();
@@ -747,11 +863,12 @@ function initDashboard() {
   if (newFolderBtn) newFolderBtn.onclick = async () => {
     const folderName = prompt("Nome da nova pasta:");
     if (!folderName || !folderName.trim()) return;
-    await createFolder(folderName.trim());
+    await addFolder(folderName.trim());
   };
 
   subscribeLinks();
   subscribeNotes();
+  subscribeFolders();
 }
 
 // ==================== LOGIN ====================
