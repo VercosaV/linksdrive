@@ -25,7 +25,10 @@ const state = {
   searchTerm: "",
   sortValue: "manual",
   isNotesView: false,
-  activeFolder: "Todas"
+  activeFolder: "Todas",
+  // NOVO: tamanho dos cards de links — persiste no localStorage
+  // Valores possíveis: "small" | "medium" | "large"
+  linkSize: localStorage.getItem("linkCardSize") || "small"
 };
 
 let renderAll = () => {};
@@ -69,6 +72,60 @@ function getColorCode(colorNum) {
     6: '#FFE4F0'
   };
   return colors[colorNum] || '#FFE4E0';
+}
+
+// ==================== TAMANHO DOS CARDS DE LINK ====================
+/*
+  Aqui centralizamos a lógica de tamanho dos cards.
+  Temos 3 tamanhos: small, medium, large.
+  Cada um altera o CSS via classe no elemento #linksGrid.
+  O valor é salvo no localStorage para persistir entre sessões.
+
+  Por que localStorage e não state puro?
+  → Porque o estado é recriado toda vez que a página carrega,
+    enquanto localStorage persiste mesmo após fechar a aba.
+*/
+const LINK_SIZE_LABELS = {
+  small:  { label: "S", title: "Pequeno"  },
+  medium: { label: "M", title: "Médio"    },
+  large:  { label: "G", title: "Grande"   }
+};
+const LINK_SIZE_ORDER = ["small", "medium", "large"];
+
+function applyLinkSize() {
+  // Aplica a classe de tamanho na grid e atualiza o botão
+  const grid = document.getElementById("linksGrid");
+  if (grid) {
+    // Remove todas as classes de tamanho antes de adicionar a nova
+    // Isso evita conflito entre classes
+    grid.classList.remove("size-small", "size-medium", "size-large");
+    grid.classList.add(`size-${state.linkSize}`);
+  }
+
+  // Atualiza o texto/ícone do botão de toggle
+  const btn = document.getElementById("linkSizeBtn");
+  if (btn) {
+    const info = LINK_SIZE_LABELS[state.linkSize];
+    btn.title = `Tamanho: ${info.title}`;
+    btn.innerHTML = `<i class="fa-solid fa-expand-alt"></i><span>${info.label}</span>`;
+  }
+}
+
+function cycleLinkSize() {
+  // Cicla entre small → medium → large → small
+  // Usamos o índice atual para pegar o próximo
+  const currentIndex = LINK_SIZE_ORDER.indexOf(state.linkSize);
+  const nextIndex = (currentIndex + 1) % LINK_SIZE_ORDER.length;
+  state.linkSize = LINK_SIZE_ORDER[nextIndex];
+
+  // Persiste no localStorage para não perder ao recarregar
+  localStorage.setItem("linkCardSize", state.linkSize);
+
+  // Aplica visualmente
+  applyLinkSize();
+
+  const info = LINK_SIZE_LABELS[state.linkSize];
+  showToast(`Cards: ${info.title}`, "success");
 }
 
 // ==================== AUTENTICAÇÃO (PBKDF2) ====================
@@ -284,6 +341,9 @@ function renderLinks() {
   grid.style.display = "grid";
   grid.innerHTML = "";
 
+  // IMPORTANTE: sempre aplica a classe de tamanho após (re)criar a grid
+  applyLinkSize();
+
   if (filtered.length === 0) {
     empty.style.display = "flex";
     grid.style.display = "none";
@@ -428,15 +488,38 @@ function subscribeNotes() {
 }
 
 async function addNote() {
+  /*
+    BUG CORRIGIDO: antes, addNote() sempre criava a nota na pasta "Geral"
+    porque não levava em conta a pasta ativa no momento da criação.
+
+    A correção é simples: lemos state.activeFolder no momento do clique.
+    Se a pasta ativa for "Todas", usamos "Geral" como fallback (pois "Todas"
+    não é uma pasta real, é só um filtro de visualização).
+
+    Por que isso acontecia antes?
+    → A função addNote() não recebia nenhum argumento e não lia state.activeFolder.
+      O campo "folder" simplesmente não era incluído no documento criado,
+      então o Firestore não salvava a pasta — e ao renderizar, a nota
+      caia no fallback `(n.folder || "Geral") === folderName`, exibindo só em "Geral".
+  */
   try {
     const color = Math.floor(Math.random() * 6) + 1;
     const order = state.allNotes.length;
+
+    // Determina a pasta destino:
+    // - Se estiver em "Todas", cria em "Geral" (pasta padrão)
+    // - Se estiver em qualquer outra pasta específica, cria nela
+    const targetFolder = (state.activeFolder === "Todas") ? "Geral" : state.activeFolder;
+
     await notesRef.add({
       content: "",
       color: color,
       order: order,
+      folder: targetFolder,                                        // ← campo adicionado
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
+
+    showToast(`Nota criada em "${targetFolder}"`, "success");
   } catch (error) {
     console.error("Erro ao criar nota:", error);
     showToast("Erro ao criar nota.", "error");
@@ -498,8 +581,21 @@ function renderNotes() {
     folders.forEach(f => {
       const btn = document.createElement("button");
       btn.className = `ftab ${state.activeFolder === f ? 'on' : ''}`;
-      const count = state.allNotes.filter(n => (n.folder || "Geral") === f).length;
+
+      /*
+        CORREÇÃO DE CONTAGEM:
+        Antes: contava notas cuja pasta fosse igual a f, mas "Todas" nunca batia
+        porque nenhuma nota tem folder === "Todas".
+
+        Agora: se f === "Todas", conta TODAS as notas. Caso contrário, conta
+        apenas as da pasta específica.
+      */
+      const count = f === "Todas"
+        ? state.allNotes.length
+        : state.allNotes.filter(n => (n.folder || "Geral") === f).length;
+
       btn.innerHTML = `<span>${f}</span> <span class="ftab-count">(${count})</span>`;
+
       if (f !== "Todas") {
         const del = document.createElement("span");
         del.className = "ftab-del";
@@ -690,6 +786,7 @@ function toggleView() {
   const searchWrap = document.getElementById("searchWrap");
   const sortWrap = document.getElementById("sortWrap");
   const toggleBtn = document.getElementById("toggleBtn");
+  const linkSizeWrap = document.getElementById("linkSizeWrap");
 
   if (!linksView || !notesView) return;
 
@@ -700,6 +797,8 @@ function toggleView() {
     if (addNoteBtn) addNoteBtn.classList.remove("hide");
     if (searchWrap) searchWrap.classList.add("hide");
     if (sortWrap) sortWrap.classList.add("hide");
+    // Esconde o botão de tamanho de card quando está em notas
+    if (linkSizeWrap) linkSizeWrap.classList.add("hide");
     if (toggleBtn) toggleBtn.innerHTML = `<i class="fa-solid fa-link"></i><span>Links</span>`;
     renderAll();
   } else {
@@ -709,6 +808,8 @@ function toggleView() {
     if (addNoteBtn) addNoteBtn.classList.add("hide");
     if (searchWrap) searchWrap.classList.remove("hide");
     if (sortWrap) sortWrap.classList.remove("hide");
+    // Mostra o botão de tamanho de card quando está em links
+    if (linkSizeWrap) linkSizeWrap.classList.remove("hide");
     if (toggleBtn) toggleBtn.innerHTML = `<i class="fa-solid fa-pen-to-square"></i><span>Notas</span>`;
     renderAll();
   }
@@ -821,6 +922,13 @@ function initDashboard() {
     if (newCatInput) newCatInput.style.display = e.target.value === "new" ? "block" : "none";
   };
 
+  // NOVO: botão de tamanho dos cards de link
+  const linkSizeBtn = document.getElementById("linkSizeBtn");
+  if (linkSizeBtn) linkSizeBtn.onclick = cycleLinkSize;
+
+  // Aplica o tamanho salvo imediatamente ao inicializar
+  applyLinkSize();
+
   // Modal editar categoria
   const editCatClose = document.getElementById("editCatClose");
   if (editCatClose) editCatClose.onclick = closeEditCatModal;
@@ -851,8 +959,8 @@ function initDashboard() {
   const changePasswordCancel = document.getElementById("changePasswordCancel");
   if (changePasswordCancel) changePasswordCancel.onclick = closeChangePasswordModal;
 
-  const saveNewPassword = document.getElementById("saveNewPassword");
-  if (saveNewPassword) saveNewPassword.onclick = saveNewPassword;
+  const saveNewPasswordBtn = document.getElementById("saveNewPassword");
+  if (saveNewPasswordBtn) saveNewPasswordBtn.onclick = saveNewPassword;
 
   const changePwdModal = document.getElementById("changePasswordModal");
   if (changePwdModal) changePwdModal.addEventListener("click", (e) => {
@@ -951,5 +1059,3 @@ window.resetSenha = async () => {
   await setPassword("admin123");
   showToast("Senha resetada para admin123", "success");
 };
-
-// a sla

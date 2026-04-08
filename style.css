@@ -92,6 +92,32 @@ body {
 .btn-ghost:hover { background: var(--surface); color: var(--tx); transform: translateY(-1px); }
 @media(max-width:450px){ .btn span { display: none; } }
 
+/* ==================== BOTÃO DE TAMANHO DOS CARDS ====================
+   Estilizado como btn-ghost com um indicador visual do tamanho ativo.
+   O span dentro do botão mostra S / M / G conforme o tamanho atual.
+*/
+#linkSizeBtn {
+  background: var(--surface2);
+  color: var(--tx2);
+  border: 1px solid var(--border);
+  min-width: 58px;
+  justify-content: center;
+}
+#linkSizeBtn:hover {
+  background: var(--surface);
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+#linkSizeBtn span {
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .5px;
+  /* Mantemos o span visível mesmo em mobile pequeno
+     para mostrar qual tamanho está ativo */
+  display: inline !important;
+}
+
 .cat-scroll { overflow-x: auto; padding-bottom: 8px; }
 .cat-tabs { display: flex; gap: 4px; }
 .cat-tab {
@@ -117,8 +143,59 @@ body {
 }
 @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 
-.links-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; }
-@media(max-width:480px){ .links-grid { grid-template-columns: 1fr 1fr; gap: 5px; } }
+/* ==================== GRID DE LINKS + TAMANHOS ====================
+
+  A grid usa auto-fill com minmax para ser responsiva.
+  Cada classe de tamanho muda o minmax e o padding/font-size dos cards.
+
+  Por que usamos classes na grid e não nos cards individualmente?
+  → Porque a grid controla o número de colunas. Se colocássemos tamanho
+    só no card, ele ficaria maior mas o número de colunas não mudaria,
+    quebrando o layout. Alterando a grid inteira, tudo se ajusta junto.
+
+  SMALL  (padrão): cards compactos, colunas mínimas de 160px — mais cards na tela
+  MEDIUM         : cards médios, mínimo de 200px — equilíbrio visual
+  LARGE          : cards grandes, mínimo de 260px — boa legibilidade
+*/
+
+.links-grid {
+  display: grid;
+  gap: 6px;
+  /* Tamanho padrão (small) — definido aqui para evitar FOUC */
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+/* Tamanho PEQUENO — igual ao padrão original */
+.links-grid.size-small {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 6px;
+}
+
+/* Tamanho MÉDIO — cards um pouco maiores, mais espaçamento */
+.links-grid.size-medium {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px;
+}
+
+/* Tamanho GRANDE — cards largos, bom para listas curtas */
+.links-grid.size-large {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+@media(max-width:480px){
+  /* Em mobile, fixamos 2 colunas para small e 1 para large */
+  .links-grid,
+  .links-grid.size-small  { grid-template-columns: 1fr 1fr; gap: 5px; }
+  .links-grid.size-medium { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .links-grid.size-large  { grid-template-columns: 1fr; gap: 8px; }
+}
+
+/* ==================== CARD DE LINK ====================
+  As variações de tamanho ajustam padding, imagem, fonte e altura do card.
+  Usamos seletores compostos ".links-grid.size-X .link-card" para garantir
+  especificidade sem !important.
+*/
 
 .link-card {
   background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
@@ -136,16 +213,62 @@ body {
   background: var(--surface2); border-color: rgba(59,130,246,.28);
   transform: translateY(-1px); box-shadow: var(--shadow);
 }
+
+/* Imagem (favicon) — pequena por padrão */
 .link-card img {
   width: 16px; height: 16px; border-radius: 3px; object-fit: cover;
   background: #fff; flex-shrink: 0;
 }
+
+/* MÉDIO: aumenta a imagem e o padding do card */
+.links-grid.size-medium .link-card {
+  padding: 9px 12px;
+  gap: 10px;
+  border-radius: 10px;
+}
+.links-grid.size-medium .link-card img {
+  width: 22px; height: 22px; border-radius: 4px;
+}
+.links-grid.size-medium .link-title {
+  font-size: .85rem;
+}
+.links-grid.size-medium .link-cat-badge {
+  font-size: .65rem;
+}
+
+/* GRANDE: card bem mais generoso, favicon maior, texto maior */
+.links-grid.size-large .link-card {
+  padding: 12px 16px;
+  gap: 12px;
+  border-radius: 12px;
+  flex-wrap: wrap;        /* permite quebrar linha caso o título seja longo */
+}
+.links-grid.size-large .link-card img {
+  width: 28px; height: 28px; border-radius: 6px;
+}
+.links-grid.size-large .link-title {
+  font-size: .92rem;
+  font-weight: 600;
+}
+.links-grid.size-large .link-cat-badge {
+  font-size: .7rem;
+  padding: 2px 7px;
+}
+/* No tamanho grande, o botão de deletar fica sempre visível (mais fácil de clicar) */
+.links-grid.size-large .link-del {
+  opacity: 1;
+  width: 26px; height: 26px;
+}
+
 .link-title {
   color: var(--tx); font-size: .78rem; font-weight: 500;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
   cursor: pointer;
 }
-.link-cat-badge { font-size: .58rem; color: var(--tx3); background: var(--bg2); border-radius: 3px; padding: 1px 4px; white-space: nowrap; flex-shrink: 0; }
+.link-cat-badge {
+  font-size: .58rem; color: var(--tx3); background: var(--bg2);
+  border-radius: 3px; padding: 1px 4px; white-space: nowrap; flex-shrink: 0;
+}
 .link-del {
   background: transparent; border: none; color: var(--tx3); cursor: pointer;
   width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center;
@@ -302,80 +425,30 @@ body {
 /* LOGIN STYLES */
 .login-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0; width: 100%; height: 100%;
   background: var(--bg);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 1000; backdrop-filter: blur(4px);
 }
 .login-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  padding: 2rem;
-  width: 100%;
-  max-width: 360px;
-  text-align: center;
-  box-shadow: var(--shadow2);
-  animation: slideUp 0.3s ease-out;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 2rem; width: 100%; max-width: 360px;
+  text-align: center; box-shadow: var(--shadow2); animation: slideUp 0.3s ease-out;
 }
-.login-icon {
-  font-size: 3rem;
-  color: var(--accent);
-  margin-bottom: 1rem;
-}
-.login-box h2 {
-  margin-bottom: 0.5rem;
-  color: var(--tx);
-}
-.login-box p {
-  color: var(--tx2);
-  font-size: 0.85rem;
-  margin-bottom: 1.5rem;
-}
+.login-icon { font-size: 3rem; color: var(--accent); margin-bottom: 1rem; }
+.login-box h2 { margin-bottom: 0.5rem; color: var(--tx); }
+.login-box p { color: var(--tx2); font-size: 0.85rem; margin-bottom: 1.5rem; }
 .login-box input {
-  width: 100%;
-  padding: 12px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  color: var(--tx);
-  border-radius: 8px;
-  font-size: 1rem;
-  margin-bottom: 1rem;
-  outline: none;
+  width: 100%; padding: 12px; background: var(--bg2); border: 1px solid var(--border);
+  color: var(--tx); border-radius: 8px; font-size: 1rem; margin-bottom: 1rem; outline: none;
 }
-.login-box input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
-}
+.login-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
 .btn-login {
-  width: 100%;
-  padding: 12px;
-  background: var(--accent);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.2s;
+  width: 100%; padding: 12px; background: var(--accent); color: white;
+  border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;
 }
-.btn-login:hover {
-  background: var(--accent2);
-  transform: translateY(-1px);
-}
-.login-error {
-  color: var(--danger);
-  font-size: 0.8rem;
-  margin-top: 1rem;
-  min-height: 2rem;
-}
+.btn-login:hover { background: var(--accent2); transform: translateY(-1px); }
+.login-error { color: var(--danger); font-size: 0.8rem; margin-top: 1rem; min-height: 2rem; }
 
 /* Ocultar seletor de ordenação (fixamos alfabética) */
-.sort-wrap {
-  display: none;
-}
+.sort-wrap { display: none; }

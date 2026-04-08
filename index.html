@@ -56,6 +56,21 @@
               <option value="manual">Personalizado ↕</option>
             </select>
           </div>
+
+          <!--
+            NOVO: Botão de tamanho dos cards de link.
+            Fica visível apenas na view de links (a lógica de hide/show
+            está em toggleView() no script.js).
+            O id="linkSizeWrap" é usado para ocultar o wrapper inteiro
+            quando o usuário muda para a view de notas.
+          -->
+          <div id="linkSizeWrap">
+            <button class="btn btn-ghost" id="linkSizeBtn" title="Tamanho dos cards">
+              <i class="fa-solid fa-expand-alt"></i>
+              <span>S</span>
+            </button>
+          </div>
+
           <button class="btn btn-primary" id="addLinkBtn"><i class="fa-solid fa-plus"></i><span>Link</span></button>
           <button class="btn btn-primary hide" id="addNoteBtn"><i class="fa-solid fa-plus"></i><span>Nota</span></button>
           <button class="btn btn-ghost" id="toggleBtn"><i class="fa-solid fa-pen-to-square"></i><span>Notas</span></button>
@@ -191,4 +206,3 @@
 <script src="script.js"></script>
 </body>
 </html>
-
