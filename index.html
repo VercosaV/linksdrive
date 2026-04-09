@@ -47,23 +47,11 @@
           <div class="sort-wrap" id="sortWrap">
             <label><i class="fa-solid fa-arrow-up-wide-short"></i></label>
             <select class="sort-select" id="sortSelect">
-              <option value="cat_asc">Categoria A→Z</option>
-              <option value="cat_desc">Categoria Z→A</option>
               <option value="title_asc">Título A→Z</option>
-              <option value="title_desc">Título Z→A</option>
-              <option value="date_desc">Mais recentes</option>
-              <option value="date_asc">Mais antigos</option>
-              <option value="manual">Personalizado ↕</option>
             </select>
           </div>
 
-          <!--
-            NOVO: Botão de tamanho dos cards de link.
-            Fica visível apenas na view de links (a lógica de hide/show
-            está em toggleView() no script.js).
-            O id="linkSizeWrap" é usado para ocultar o wrapper inteiro
-            quando o usuário muda para a view de notas.
-          -->
+          <!-- Tamanho dos cards -->
           <div id="linkSizeWrap">
             <button class="btn btn-ghost" id="linkSizeBtn" title="Tamanho dos cards">
               <i class="fa-solid fa-expand-alt"></i>
@@ -71,10 +59,24 @@
             </button>
           </div>
 
+          <!--
+            Botão de exportar links.
+            Gera dois arquivos simultâneos:
+              - links_backup_YYYY-MM-DD.json  (reimportável)
+              - links_backup_YYYY-MM-DD.txt   (legível por humanos)
+            Fica visível apenas na view de links.
+          -->
+          <div id="exportWrap">
+            <button class="btn btn-ghost" id="exportLinksBtn" title="Exportar links como JSON + TXT">
+              <i class="fa-solid fa-file-export"></i>
+              <span>Exportar</span>
+            </button>
+          </div>
+
           <button class="btn btn-primary" id="addLinkBtn"><i class="fa-solid fa-plus"></i><span>Link</span></button>
           <button class="btn btn-primary hide" id="addNoteBtn"><i class="fa-solid fa-plus"></i><span>Nota</span></button>
           <button class="btn btn-ghost" id="toggleBtn"><i class="fa-solid fa-pen-to-square"></i><span>Notas</span></button>
-          <button class="btn btn-ghost" id="changePasswordBtn"><i class="fa-solid fa-key"></i><span>Alterar Senha</span></button>
+          <button class="btn btn-ghost" id="changePasswordBtn"><i class="fa-solid fa-key"></i><span>Senha</span></button>
           <button class="btn btn-ghost" id="logoutBtn"><i class="fa-solid fa-sign-out-alt"></i><span>Sair</span></button>
         </div>
       </div>
@@ -153,7 +155,7 @@
     </div>
   </div>
 
-  <!-- MODAL: EXPANDIR NOTA (melhorado) -->
+  <!-- MODAL: EXPANDIR NOTA -->
   <div id="expandOverlay" class="expand-overlay">
     <div class="expand-box">
       <div class="expand-topbar">

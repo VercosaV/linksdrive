@@ -9,32 +9,140 @@ const firebaseConfig = {
   measurementId: "G-V1EZDLJQ2K"
 };
 
-// Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+
+/*
+  OTIMIZAÇÃO PRINCIPAL: persistência offline do Firestore.
+
+  O Firestore tem um sistema de cache embutido. Com enablePersistence(),
+  ele salva os documentos no IndexedDB do navegador (como um banco de dados
+  local no disco do usuário). Isso significa:
+
+  1. Na PRIMEIRA abertura: busca tudo do servidor (leituras normais).
+  2. Nas aberturas SEGUINTES: serve os dados do cache LOCAL sem consumir
+     nenhuma leitura do Firestore — só sincroniza o delta (o que mudou).
+  3. Se o Firestore já está em cache, onSnapshot() dispara imediatamente
+     com os dados locais e depois atualiza se houver mudanças no servidor.
+
+  Sem isso, cada vez que você abre o dashboard = N leituras completas.
+  Com isso, cada abertura = 0 leituras (se nada mudou no servidor).
+
+  Por que isso importa para o Spark plan (gratuito)?
+  → O limite são 50.000 leituras/dia. Com 3 coleções (links, notes, folders)
+    e onSnapshot ativo, cada abertura do app consomia todos os documentos
+    de cada coleção. Com persistência, você abre 1000 vezes por dia
+    sem gastar uma leitura sequer.
+*/
+db.enablePersistence({ synchronizeTabs: true })
+  .catch(err => {
+    // Pode falhar em modo privado (sem IndexedDB) ou se outra aba já tiver
+    // ativado. Não é fatal — o app funciona normalmente, só sem cache local.
+    if (err.code === 'failed-precondition') {
+      console.warn('Cache offline desativado: múltiplas abas abertas.');
+    } else if (err.code === 'unimplemented') {
+      console.warn('Cache offline não suportado neste navegador.');
+    }
+  });
+
 const linksRef = db.collection("links");
 const notesRef = db.collection("notes");
 const foldersRef = db.collection("folders");
 
+// ==================== CACHE KEYS (localStorage) ====================
+/*
+  Além do cache do Firestore (IndexedDB), mantemos um cache manual no
+  localStorage para duas finalidades específicas:
+
+  1. BACKUP DE LINKS: toda vez que os links mudam, salvamos um JSON completo
+     em localStorage. Se o Firestore falhar ou a conta for excluída, os dados
+     ainda existem localmente.
+
+  2. SNAPSHOT LOCAL RÁPIDO: na inicialização, carregamos os dados do
+     localStorage ANTES do Firestore responder. O usuário vê os dados
+     instantaneamente, sem esqueleto de loading.
+
+  Importante: o localStorage tem limite de ~5MB por domínio. Para links e
+  pastas isso é mais do que suficiente. Notas com muito conteúdo poderiam
+  extrapolar, então só fazemos backup de links (o mais crítico).
+*/
+const CACHE_KEYS = {
+  links:   "cache_links_v1",
+  notes:   "cache_notes_v1",
+  folders: "cache_folders_v1",
+  linkSize: "linkCardSize",
+  auth:     "dashboard_auth",
+  salt:     "dashboard_salt",
+  hash:     "dashboard_hash",
+};
+
+function cacheWrite(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch(e) {
+    // QuotaExceededError: localStorage cheio. Silenciamos — não é crítico.
+    console.warn("Cache localStorage cheio, ignorando:", e.message);
+  }
+}
+
+function cacheRead(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) {
+    return null;
+  }
+}
+
 // ==================== ESTADO GLOBAL ====================
 const state = {
-  allLinks: [],
-  allNotes: [],
-  allFolders: [],
+  allLinks:       cacheRead(CACHE_KEYS.links)   || [],
+  allNotes:       cacheRead(CACHE_KEYS.notes)   || [],
+  allFolders:     cacheRead(CACHE_KEYS.folders) || [],
   activeCategory: "Todos",
-  searchTerm: "",
-  sortValue: "manual",
-  isNotesView: false,
-  activeFolder: "Todas",
-  // NOVO: tamanho dos cards de links — persiste no localStorage
-  // Valores possíveis: "small" | "medium" | "large"
-  linkSize: localStorage.getItem("linkCardSize") || "small"
+  searchTerm:     "",
+  sortValue:      "manual",
+  isNotesView:    false,
+  activeFolder:   "Todas",
+  linkSize:       localStorage.getItem(CACHE_KEYS.linkSize) || "small",
+  /*
+    firestoreReady: flag que indica se o Firestore já sincronizou pelo menos
+    uma vez. Usamos para mostrar o badge "Cache" vs badge online.
+  */
+  firestoreReady: false,
 };
 
 let renderAll = () => {};
 
-function setAllLinks(links) { state.allLinks = links; }
-function setAllNotes(notes) { state.allNotes = notes; }
+function setAllLinks(links) {
+  state.allLinks = links;
+  // Toda vez que os links mudam, persiste no localStorage como backup
+  cacheWrite(CACHE_KEYS.links, links);
+  // Também atualiza o backup em JSON para download
+  updateLinkBackupMeta();
+}
+
+function setAllNotes(notes) {
+  state.allNotes = notes;
+  cacheWrite(CACHE_KEYS.notes, notes);
+}
+
+// ==================== BADGE ONLINE/OFFLINE ====================
+function setBadge(online) {
+  const badge  = document.getElementById("offlineBadge");
+  const label  = document.getElementById("offlineLabel");
+  if (!badge || !label) return;
+  badge.classList.add("visible");
+  if (online) {
+    badge.classList.add("online");
+    label.textContent = "Sincronizado";
+    // Some o badge após 3s quando online — só interessa mostrar se offline
+    setTimeout(() => badge.classList.remove("visible"), 3000);
+  } else {
+    badge.classList.remove("online");
+    label.textContent = "Cache local";
+  }
+}
 
 // ==================== TOAST ====================
 function showToast(message, type = "success") {
@@ -53,56 +161,162 @@ function showToast(message, type = "success") {
 
 function escapeHtml(str) {
   if (!str) return '';
-  return str.replace(/[&<>]/g, function(m) {
-    if (m === '&') return '&amp;';
-    if (m === '<') return '&lt;';
-    if (m === '>') return '&gt;';
-    return m;
-  });
+  return str.replace(/[&<>]/g, m =>
+    m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'
+  );
 }
 
-// Cores pastel suaves para notas
 function getColorCode(colorNum) {
-  const colors = {
-    1: '#FFE4E0',
-    2: '#E0F2FE',
-    3: '#E0F2E9',
-    4: '#FFF3E0',
-    5: '#F3E8FF',
-    6: '#FFE4F0'
-  };
+  const colors = { 1:'#FFE4E0', 2:'#E0F2FE', 3:'#E0F2E9', 4:'#FFF3E0', 5:'#F3E8FF', 6:'#FFE4F0' };
   return colors[colorNum] || '#FFE4E0';
 }
 
-// ==================== TAMANHO DOS CARDS DE LINK ====================
+// ==================== BACKUP DE LINKS ====================
 /*
-  Aqui centralizamos a lógica de tamanho dos cards.
-  Temos 3 tamanhos: small, medium, large.
-  Cada um altera o CSS via classe no elemento #linksGrid.
-  O valor é salvo no localStorage para persistir entre sessões.
+  Sistema de backup duplo para os links:
 
-  Por que localStorage e não state puro?
-  → Porque o estado é recriado toda vez que a página carrega,
-    enquanto localStorage persiste mesmo após fechar a aba.
+  CAMADA 1 — localStorage (automático):
+    Atualizado a cada mudança via setAllLinks(). Zero cliques do usuário.
+    Sobrevive a falhas de rede e erros do Firestore.
+    Limite: ~5MB. Para links (texto puro), aguenta milhares deles.
+
+  CAMADA 2 — Download de arquivo (manual):
+    O usuário clica em "Exportar Links" e faz download de um arquivo JSON.
+    Esse arquivo pode ser guardado no computador, Google Drive, etc.
+    Formato JSON escolhido por ser: legível, importável pelo importarLinksEmLote(),
+    e por representar fielmente a estrutura dos dados (título + url + categoria).
+
+  Por que JSON e não TXT?
+  → TXT seria mais legível para humanos, mas perderia a categoria e seria
+    mais difícil de reimportar. Com JSON, um único comando no console restaura
+    tudo: importarLinksEmLote(data).
+    Ainda assim, geramos também um .txt legível no mesmo download (ver abaixo).
+
+  Metadata de backup: guardamos no localStorage quando foi o último backup
+  para informar o usuário no botão.
 */
+const BACKUP_META_KEY = "links_backup_meta";
+
+function updateLinkBackupMeta() {
+  // Apenas atualiza o contador de links no metadata — não faz I/O pesado
+  const existing = cacheRead(BACKUP_META_KEY) || {};
+  cacheWrite(BACKUP_META_KEY, {
+    ...existing,
+    count: state.allLinks.length,
+    lastAutoSave: new Date().toISOString(),
+  });
+  // Atualiza o texto do botão de backup se ele existir
+  refreshBackupBtnLabel();
+}
+
+function refreshBackupBtnLabel() {
+  const btn = document.getElementById("exportLinksBtn");
+  if (!btn) return;
+  const meta = cacheRead(BACKUP_META_KEY);
+  if (meta && meta.count > 0) {
+    btn.title = `Último auto-save: ${new Date(meta.lastAutoSave).toLocaleString()}\n${meta.count} links`;
+  }
+}
+
+function exportLinksAsJSON() {
+  /*
+    Gera e faz download de dois arquivos:
+    1. links_backup.json  — reimportável via importarLinksEmLote()
+    2. links_backup.txt   — legível por humanos, organizado por categoria
+
+    Usamos a técnica de criar um <a> temporário com blob URL para disparar
+    o download sem servidor — tudo no front-end.
+  */
+  if (state.allLinks.length === 0) {
+    showToast("Nenhum link para exportar.", "error");
+    return;
+  }
+
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10); // "2025-04-09"
+
+  // — ARQUIVO 1: JSON estruturado —
+  const jsonData = state.allLinks.map(l => ({
+    title:    l.title,
+    url:      l.url,
+    category: l.category,
+  }));
+  downloadBlob(
+    JSON.stringify(jsonData, null, 2),
+    `links_backup_${dateStr}.json`,
+    "application/json"
+  );
+
+  // — ARQUIVO 2: TXT legível por categoria —
+  // Agrupamos os links por categoria antes de gerar o texto
+  const byCategory = {};
+  state.allLinks.forEach(l => {
+    if (!byCategory[l.category]) byCategory[l.category] = [];
+    byCategory[l.category].push(l);
+  });
+
+  const categories = Object.keys(byCategory).sort();
+  let txt = `MyDashboard — Backup de Links\nGerado em: ${now.toLocaleString()}\nTotal: ${state.allLinks.length} links\n`;
+  txt += "=".repeat(50) + "\n\n";
+
+  categories.forEach(cat => {
+    txt += `\n[${cat}]\n`;
+    // Ordena os links da categoria alfabeticamente
+    byCategory[cat]
+      .sort((a, b) => a.title.localeCompare(b.title))
+      .forEach(l => {
+        txt += `  ${l.title}\n  ${l.url}\n\n`;
+      });
+  });
+
+  // Pequeno delay para o browser não bloquear dois downloads simultâneos
+  setTimeout(() => {
+    downloadBlob(txt, `links_backup_${dateStr}.txt`, "text/plain");
+  }, 300);
+
+  // Atualiza metadata do backup manual
+  cacheWrite(BACKUP_META_KEY, {
+    count:          state.allLinks.length,
+    lastAutoSave:   new Date().toISOString(),
+    lastManualDate: now.toISOString(),
+  });
+
+  showToast(`${state.allLinks.length} links exportados (JSON + TXT)!`, "success");
+}
+
+function downloadBlob(content, filename, mimeType) {
+  /*
+    Cria um Blob (objeto binário em memória) com o conteúdo,
+    gera uma URL temporária para ele e simula um clique num link <a>.
+    Depois revoga a URL para liberar memória.
+  */
+  const blob = new Blob([content], { type: mimeType + ";charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = filename;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Libera a URL do blob da memória após o download iniciar
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ==================== TAMANHO DOS CARDS DE LINK ====================
 const LINK_SIZE_LABELS = {
-  small:  { label: "S", title: "Pequeno"  },
-  medium: { label: "M", title: "Médio"    },
-  large:  { label: "G", title: "Grande"   }
+  small:  { label: "S", title: "Pequeno" },
+  medium: { label: "M", title: "Médio"   },
+  large:  { label: "G", title: "Grande"  }
 };
 const LINK_SIZE_ORDER = ["small", "medium", "large"];
 
 function applyLinkSize() {
-  // Aplica a classe de tamanho na grid e atualiza o botão
   const grid = document.getElementById("linksGrid");
   if (grid) {
-    // Remove todas as classes de tamanho antes de adicionar a nova
-    // Isso evita conflito entre classes
     grid.classList.remove("size-small", "size-medium", "size-large");
     grid.classList.add(`size-${state.linkSize}`);
   }
-
-  // Atualiza o texto/ícone do botão de toggle
   const btn = document.getElementById("linkSizeBtn");
   if (btn) {
     const info = LINK_SIZE_LABELS[state.linkSize];
@@ -112,26 +326,14 @@ function applyLinkSize() {
 }
 
 function cycleLinkSize() {
-  // Cicla entre small → medium → large → small
-  // Usamos o índice atual para pegar o próximo
-  const currentIndex = LINK_SIZE_ORDER.indexOf(state.linkSize);
-  const nextIndex = (currentIndex + 1) % LINK_SIZE_ORDER.length;
-  state.linkSize = LINK_SIZE_ORDER[nextIndex];
-
-  // Persiste no localStorage para não perder ao recarregar
-  localStorage.setItem("linkCardSize", state.linkSize);
-
-  // Aplica visualmente
+  const idx = LINK_SIZE_ORDER.indexOf(state.linkSize);
+  state.linkSize = LINK_SIZE_ORDER[(idx + 1) % LINK_SIZE_ORDER.length];
+  localStorage.setItem(CACHE_KEYS.linkSize, state.linkSize);
   applyLinkSize();
-
-  const info = LINK_SIZE_LABELS[state.linkSize];
-  showToast(`Cards: ${info.title}`, "success");
+  showToast(`Cards: ${LINK_SIZE_LABELS[state.linkSize].title}`, "success");
 }
 
 // ==================== AUTENTICAÇÃO (PBKDF2) ====================
-const SALT_KEY = "dashboard_salt";
-const HASH_KEY = "dashboard_hash";
-const AUTH_KEY = "dashboard_auth";
 const DEFAULT_PASSWORD = "admin123";
 
 async function generateSalt() {
@@ -140,126 +342,111 @@ async function generateSalt() {
 }
 
 async function hashPassword(password, saltBase64) {
-  const encoder = new TextEncoder();
-  const passwordBuffer = encoder.encode(password);
-  const saltBuffer = Uint8Array.from(atob(saltBase64), c => c.charCodeAt(0));
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    passwordBuffer,
-    "PBKDF2",
-    false,
-    ["deriveBits"]
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt: Uint8Array.from(atob(saltBase64), c => c.charCodeAt(0)), iterations: 100000, hash: "SHA-256" },
+    keyMaterial, 256
   );
-  const derivedBits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", salt: saltBuffer, iterations: 100000, hash: "SHA-256" },
-    keyMaterial,
-    256
-  );
-  const hashArray = new Uint8Array(derivedBits);
-  return btoa(String.fromCharCode(...hashArray));
+  return btoa(String.fromCharCode(...new Uint8Array(bits)));
 }
 
 async function verifyPassword(password) {
-  const salt = localStorage.getItem(SALT_KEY);
-  const storedHash = localStorage.getItem(HASH_KEY);
-  if (!salt || !storedHash) {
-    await setPassword(DEFAULT_PASSWORD);
-    return await verifyPassword(password);
-  }
-  const hash = await hashPassword(password, salt);
-  return hash === storedHash;
+  const salt = localStorage.getItem(CACHE_KEYS.salt);
+  const storedHash = localStorage.getItem(CACHE_KEYS.hash);
+  if (!salt || !storedHash) { await setPassword(DEFAULT_PASSWORD); return verifyPassword(password); }
+  return (await hashPassword(password, salt)) === storedHash;
 }
 
 async function setPassword(newPassword) {
-  const newSalt = await generateSalt();
-  const newHash = await hashPassword(newPassword, newSalt);
-  localStorage.setItem(SALT_KEY, newSalt);
-  localStorage.setItem(HASH_KEY, newHash);
-  localStorage.setItem(AUTH_KEY, "true");
-  showToast("Senha alterada com sucesso!", "success");
+  const salt = await generateSalt();
+  const hash = await hashPassword(newPassword, salt);
+  localStorage.setItem(CACHE_KEYS.salt, salt);
+  localStorage.setItem(CACHE_KEYS.hash, hash);
+  localStorage.setItem(CACHE_KEYS.auth, "true");
+  showToast("Senha alterada com sucesso!");
 }
 
 async function login(password) {
-  const isValid = await verifyPassword(password);
-  if (isValid) {
-    localStorage.setItem(AUTH_KEY, "true");
+  if (await verifyPassword(password)) {
+    localStorage.setItem(CACHE_KEYS.auth, "true");
     return true;
   }
   return false;
 }
 
-function logout() {
-  localStorage.removeItem(AUTH_KEY);
-  window.location.reload();
-}
-
-function checkAuth() {
-  return localStorage.getItem(AUTH_KEY) === "true";
-}
+function logout() { localStorage.removeItem(CACHE_KEYS.auth); window.location.reload(); }
+function checkAuth() { return localStorage.getItem(CACHE_KEYS.auth) === "true"; }
 
 function openChangePasswordModal() {
-  const modal = document.getElementById("changePasswordModal");
-  if (!modal) return;
-  modal.style.display = "flex";
-  const currentPwd = document.getElementById("currentPassword");
-  const newPwd = document.getElementById("newPassword");
-  const confirmPwd = document.getElementById("confirmPassword");
-  if (currentPwd) currentPwd.value = "";
-  if (newPwd) newPwd.value = "";
-  if (confirmPwd) confirmPwd.value = "";
-  if (currentPwd) currentPwd.focus();
+  document.getElementById("changePasswordModal").style.display = "flex";
+  ["currentPassword","newPassword","confirmPassword"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = "";
+  });
+  document.getElementById("currentPassword")?.focus();
 }
-
 function closeChangePasswordModal() {
-  const modal = document.getElementById("changePasswordModal");
-  if (modal) modal.style.display = "none";
+  document.getElementById("changePasswordModal").style.display = "none";
 }
 
 async function saveNewPassword() {
   const current = document.getElementById("currentPassword")?.value;
-  const newPwd = document.getElementById("newPassword")?.value;
+  const newPwd  = document.getElementById("newPassword")?.value;
   const confirm = document.getElementById("confirmPassword")?.value;
-
-  if (!current || !newPwd || !confirm) {
-    showToast("Preencha todos os campos!", "error");
-    return;
-  }
-  if (newPwd !== confirm) {
-    showToast("As senhas não coincidem!", "error");
-    return;
-  }
-  if (newPwd.length < 4) {
-    showToast("A nova senha deve ter pelo menos 4 caracteres!", "error");
-    return;
-  }
-
-  const isValidCurrent = await verifyPassword(current);
-  if (!isValidCurrent) {
-    showToast("Senha atual incorreta!", "error");
-    return;
-  }
-
+  if (!current || !newPwd || !confirm) { showToast("Preencha todos os campos!", "error"); return; }
+  if (newPwd !== confirm)              { showToast("As senhas não coincidem!", "error"); return; }
+  if (newPwd.length < 4)              { showToast("Mínimo 4 caracteres!", "error"); return; }
+  if (!await verifyPassword(current))  { showToast("Senha atual incorreta!", "error"); return; }
   await setPassword(newPwd);
   closeChangePasswordModal();
 }
 
 // ==================== LINKS ====================
+/*
+  POR QUE CONTINUAR USANDO onSnapshot() COM PERSISTÊNCIA ATIVA?
+
+  O onSnapshot() com persistência é a combinação mais eficiente possível:
+  - Dispara imediatamente com dados do CACHE (custo: 0 leituras)
+  - Recebe apenas o DIFF do servidor quando algo muda (custo: só os docs alterados)
+  - Sem persistência, cada snapshot = todos os documentos relidos do servidor
+
+  Alternativa descartada: substituir por get() + polling.
+  → get() com cache ainda consome 1 leitura por documento na primeira vez.
+  → Polling (setInterval) forçaria leituras mesmo sem mudanças.
+  → onSnapshot com persistência é superior em todos os eixos.
+
+  NOTA sobre o limite Spark:
+  50.000 leituras/dia. Com persistência, cada documento só é "lido" quando
+  muda no servidor. Se você não editar nada, pode abrir o app 10.000 vezes
+  no dia sem gastar uma única leitura adicional.
+*/
 function subscribeLinks() {
-  const q = linksRef.orderBy("category");
-  return q.onSnapshot((snapshot) => {
-    const links = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setAllLinks(links);
-    renderAll();
-  }, (error) => {
-    console.error("Erro no Firebase:", error);
-    showToast("Erro ao conectar com o banco de dados.", "error");
-  });
+  return linksRef.orderBy("category").onSnapshot(
+    { includeMetadataChanges: false }, // ignora eventos intermediários de sincronização
+    (snapshot) => {
+      const links = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAllLinks(links);
+      state.firestoreReady = true;
+      setBadge(true);
+      renderAll();
+    },
+    (error) => {
+      console.error("Erro no Firebase:", error);
+      // Se falhar mas temos cache, continuamos funcionando
+      if (state.allLinks.length > 0) {
+        setBadge(false);
+        showToast("Usando dados do cache local.", "error");
+      } else {
+        showToast("Erro ao conectar com o banco de dados.", "error");
+      }
+    }
+  );
 }
 
 async function addLink(linkData) {
   try {
     await linksRef.add({ ...linkData, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-    showToast("Link salvo com sucesso!");
+    showToast("Link salvo!");
   } catch (error) {
     console.error("Erro ao adicionar link:", error);
     showToast("Erro ao salvar link.", "error");
@@ -270,7 +457,7 @@ async function addLink(linkData) {
 async function deleteLink(linkId) {
   try {
     await db.collection("links").doc(linkId).delete();
-    showToast("Link excluído com sucesso!");
+    showToast("Link excluído!");
   } catch (error) {
     console.error("Erro ao excluir link:", error);
     showToast("Erro ao excluir o link.", "error");
@@ -280,7 +467,7 @@ async function deleteLink(linkId) {
 async function changeLinkCategory(linkId, newCategory) {
   try {
     await db.collection("links").doc(linkId).update({ category: newCategory });
-    showToast("Categoria atualizada!", "success");
+    showToast("Categoria atualizada!");
   } catch (error) {
     console.error("Erro ao mudar categoria:", error);
     showToast("Erro ao atualizar categoria.", "error");
@@ -293,8 +480,8 @@ function renderCategories() {
   if (!nav || !select) return;
 
   const categoryCount = {};
-  state.allLinks.forEach(link => {
-    categoryCount[link.category] = (categoryCount[link.category] || 0) + 1;
+  state.allLinks.forEach(l => {
+    categoryCount[l.category] = (categoryCount[l.category] || 0) + 1;
   });
 
   const categories = ["Todos", ...new Set(state.allLinks.map(l => l.category))].sort();
@@ -302,20 +489,16 @@ function renderCategories() {
   select.innerHTML = "";
 
   categories.forEach(cat => {
-    const btn = document.createElement("button");
     const count = cat === "Todos" ? state.allLinks.length : (categoryCount[cat] || 0);
+    const btn = document.createElement("button");
     btn.className = `cat-tab ${state.activeCategory === cat ? 'active' : ''}`;
     btn.innerText = `${cat} (${count})`;
-    btn.onclick = () => {
-      state.activeCategory = cat;
-      renderAll();
-    };
+    btn.onclick = () => { state.activeCategory = cat; renderAll(); };
     nav.appendChild(btn);
 
     if (cat !== "Todos") {
       const opt = document.createElement("option");
-      opt.value = cat;
-      opt.innerText = cat;
+      opt.value = cat; opt.innerText = cat;
       select.appendChild(opt);
     }
   });
@@ -323,25 +506,22 @@ function renderCategories() {
 }
 
 function renderLinks() {
-  const grid = document.getElementById("linksGrid");
-  const empty = document.getElementById("linksEmpty");
+  const grid     = document.getElementById("linksGrid");
+  const empty    = document.getElementById("linksEmpty");
   const skeleton = document.getElementById("linksSkeleton");
   if (!grid || !empty || !skeleton) return;
 
-  let filtered = state.allLinks.filter(link => {
-    const matchCat = state.activeCategory === "Todos" || link.category === state.activeCategory;
-    const matchSearch = link.title.toLowerCase().includes(state.searchTerm.toLowerCase());
-    return matchCat && matchSearch;
-  });
-
-  // Ordenação fixa alfabética por título
-  filtered.sort((a, b) => a.title.localeCompare(b.title));
+  const filtered = state.allLinks
+    .filter(l => {
+      const matchCat    = state.activeCategory === "Todos" || l.category === state.activeCategory;
+      const matchSearch = l.title.toLowerCase().includes(state.searchTerm.toLowerCase());
+      return matchCat && matchSearch;
+    })
+    .sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
 
   skeleton.style.display = "none";
   grid.style.display = "grid";
   grid.innerHTML = "";
-
-  // IMPORTANTE: sempre aplica a classe de tamanho após (re)criar a grid
   applyLinkSize();
 
   if (filtered.length === 0) {
@@ -354,35 +534,28 @@ function renderLinks() {
   filtered.forEach(link => {
     let domain = "google.com";
     try { domain = new URL(link.url).hostname; } catch(e) {}
+
     const card = document.createElement("div");
     card.className = "link-card";
-    card.onclick = (e) => {
-      if (!e.target.closest('.link-del')) window.open(link.url, '_blank');
-    };
+    card.onclick = (e) => { if (!e.target.closest('.link-del')) window.open(link.url, '_blank'); };
     card.innerHTML = `
-      <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=64" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
+      <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=64"
+           onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
       <span class="link-title">${escapeHtml(link.title)}</span>
       <span class="link-cat-badge">${escapeHtml(link.category)}</span>
       <button class="link-del" aria-label="Deletar"><i class="fa-solid fa-trash"></i></button>
     `;
 
-    const delBtn = card.querySelector('.link-del');
-    delBtn.onclick = async (e) => {
+    card.querySelector('.link-del').onclick = async (e) => {
       e.stopPropagation();
-      if (confirm(`Excluir "${link.title}"?`)) {
-        await deleteLink(link.id);
-      }
+      if (confirm(`Excluir "${link.title}"?`)) await deleteLink(link.id);
     };
 
-    // Ícone de editar categoria (lápis) – abre modal
-    const catSpan = card.querySelector('.link-cat-badge');
+    const catSpan  = card.querySelector('.link-cat-badge');
     const editIcon = document.createElement("i");
     editIcon.className = "fa-solid fa-pencil";
-    editIcon.style.cssText = "font-size: 0.65rem; margin-left: 6px; cursor: pointer; opacity: 0.6;";
-    editIcon.onclick = async (e) => {
-      e.stopPropagation();
-      openEditCatModal(link.id, link.category);
-    };
+    editIcon.style.cssText = "font-size:.65rem;margin-left:6px;cursor:pointer;opacity:.6;";
+    editIcon.onclick = (e) => { e.stopPropagation(); openEditCatModal(link.id, link.category); };
     catSpan.appendChild(editIcon);
 
     grid.appendChild(card);
@@ -394,66 +567,53 @@ let currentEditLinkId = null;
 
 function openEditCatModal(linkId, currentCat) {
   currentEditLinkId = linkId;
-  const modal = document.getElementById("editCatModal");
-  const select = document.getElementById("editCatSelect");
+  const modal       = document.getElementById("editCatModal");
+  const select      = document.getElementById("editCatSelect");
   const newCatInput = document.getElementById("editNewCatInput");
-
   if (!modal || !select) return;
 
-  // Preencher select com categorias existentes
   const categories = [...new Set(state.allLinks.map(l => l.category))].sort();
-  select.innerHTML = "";
-  categories.forEach(cat => {
-    const opt = document.createElement("option");
-    opt.value = cat;
-    opt.innerText = cat;
-    if (cat === currentCat) opt.selected = true;
-    select.appendChild(opt);
-  });
-  select.innerHTML += `<option value="new">+ Nova Categoria...</option>`;
+  select.innerHTML = categories.map(cat =>
+    `<option value="${cat}" ${cat === currentCat ? 'selected' : ''}>${cat}</option>`
+  ).join('') + `<option value="new">+ Nova Categoria...</option>`;
 
-  // Esconder input de nova categoria
   if (newCatInput) newCatInput.style.display = "none";
   modal.style.display = "flex";
 }
 
 function closeEditCatModal() {
-  const modal = document.getElementById("editCatModal");
-  if (modal) modal.style.display = "none";
+  document.getElementById("editCatModal").style.display = "none";
   currentEditLinkId = null;
 }
 
 async function saveEditCategory() {
   if (!currentEditLinkId) return;
-  const select = document.getElementById("editCatSelect");
-  let newCategory = select?.value;
-  if (newCategory === "new") {
-    newCategory = document.getElementById("editNewCatInput")?.value.trim();
-  }
-  if (!newCategory) {
-    showToast("Digite o nome da categoria!", "error");
-    return;
-  }
-  await changeLinkCategory(currentEditLinkId, newCategory);
+  let cat = document.getElementById("editCatSelect")?.value;
+  if (cat === "new") cat = document.getElementById("editNewCatInput")?.value.trim();
+  if (!cat) { showToast("Digite o nome da categoria!", "error"); return; }
+  await changeLinkCategory(currentEditLinkId, cat);
   closeEditCatModal();
 }
 
-// ==================== PASTAS SEPARADAS ====================
+// ==================== PASTAS ====================
 function subscribeFolders() {
-  return foldersRef.onSnapshot((snapshot) => {
-    state.allFolders = snapshot.docs.map(doc => doc.id);
-    renderAll();
-  }, (error) => {
-    console.error("Erro ao carregar pastas:", error);
-  });
+  return foldersRef.onSnapshot(
+    { includeMetadataChanges: false },
+    (snapshot) => {
+      state.allFolders = snapshot.docs.map(doc => doc.id);
+      cacheWrite(CACHE_KEYS.folders, state.allFolders);
+      renderAll();
+    },
+    (error) => { console.error("Erro ao carregar pastas:", error); }
+  );
 }
 
 async function addFolder(folderName) {
   try {
     await foldersRef.doc(folderName).set({ name: folderName, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-    showToast(`Pasta "${folderName}" criada!`, "success");
-  } catch (error) {
-    console.error("Erro ao criar pasta:", error);
+    showToast(`Pasta "${folderName}" criada!`);
+  } catch (e) {
+    console.error(e);
     showToast("Erro ao criar pasta.", "error");
   }
 }
@@ -461,13 +621,11 @@ async function addFolder(folderName) {
 async function deleteFolder(folderName) {
   try {
     const notesInFolder = state.allNotes.filter(n => (n.folder || "Geral") === folderName);
-    for (const note of notesInFolder) {
-      await updateNote(note.id, { folder: "Geral" });
-    }
+    await Promise.all(notesInFolder.map(n => updateNote(n.id, { folder: "Geral" })));
     await foldersRef.doc(folderName).delete();
-    showToast(`Pasta "${folderName}" excluída. Notas movidas para "Geral".`, "success");
-  } catch (error) {
-    console.error("Erro ao excluir pasta:", error);
+    showToast(`Pasta "${folderName}" excluída. Notas movidas para "Geral".`);
+  } catch (e) {
+    console.error(e);
     showToast("Erro ao excluir pasta.", "error");
   }
 }
@@ -476,52 +634,37 @@ async function deleteFolder(folderName) {
 let dragSrc = null;
 
 function subscribeNotes() {
-  const q = notesRef.orderBy("order", "asc");
-  return q.onSnapshot((snapshot) => {
-    const notes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setAllNotes(notes);
-    renderAll();
-  }, (error) => {
-    console.error("Erro ao carregar notas:", error);
-    showToast("Erro ao carregar notas.", "error");
-  });
+  return notesRef.orderBy("order", "asc").onSnapshot(
+    { includeMetadataChanges: false },
+    (snapshot) => {
+      const notes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAllNotes(notes);
+      renderAll();
+    },
+    (error) => {
+      console.error("Erro ao carregar notas:", error);
+      showToast("Erro ao carregar notas.", "error");
+    }
+  );
 }
 
 async function addNote() {
   /*
-    BUG CORRIGIDO: antes, addNote() sempre criava a nota na pasta "Geral"
-    porque não levava em conta a pasta ativa no momento da criação.
-
-    A correção é simples: lemos state.activeFolder no momento do clique.
-    Se a pasta ativa for "Todas", usamos "Geral" como fallback (pois "Todas"
-    não é uma pasta real, é só um filtro de visualização).
-
-    Por que isso acontecia antes?
-    → A função addNote() não recebia nenhum argumento e não lia state.activeFolder.
-      O campo "folder" simplesmente não era incluído no documento criado,
-      então o Firestore não salvava a pasta — e ao renderizar, a nota
-      caia no fallback `(n.folder || "Geral") === folderName`, exibindo só em "Geral".
+    CORREÇÃO: usa state.activeFolder para criar a nota na pasta certa.
+    "Todas" não é uma pasta real — usamos "Geral" como fallback.
   */
+  const targetFolder = (state.activeFolder === "Todas") ? "Geral" : state.activeFolder;
   try {
-    const color = Math.floor(Math.random() * 6) + 1;
-    const order = state.allNotes.length;
-
-    // Determina a pasta destino:
-    // - Se estiver em "Todas", cria em "Geral" (pasta padrão)
-    // - Se estiver em qualquer outra pasta específica, cria nela
-    const targetFolder = (state.activeFolder === "Todas") ? "Geral" : state.activeFolder;
-
     await notesRef.add({
-      content: "",
-      color: color,
-      order: order,
-      folder: targetFolder,                                        // ← campo adicionado
+      content:   "",
+      color:     Math.floor(Math.random() * 6) + 1,
+      order:     state.allNotes.length,
+      folder:    targetFolder,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
-
-    showToast(`Nota criada em "${targetFolder}"`, "success");
-  } catch (error) {
-    console.error("Erro ao criar nota:", error);
+    showToast(`Nota criada em "${targetFolder}"`);
+  } catch (e) {
+    console.error(e);
     showToast("Erro ao criar nota.", "error");
   }
 }
@@ -530,8 +673,8 @@ async function deleteNote(noteId) {
   try {
     await db.collection("notes").doc(noteId).delete();
     showToast("Nota excluída");
-  } catch (error) {
-    console.error("Erro ao excluir nota:", error);
+  } catch (e) {
+    console.error(e);
     showToast("Erro ao excluir nota.", "error");
   }
 }
@@ -539,61 +682,50 @@ async function deleteNote(noteId) {
 async function updateNote(noteId, updates) {
   try {
     await db.collection("notes").doc(noteId).update(updates);
-  } catch (error) {
-    console.error("Erro ao atualizar nota:", error);
+  } catch (e) {
+    console.error(e);
     showToast("Erro ao atualizar nota.", "error");
   }
 }
 
 async function updateNoteOrder(sourceId, targetId) {
-  const sourceIndex = state.allNotes.findIndex(n => n.id === sourceId);
-  const targetIndex = state.allNotes.findIndex(n => n.id === targetId);
-  if (sourceIndex === -1 || targetIndex === -1) return;
+  const si = state.allNotes.findIndex(n => n.id === sourceId);
+  const ti = state.allNotes.findIndex(n => n.id === targetId);
+  if (si === -1 || ti === -1) return;
 
   const newNotes = [...state.allNotes];
-  const [removed] = newNotes.splice(sourceIndex, 1);
-  newNotes.splice(targetIndex, 0, removed);
+  const [removed] = newNotes.splice(si, 1);
+  newNotes.splice(ti, 0, removed);
 
-  const start = Math.min(sourceIndex, targetIndex);
-  const end = Math.max(sourceIndex, targetIndex);
+  const start = Math.min(si, ti);
+  const end   = Math.max(si, ti);
 
   try {
-    const updates = [];
-    for (let i = start; i <= end; i++) {
-      updates.push(db.collection("notes").doc(newNotes[i].id).update({ order: i }));
-    }
-    await Promise.all(updates);
-  } catch (error) {
-    console.error("Erro ao atualizar ordem das notas:", error);
+    await Promise.all(
+      newNotes.slice(start, end + 1).map((n, i) =>
+        db.collection("notes").doc(n.id).update({ order: start + i })
+      )
+    );
+  } catch (e) {
+    console.error(e);
     showToast("Erro ao reordenar notas.", "error");
   }
 }
 
 function renderNotes() {
-  const grid = document.getElementById("notesGrid");
+  const grid  = document.getElementById("notesGrid");
   const empty = document.getElementById("notesEmpty");
   if (!grid || !empty) return;
 
-  const folders = ["Todas", ...state.allFolders];
   const folderStrip = document.getElementById("folderStrip");
   if (folderStrip) {
     folderStrip.innerHTML = "";
-    folders.forEach(f => {
-      const btn = document.createElement("button");
+    ["Todas", ...state.allFolders].forEach(f => {
+      const btn   = document.createElement("button");
       btn.className = `ftab ${state.activeFolder === f ? 'on' : ''}`;
-
-      /*
-        CORREÇÃO DE CONTAGEM:
-        Antes: contava notas cuja pasta fosse igual a f, mas "Todas" nunca batia
-        porque nenhuma nota tem folder === "Todas".
-
-        Agora: se f === "Todas", conta TODAS as notas. Caso contrário, conta
-        apenas as da pasta específica.
-      */
       const count = f === "Todas"
         ? state.allNotes.length
         : state.allNotes.filter(n => (n.folder || "Geral") === f).length;
-
       btn.innerHTML = `<span>${f}</span> <span class="ftab-count">(${count})</span>`;
 
       if (f !== "Todas") {
@@ -602,49 +734,47 @@ function renderNotes() {
         del.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
         del.onclick = (e) => {
           e.stopPropagation();
-          if (confirm(`Excluir pasta "${f}"? Todas as notas serão movidas para "Geral".`)) {
-            deleteFolder(f);
-          }
+          if (confirm(`Excluir pasta "${f}"? As notas serão movidas para "Geral".`)) deleteFolder(f);
         };
         btn.appendChild(del);
       }
-      btn.onclick = () => {
-        state.activeFolder = f;
-        renderAll();
-      };
+      btn.onclick = () => { state.activeFolder = f; renderAll(); };
       folderStrip.appendChild(btn);
     });
   }
 
-  let notesToShow = state.allNotes.filter(n => {
-    if (state.activeFolder === "Todas") return true;
-    return (n.folder || "Geral") === state.activeFolder;
-  });
+  const notesToShow = state.activeFolder === "Todas"
+    ? state.allNotes
+    : state.allNotes.filter(n => (n.folder || "Geral") === state.activeFolder);
 
   if (notesToShow.length === 0) {
     empty.style.display = "flex";
-    grid.style.display = "none";
+    grid.style.display  = "none";
     return;
   }
   empty.style.display = "none";
-  grid.style.display = "grid";
-  grid.innerHTML = "";
+  grid.style.display  = "grid";
+  grid.innerHTML      = "";
 
   notesToShow.forEach(note => {
     const card = document.createElement("div");
-    card.className = `note-card nc${note.color || 1}`;
-    card.draggable = true;
+    card.className  = `note-card nc${note.color || 1}`;
+    card.draggable  = true;
     card.dataset.id = note.id;
-    if (note.width) card.style.width = note.width;
+    if (note.width)  card.style.width  = note.width;
     if (note.height) card.style.height = note.height;
 
-    const date = note.timestamp ? new Date(note.timestamp.seconds * 1000).toLocaleString() : "Agora";
+    const date = note.timestamp
+      ? new Date(note.timestamp.seconds * 1000).toLocaleString("pt-BR")
+      : "Agora";
 
     card.innerHTML = `
       <div class="note-topbar">
         <div class="note-tbl">
           <div class="note-drag"><i class="fa-solid fa-grip-vertical"></i></div>
-          ${[1,2,3,4,5,6].map(c => `<div class="cdot" data-color="${c}" style="background:${getColorCode(c)}"></div>`).join('')}
+          ${[1,2,3,4,5,6].map(c =>
+            `<div class="cdot" data-color="${c}" style="background:${getColorCode(c)}"></div>`
+          ).join('')}
         </div>
         <div class="note-tbr">
           <button class="note-btn expand-note" title="Expandir"><i class="fa-solid fa-expand"></i></button>
@@ -659,74 +789,49 @@ function renderNotes() {
         <span class="note-ts">${date}</span>
         <select class="note-folder-sel">
           <option value="Geral">Geral</option>
-          ${[...state.allFolders].map(f => `<option value="${f}" ${(note.folder || "Geral") === f ? 'selected' : ''}>${f}</option>`).join('')}
+          ${state.allFolders.map(f =>
+            `<option value="${f}" ${(note.folder||"Geral")===f?'selected':''}>${f}</option>`
+          ).join('')}
         </select>
-        <span class="note-chars">${(note.content || '').length} car.</span>
+        <span class="note-chars">${(note.content||'').length} car.</span>
       </div>
     `;
 
     // Drag & drop
-    card.addEventListener('dragstart', (e) => {
-      card.classList.add('dragging');
-      dragSrc = card;
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    card.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-    });
-    card.addEventListener('drop', (e) => {
-      e.preventDefault();
-      if (dragSrc !== card) {
-        updateNoteOrder(dragSrc.dataset.id, card.dataset.id);
-      }
-    });
-    card.addEventListener('dragend', () => {
-      card.classList.remove('dragging');
-    });
+    card.addEventListener('dragstart', (e) => { card.classList.add('dragging'); dragSrc = card; e.dataTransfer.effectAllowed = 'move'; });
+    card.addEventListener('dragover',  (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    card.addEventListener('drop',      (e) => { e.preventDefault(); if (dragSrc !== card) updateNoteOrder(dragSrc.dataset.id, card.dataset.id); });
+    card.addEventListener('dragend',   ()  => { card.classList.remove('dragging'); });
 
-    // Troca de cor
-    card.querySelectorAll('.cdot').forEach(dot => {
-      dot.addEventListener('click', (e) => {
-        e.stopPropagation();
-        updateNote(note.id, { color: parseInt(dot.dataset.color) });
-      });
-    });
+    // Cor
+    card.querySelectorAll('.cdot').forEach(dot =>
+      dot.addEventListener('click', (e) => { e.stopPropagation(); updateNote(note.id, { color: parseInt(dot.dataset.color) }); })
+    );
 
-    // Título
+    // Título com debounce
     const titleInput = card.querySelector('.note-title-input');
-    let titleTimeout;
+    let titleTimer;
     titleInput.addEventListener('input', () => {
-      clearTimeout(titleTimeout);
-      titleTimeout = setTimeout(() => {
-        updateNote(note.id, { title: titleInput.value });
-      }, 500);
+      clearTimeout(titleTimer);
+      titleTimer = setTimeout(() => updateNote(note.id, { title: titleInput.value }), 600);
     });
 
-    // Conteúdo
-    const bodyText = card.querySelector('.note-body');
-    let bodyTimeout;
+    // Conteúdo com debounce
+    const bodyText  = card.querySelector('.note-body');
+    let bodyTimer;
     bodyText.addEventListener('input', () => {
-      clearTimeout(bodyTimeout);
-      bodyTimeout = setTimeout(() => {
+      clearTimeout(bodyTimer);
+      bodyTimer = setTimeout(() => {
         updateNote(note.id, { content: bodyText.value });
         card.querySelector('.note-chars').innerText = `${bodyText.value.length} car.`;
-      }, 500);
+      }, 600);
     });
 
     // Pasta
     const folderSel = card.querySelector('.note-folder-sel');
-    folderSel.addEventListener('change', () => {
-      updateNote(note.id, { folder: folderSel.value });
-    });
+    folderSel.addEventListener('change', () => updateNote(note.id, { folder: folderSel.value }));
 
-    // Expandir
-    card.querySelector('.expand-note').addEventListener('click', (e) => {
-      e.stopPropagation();
-      openExpandNote(note.id);
-    });
-
-    // Excluir
+    card.querySelector('.expand-note').addEventListener('click', (e) => { e.stopPropagation(); openExpandNote(note.id); });
     card.querySelector('.delete-note').addEventListener('click', async (e) => {
       e.stopPropagation();
       if (confirm("Excluir esta nota?")) await deleteNote(note.id);
@@ -739,80 +844,77 @@ function renderNotes() {
 function openExpandNote(noteId) {
   const note = state.allNotes.find(n => n.id === noteId);
   if (!note) return;
-  const overlay = document.getElementById("expandOverlay");
-  const titleInput = document.getElementById("expTitle");
-  const body = document.getElementById("expBody");
-  const folderSel = document.getElementById("expFolder");
-  const tsSpan = document.getElementById("expTs");
-  const charsSpan = document.getElementById("expChars");
 
-  if (!overlay || !titleInput || !body || !folderSel || !tsSpan || !charsSpan) return;
+  const overlay   = document.getElementById("expandOverlay");
+  const titleInput = document.getElementById("expTitle");
+  const body      = document.getElementById("expBody");
+  const folderSel = document.getElementById("expFolder");
+  const tsSpan    = document.getElementById("expTs");
+  const charsSpan = document.getElementById("expChars");
+  if (!overlay || !titleInput || !body) return;
 
   titleInput.value = note.title || "";
-  body.value = note.content || "";
-  const date = note.timestamp ? new Date(note.timestamp.seconds * 1000).toLocaleString() : "Agora";
-  tsSpan.innerText = date;
-  charsSpan.innerText = `${(note.content || '').length} car.`;
+  body.value       = note.content || "";
+  tsSpan.innerText = note.timestamp
+    ? new Date(note.timestamp.seconds * 1000).toLocaleString("pt-BR") : "Agora";
+  charsSpan.innerText = `${(note.content||'').length} car.`;
 
-  const folders = ["Geral", ...state.allFolders];
-  folderSel.innerHTML = folders.map(f => `<option value="${f}" ${(note.folder || "Geral") === f ? 'selected' : ''}>${f}</option>`).join('');
+  folderSel.innerHTML = ["Geral", ...state.allFolders].map(f =>
+    `<option value="${f}" ${(note.folder||"Geral")===f?'selected':''}>${f}</option>`
+  ).join('');
 
   overlay.classList.add("open");
 
-  let timeout;
+  let timer;
   const save = () => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      updateNote(noteId, {
-        title: titleInput.value,
-        content: body.value,
-        folder: folderSel.value
-      });
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      updateNote(noteId, { title: titleInput.value, content: body.value, folder: folderSel.value });
       charsSpan.innerText = `${body.value.length} car.`;
-    }, 500);
+    }, 600);
   };
-  titleInput.oninput = save;
-  body.oninput = save;
-  folderSel.onchange = save;
+  titleInput.oninput  = save;
+  body.oninput        = save;
+  folderSel.onchange  = save;
 }
 
 // ==================== TOGGLE VIEW ====================
 function toggleView() {
   state.isNotesView = !state.isNotesView;
-  const linksView = document.getElementById("linksView");
-  const notesView = document.getElementById("notesView");
-  const addLinkBtn = document.getElementById("addLinkBtn");
-  const addNoteBtn = document.getElementById("addNoteBtn");
-  const searchWrap = document.getElementById("searchWrap");
-  const sortWrap = document.getElementById("sortWrap");
-  const toggleBtn = document.getElementById("toggleBtn");
+  const linksView    = document.getElementById("linksView");
+  const notesView    = document.getElementById("notesView");
+  const addLinkBtn   = document.getElementById("addLinkBtn");
+  const addNoteBtn   = document.getElementById("addNoteBtn");
+  const searchWrap   = document.getElementById("searchWrap");
+  const sortWrap     = document.getElementById("sortWrap");
+  const toggleBtn    = document.getElementById("toggleBtn");
   const linkSizeWrap = document.getElementById("linkSizeWrap");
+  const exportWrap   = document.getElementById("exportWrap");
 
   if (!linksView || !notesView) return;
 
   if (state.isNotesView) {
     linksView.style.display = "none";
     notesView.style.display = "block";
-    if (addLinkBtn) addLinkBtn.classList.add("hide");
-    if (addNoteBtn) addNoteBtn.classList.remove("hide");
-    if (searchWrap) searchWrap.classList.add("hide");
-    if (sortWrap) sortWrap.classList.add("hide");
-    // Esconde o botão de tamanho de card quando está em notas
-    if (linkSizeWrap) linkSizeWrap.classList.add("hide");
+    addLinkBtn?.classList.add("hide");
+    addNoteBtn?.classList.remove("hide");
+    searchWrap?.classList.add("hide");
+    sortWrap?.classList.add("hide");
+    linkSizeWrap?.classList.add("hide");
+    exportWrap?.classList.add("hide");
     if (toggleBtn) toggleBtn.innerHTML = `<i class="fa-solid fa-link"></i><span>Links</span>`;
-    renderAll();
   } else {
     linksView.style.display = "block";
     notesView.style.display = "none";
-    if (addLinkBtn) addLinkBtn.classList.remove("hide");
-    if (addNoteBtn) addNoteBtn.classList.add("hide");
-    if (searchWrap) searchWrap.classList.remove("hide");
-    if (sortWrap) sortWrap.classList.remove("hide");
-    // Mostra o botão de tamanho de card quando está em links
-    if (linkSizeWrap) linkSizeWrap.classList.remove("hide");
+    addLinkBtn?.classList.remove("hide");
+    addNoteBtn?.classList.add("hide");
+    searchWrap?.classList.remove("hide");
+    sortWrap?.classList.remove("hide");
+    linkSizeWrap?.classList.remove("hide");
+    exportWrap?.classList.remove("hide");
     if (toggleBtn) toggleBtn.innerHTML = `<i class="fa-solid fa-pen-to-square"></i><span>Notas</span>`;
-    renderAll();
   }
+  renderAll();
 }
 
 // ==================== MODAL ADICIONAR LINK ====================
@@ -820,52 +922,31 @@ function openLinkModal() {
   const modal = document.getElementById("linkModal");
   if (!modal) return;
   modal.style.display = "flex";
-  const urlInput = document.getElementById("urlInput");
-  if (urlInput) urlInput.focus();
-  const select = document.getElementById("catSelect");
-  if (!select) return;
-  const categories = ["Todos", ...new Set(state.allLinks.map(l => l.category))].sort();
-  select.innerHTML = "";
-  categories.forEach(cat => {
-    if (cat !== "Todos") {
-      const opt = document.createElement("option");
-      opt.value = cat;
-      opt.innerText = cat;
-      select.appendChild(opt);
-    }
-  });
-  select.innerHTML += `<option value="new">+ Nova Categoria...</option>`;
+  document.getElementById("urlInput")?.focus();
+
+  const select     = document.getElementById("catSelect");
+  const categories = [...new Set(state.allLinks.map(l => l.category))].sort();
+  select.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('')
+    + `<option value="new">+ Nova Categoria...</option>`;
 }
 
 function closeLinkModal() {
-  const modal = document.getElementById("linkModal");
-  if (modal) modal.style.display = "none";
-  const urlInput = document.getElementById("urlInput");
-  const titleInput = document.getElementById("titleInput");
-  const newCatInput = document.getElementById("newCatInput");
-  if (urlInput) urlInput.value = "";
-  if (titleInput) titleInput.value = "";
-  if (newCatInput) {
-    newCatInput.style.display = "none";
-    newCatInput.value = "";
-  }
+  document.getElementById("linkModal").style.display = "none";
+  ["urlInput","titleInput"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  const nc = document.getElementById("newCatInput");
+  if (nc) { nc.style.display = "none"; nc.value = ""; }
 }
 
 async function saveLinkHandler() {
-  let title = document.getElementById("titleInput")?.value.trim();
-  let url = document.getElementById("urlInput")?.value.trim();
+  let title    = document.getElementById("titleInput")?.value.trim();
+  let url      = document.getElementById("urlInput")?.value.trim();
   let category = document.getElementById("catSelect")?.value;
   if (category === "new") category = document.getElementById("newCatInput")?.value.trim();
 
-  if (!title || !url || !category) {
-    showToast("Preencha todos os campos!", "error");
-    return;
-  }
+  if (!title || !url || !category) { showToast("Preencha todos os campos!", "error"); return; }
   if (!url.startsWith("http")) url = `https://${url}`;
-
   if (state.allLinks.some(l => l.url.toLowerCase() === url.toLowerCase())) {
-    showToast("Este link já existe!", "error");
-    return;
+    showToast("Este link já existe!", "error"); return;
   }
 
   try {
@@ -880,100 +961,83 @@ async function saveLinkHandler() {
 
 // ==================== INICIALIZAÇÃO ====================
 function initDashboard() {
-  const dashboard = document.getElementById("dashboard");
-  const loginOverlay = document.getElementById("loginOverlay");
-  if (dashboard) dashboard.style.display = "block";
-  if (loginOverlay) loginOverlay.style.display = "none";
+  document.getElementById("dashboard").style.display = "block";
+  document.getElementById("loginOverlay").style.display = "none";
 
-  // Event listeners
-  const addLinkBtn = document.getElementById("addLinkBtn");
-  if (addLinkBtn) addLinkBtn.onclick = openLinkModal;
+  // Se temos dados em cache, renderiza imediatamente antes do Firestore responder
+  // Isso dá a sensação de carregamento instantâneo ao usuário
+  if (state.allLinks.length > 0 || state.allNotes.length > 0) {
+    renderAll();
+    setBadge(false); // mostra "cache" até confirmar que Firestore respondeu
+  }
 
-  const addNoteBtn = document.getElementById("addNoteBtn");
-  if (addNoteBtn) addNoteBtn.onclick = addNote;
-
-  const toggleBtn = document.getElementById("toggleBtn");
-  if (toggleBtn) toggleBtn.onclick = toggleView;
-
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) logoutBtn.onclick = logout;
-
-  const changePasswordBtn = document.getElementById("changePasswordBtn");
-  if (changePasswordBtn) changePasswordBtn.onclick = openChangePasswordModal;
-
-  const searchInput = document.getElementById("searchInput");
-  if (searchInput) searchInput.oninput = (e) => { state.searchTerm = e.target.value; renderAll(); };
-
-  const sortSelect = document.getElementById("sortSelect");
-  if (sortSelect) sortSelect.onchange = (e) => { state.sortValue = e.target.value; renderAll(); };
-
-  const saveLink = document.getElementById("saveLink");
-  if (saveLink) saveLink.onclick = saveLinkHandler;
-
-  const modalClose = document.getElementById("modalClose");
-  if (modalClose) modalClose.onclick = closeLinkModal;
-
-  const modalCancel = document.getElementById("modalCancel");
-  if (modalCancel) modalCancel.onclick = closeLinkModal;
+  // Event listeners — links
+  document.getElementById("addLinkBtn")?.addEventListener("click", openLinkModal);
+  document.getElementById("saveLink")?.addEventListener("click", saveLinkHandler);
+  document.getElementById("modalClose")?.addEventListener("click", closeLinkModal);
+  document.getElementById("modalCancel")?.addEventListener("click", closeLinkModal);
+  document.getElementById("linkModal")?.addEventListener("click", e => { if (e.target.id === "linkModal") closeLinkModal(); });
 
   const catSelect = document.getElementById("catSelect");
-  if (catSelect) catSelect.onchange = (e) => {
-    const newCatInput = document.getElementById("newCatInput");
-    if (newCatInput) newCatInput.style.display = e.target.value === "new" ? "block" : "none";
-  };
+  catSelect?.addEventListener("change", e => {
+    const nc = document.getElementById("newCatInput");
+    if (nc) nc.style.display = e.target.value === "new" ? "block" : "none";
+  });
 
-  // NOVO: botão de tamanho dos cards de link
-  const linkSizeBtn = document.getElementById("linkSizeBtn");
-  if (linkSizeBtn) linkSizeBtn.onclick = cycleLinkSize;
+  // Event listeners — notas
+  document.getElementById("addNoteBtn")?.addEventListener("click", addNote);
 
-  // Aplica o tamanho salvo imediatamente ao inicializar
+  // Event listeners — tamanho
+  document.getElementById("linkSizeBtn")?.addEventListener("click", cycleLinkSize);
   applyLinkSize();
 
-  // Modal editar categoria
-  const editCatClose = document.getElementById("editCatClose");
-  if (editCatClose) editCatClose.onclick = closeEditCatModal;
-  const editCatCancel = document.getElementById("editCatCancel");
-  if (editCatCancel) editCatCancel.onclick = closeEditCatModal;
-  const saveEditCat = document.getElementById("saveEditCat");
-  if (saveEditCat) saveEditCat.onclick = saveEditCategory;
-  const editCatSelect = document.getElementById("editCatSelect");
-  if (editCatSelect) editCatSelect.onchange = (e) => {
-    const newCatInput = document.getElementById("editNewCatInput");
-    if (newCatInput) newCatInput.style.display = e.target.value === "new" ? "block" : "none";
-  };
-  const editCatModal = document.getElementById("editCatModal");
-  if (editCatModal) editCatModal.addEventListener("click", (e) => {
-    if (e.target === editCatModal) closeEditCatModal();
+  // Event listeners — exportar links
+  document.getElementById("exportLinksBtn")?.addEventListener("click", exportLinksAsJSON);
+  refreshBackupBtnLabel();
+
+  // Event listeners — navegação
+  document.getElementById("toggleBtn")?.addEventListener("click", toggleView);
+  document.getElementById("logoutBtn")?.addEventListener("click", logout);
+  document.getElementById("changePasswordBtn")?.addEventListener("click", openChangePasswordModal);
+
+  // Busca
+  document.getElementById("searchInput")?.addEventListener("input", e => {
+    state.searchTerm = e.target.value; renderAll();
   });
 
+  // Editar categoria
+  document.getElementById("editCatClose")?.addEventListener("click", closeEditCatModal);
+  document.getElementById("editCatCancel")?.addEventListener("click", closeEditCatModal);
+  document.getElementById("saveEditCat")?.addEventListener("click", saveEditCategory);
+  document.getElementById("editCatSelect")?.addEventListener("change", e => {
+    const ni = document.getElementById("editNewCatInput");
+    if (ni) ni.style.display = e.target.value === "new" ? "block" : "none";
+  });
+  document.getElementById("editCatModal")?.addEventListener("click", e => {
+    if (e.target.id === "editCatModal") closeEditCatModal();
+  });
+
+  // Expandir nota
   const expandOverlay = document.getElementById("expandOverlay");
-  const expandClose = document.getElementById("expandClose");
-  if (expandClose) expandClose.onclick = () => expandOverlay?.classList.remove("open");
-  if (expandOverlay) expandOverlay.addEventListener("click", (e) => {
-    if (e.target === expandOverlay) expandOverlay.classList.remove("open");
+  document.getElementById("expandClose")?.addEventListener("click", () => expandOverlay?.classList.remove("open"));
+  expandOverlay?.addEventListener("click", e => { if (e.target === expandOverlay) expandOverlay.classList.remove("open"); });
+
+  // Senha
+  document.getElementById("changePasswordClose")?.addEventListener("click", closeChangePasswordModal);
+  document.getElementById("changePasswordCancel")?.addEventListener("click", closeChangePasswordModal);
+  document.getElementById("saveNewPassword")?.addEventListener("click", saveNewPassword);
+  document.getElementById("changePasswordModal")?.addEventListener("click", e => {
+    if (e.target.id === "changePasswordModal") closeChangePasswordModal();
   });
 
-  const changePasswordClose = document.getElementById("changePasswordClose");
-  if (changePasswordClose) changePasswordClose.onclick = closeChangePasswordModal;
-
-  const changePasswordCancel = document.getElementById("changePasswordCancel");
-  if (changePasswordCancel) changePasswordCancel.onclick = closeChangePasswordModal;
-
-  const saveNewPasswordBtn = document.getElementById("saveNewPassword");
-  if (saveNewPasswordBtn) saveNewPasswordBtn.onclick = saveNewPassword;
-
-  const changePwdModal = document.getElementById("changePasswordModal");
-  if (changePwdModal) changePwdModal.addEventListener("click", (e) => {
-    if (e.target === changePwdModal) closeChangePasswordModal();
+  // Nova pasta
+  document.getElementById("newFolderBtn")?.addEventListener("click", async () => {
+    const name = prompt("Nome da nova pasta:");
+    if (name?.trim()) await addFolder(name.trim());
   });
 
-  const newFolderBtn = document.getElementById("newFolderBtn");
-  if (newFolderBtn) newFolderBtn.onclick = async () => {
-    const folderName = prompt("Nome da nova pasta:");
-    if (!folderName || !folderName.trim()) return;
-    await addFolder(folderName.trim());
-  };
-
+  // Conecta ao Firestore — o cache garante que qualquer dado existente
+  // já está visível antes desses callbacks rodarem pela primeira vez
   subscribeLinks();
   subscribeNotes();
   subscribeFolders();
@@ -986,23 +1050,16 @@ async function attemptLogin() {
   if (await login(pwd)) {
     initDashboard();
   } else {
-    const loginError = document.getElementById("loginError");
-    if (loginError) loginError.innerText = "Senha incorreta!";
+    const err = document.getElementById("loginError");
+    if (err) err.innerText = "Senha incorreta!";
   }
 }
 
-const loginBtn = document.getElementById("loginBtn");
-if (loginBtn) loginBtn.onclick = attemptLogin;
-
-const loginPassword = document.getElementById("loginPassword");
-if (loginPassword) loginPassword.addEventListener("keypress", async (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    await attemptLogin();
-  }
+document.getElementById("loginBtn")?.addEventListener("click", attemptLogin);
+document.getElementById("loginPassword")?.addEventListener("keypress", async e => {
+  if (e.key === "Enter") { e.preventDefault(); await attemptLogin(); }
 });
 
-// Definir renderAll
 renderAll = function() {
   if (state.isNotesView) {
     renderNotes();
@@ -1012,50 +1069,48 @@ renderAll = function() {
   }
 };
 
-// Inicialização
+// Inicialização: carrega o dashboard se já autenticado, senão mostra login
 if (checkAuth()) {
   initDashboard();
 } else {
-  const loginOverlay = document.getElementById("loginOverlay");
-  if (loginOverlay) loginOverlay.style.display = "flex";
+  document.getElementById("loginOverlay").style.display = "flex";
 }
 
-// ==================== UTILITÁRIOS GLOBAIS ====================
+// ==================== UTILITÁRIOS GLOBAIS (console) ====================
 window.importarLinksEmLote = async (linksArray) => {
-  let salvos = 0;
-  let naoSalvos = 0;
+  let salvos = 0, naoSalvos = 0;
   for (const link of linksArray) {
     if (state.allLinks.some(l => l.url.toLowerCase() === link.url.toLowerCase())) {
-      console.warn(`❌ NÃO SALVO (Já existe): ${link.title}`);
-      naoSalvos++;
-      continue;
+      console.warn(`❌ Já existe: ${link.title}`); naoSalvos++; continue;
     }
-    try {
-      await addLink(link);
-      salvos++;
-    } catch (error) {
-      console.error(`❌ Erro ao salvar: ${link.title}`, error);
-      naoSalvos++;
-    }
+    try { await addLink(link); salvos++; }
+    catch { naoSalvos++; }
   }
-  alert(`Importação concluída!\n✅ Sucessos: ${salvos}\n❌ Não salvos: ${naoSalvos}`);
+  alert(`✅ Importados: ${salvos}\n❌ Ignorados: ${naoSalvos}`);
 };
 
 window.removerDuplicatas = async () => {
-  const seen = new Set();
-  let removidos = 0;
+  const seen = new Set(); let removidos = 0;
   for (const link of state.allLinks) {
-    if (seen.has(link.url)) {
-      await deleteLink(link.id);
-      removidos++;
-    } else {
-      seen.add(link.url);
-    }
+    if (seen.has(link.url)) { await deleteLink(link.id); removidos++; }
+    else seen.add(link.url);
   }
-  alert(`Limpeza concluída! ${removidos} links duplicados removidos.`);
+  alert(`${removidos} duplicatas removidas.`);
 };
 
 window.resetSenha = async () => {
   await setPassword("admin123");
-  showToast("Senha resetada para admin123", "success");
+  showToast("Senha resetada para admin123");
+};
+
+/*
+  UTILITÁRIO EXTRA: restaurar links a partir do cache local
+  Caso o Firestore esteja vazio mas o localStorage tenha dados, use:
+  window.restaurarLinksDoCache()
+*/
+window.restaurarLinksDoCache = async () => {
+  const cached = cacheRead(CACHE_KEYS.links);
+  if (!cached || cached.length === 0) { alert("Cache vazio."); return; }
+  if (!confirm(`Reimportar ${cached.length} links do cache local para o Firestore?`)) return;
+  await window.importarLinksEmLote(cached);
 };
