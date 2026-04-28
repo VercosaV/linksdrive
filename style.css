@@ -452,3 +452,69 @@ body {
 
 /* Ocultar seletor de ordenação (fixamos alfabética) */
 .sort-wrap { display: none; }
+/* ==================== GRUPOS ==================== */
+.groups-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  margin-top: 16px;
+}
+@media(max-width: 480px) {
+  .groups-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+}
+
+.group-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all .18s cubic-bezier(.4,0,.2,1);
+  position: relative;
+}
+.group-card:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.group-card i {
+  font-size: 2.2rem;
+  color: var(--accent);
+  opacity: .8;
+}
+.group-name {
+  font-weight: 600;
+  font-size: .9rem;
+  text-align: center;
+  color: var(--tx);
+}
+.group-count {
+  font-size: .75rem;
+  color: var(--tx3);
+  background: rgba(0,0,0,.05);
+  padding: 3px 10px;
+  border-radius: 12px;
+  margin-top: 4px;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 0 4px;
+}
+.group-header h2 {
+  font-size: 1.4rem;
+  color: var(--tx);
+}
+
+/* Link Password Field */
+#linkPasswordField {
+  margin-top: 8px;
+}

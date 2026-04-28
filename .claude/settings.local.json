@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__filesystem__read_text_file",
+      "mcp__filesystem__edit_file",
+      "Bash(python *)",
+      "Bash(node -c \"C:\\\\linksdrive\\\\script.js\")",
+      "Bash(git checkout *)"
+    ]
+  }
+}

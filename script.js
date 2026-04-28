@@ -354,7 +354,16 @@ async function hashPassword(password, saltBase64) {
 async function verifyPassword(password) {
   const salt = localStorage.getItem(CACHE_KEYS.salt);
   const storedHash = localStorage.getItem(CACHE_KEYS.hash);
-  if (!salt || !storedHash) { await setPassword(DEFAULT_PASSWORD); return verifyPassword(password); }
+
+  // Primeira execução: aceita apenas senha padrão e cria credenciais
+  if (!salt || !storedHash) {
+    if (password !== DEFAULT_PASSWORD) {
+      return false; // Recusa senhas não-padrão na primeira execução
+    }
+    await setPassword(DEFAULT_PASSWORD);
+    return true;
+  }
+
   return (await hashPassword(password, salt)) === storedHash;
 }
 

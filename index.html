@@ -100,6 +100,23 @@
       </div>
     </div>
 
+
+  <!-- VIEW GRUPOS -->
+  <div id="groupsView" style="display:none">
+    <div id="groupsGrid" class="groups-grid"></div>
+    <div id="groupsEmpty" class="empty-state" style="display:none">
+      <i class="fa-solid fa-folder-open"></i><p>Nenhum grupo encontrado.</p>
+    </div>
+    <div id="groupLinksView" style="display:none">
+      <div class="group-header">
+        <button id="backToGroupsBtn" class="btn btn-ghost">
+          <i class="fa-solid fa-arrow-left"></i> Voltar aos Grupos
+        </button>
+        <h2 id="currentGroupTitle"></h2>
+      </div>
+      <div id="groupLinksGrid" class="links-grid"></div>
+    </div>
+  </div>
     <!-- VIEW NOTAS -->
     <div id="notesView" style="display:none">
       <div class="notes-toolbar">
@@ -129,6 +146,14 @@
         <select id="catSelect"></select>
         <input id="newCatInput" type="text" placeholder="Nome da nova categoria…" style="display:none;margin-top:8px">
       </div>
+  <div class="form-row">
+    <label>Proteger com senha</label>
+    <div style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="protectWithPassword">
+      <span>Habilitar senha</span>
+    </div>
+    <input type="password" id="linkPasswordField" placeholder="Senha do link" style="display:none;margin-top:8px">
+  </div>
       <div class="modal-actions">
         <button class="btn-cancel" id="modalCancel">Cancelar</button>
         <button class="btn btn-primary" id="saveLink">Salvar</button>
@@ -151,6 +176,28 @@
       <div class="modal-actions">
         <button class="btn-cancel" id="editCatCancel">Cancelar</button>
         <button class="btn btn-primary" id="saveEditCat">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: INSERIR SENHA DO LINK -->
+  <div id="linkPasswordModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-hdr">
+        <h3><i class="fa-solid fa-lock" style="color:var(--accent);margin-right:7px"></i>Link Protegido</h3>
+        <button class="modal-close" id="linkPasswordClose"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="form-row">
+        <label>URL</label>
+        <input id="linkPasswordUrl" type="text" readonly style="background:#f5f5f5">
+      </div>
+      <div class="form-row">
+        <label>Digite a senha</label>
+        <input type="password" id="linkPasswordInput" placeholder="Senha do link" autocomplete="off">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="linkPasswordCancel">Cancelar</button>
+        <button class="btn btn-primary" id="linkPasswordSubmit">Abrir Link</button>
       </div>
     </div>
   </div>
