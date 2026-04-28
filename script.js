@@ -101,6 +101,8 @@ const state = {
   allFolders:     cacheRead(CACHE_KEYS.folders) || [],
   activeCategory: "Todos",
   searchTerm:     "",
+  activeView: "groups",
+  activeGroup: null,
   sortValue:      "manual",
   isNotesView:    false,
   activeFolder:   "Todas",
@@ -490,6 +492,51 @@ function renderCategories() {
 
   const categoryCount = {};
   state.allLinks.forEach(l => {
+
+function renderGroups() {
+  const groupsView = document.getElementById("groupsView");
+  const groupsGrid = document.getElementById("groupsGrid");
+  if (!groupsView || !groupsGrid) return;
+
+  // Contagem de links por categoria
+  const categoryCount = {};
+  state.allLinks.forEach(l => {
+    const cat = l.category || "Sem Categoria";
+    categoryCount[cat] = (categoryCount[cat] || 0) + 1;
+  });
+
+  // Criar array de categorias únicas
+  const categories = [...new Set(state.allLinks.map(l => l.category || "Sem Categoria"))].sort();
+
+  groupsGrid.innerHTML = "";
+
+  if (categories.length === 0) {
+    groupsGrid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-folder-open"></i><p>Nenhum grupo encontrado.</p></div>';
+    return;
+  }
+
+  categories.forEach(cat => {
+    const count = categoryCount[cat] || 0;
+    const card = document.createElement("div");
+    card.className = "group-card";
+    card.onclick = () => {
+      // Navegar para a view de links com a categoria selecionada
+      state.activeView = 'links';
+      state.activeCategory = cat;
+      updateUILayout();
+      renderAll();
+    };
+
+    card.innerHTML = `
+      <i class="fa-solid fa-folder"></i>
+      <span class="group-name">${escapeHtml(cat)}</span>
+      <span class="group-count">${count} link${count !== 1 ? 's' : ''}</span>
+    `;
+
+    groupsGrid.appendChild(card);
+  });
+}
+
     categoryCount[l.category] = (categoryCount[l.category] || 0) + 1;
   });
 
@@ -969,8 +1016,50 @@ async function saveLinkHandler() {
 }
 
 // ==================== INICIALIZAÇÃO ====================
+// Mostra/oculta elementos da UI baseado na view atual
+function updateUILayout() {
+  const catScroll = document.getElementById("catScroll");
+  const linkSizeWrap = document.getElementById("linkSizeWrap");
+  const exportWrap = document.getElementById("exportWrap");
+  const searchWrap = document.getElementById("searchWrap");
+  const sortWrap = document.getElementById("sortWrap");
+  const addLinkBtn = document.getElementById("addLinkBtn");
+  const addNoteBtn = document.getElementById("addNoteBtn");
+  const toggleBtn = document.getElementById("toggleBtn");
+  if (!catScroll || !linkSizeWrap || !exportWrap || !searchWrap || !sortWrap || !addLinkBtn || !addNoteBtn || !toggleBtn) return;
+
+  // Reset
+  catScroll.style.display = "flex";
+  linkSizeWrap.style.display = "block";
+  exportWrap.style.display = "block";
+  searchWrap.style.display = "block";
+  sortWrap.style.display = "block";
+  addLinkBtn.classList.remove("hide");
+  addNoteBtn.classList.add("hide");
+  toggleBtn.innerHTML = '<i class="fa-solid fa-layer-group"></i><span>Grupos</span>';
+
+  if (state.activeView === 'groups') {
+    // Ocultar categorias ao mostrar grupos
+    catScroll.style.display = "none";
+    linkSizeWrap.style.display = "none";
+    exportWrap.style.display = "none";
+    searchWrap.style.display = "none";
+    sortWrap.style.display = "none";
+  } else if (state.activeView === 'notes') {
+    catScroll.style.display = "none";
+    linkSizeWrap.style.display = "none";
+    exportWrap.style.display = "none";
+    searchWrap.style.display = "none";
+    sortWrap.style.display = "none";
+    addLinkBtn.classList.add("hide");
+    addNoteBtn.classList.remove("hide");
+    toggleBtn.innerHTML = '<i class="fa-solid fa-link"></i><span>Links</span>';
+  }
+}
+
 function initDashboard() {
   document.getElementById("dashboard").style.display = "block";
+  updateUILayout();
   document.getElementById("loginOverlay").style.display = "none";
 
   // Se temos dados em cache, renderiza imediatamente antes do Firestore responder
@@ -992,7 +1081,7 @@ function initDashboard() {
     const nc = document.getElementById("newCatInput");
     if (nc) nc.style.display = e.target.value === "new" ? "block" : "none";
   });
-
+}
   // Event listeners — notas
   document.getElementById("addNoteBtn")?.addEventListener("click", addNote);
 
@@ -1035,22 +1124,9 @@ function initDashboard() {
   document.getElementById("changePasswordClose")?.addEventListener("click", closeChangePasswordModal);
   document.getElementById("changePasswordCancel")?.addEventListener("click", closeChangePasswordModal);
   document.getElementById("saveNewPassword")?.addEventListener("click", saveNewPassword);
-  document.getElementById("changePasswordModal")?.addEventListener("click", e => {
-    if (e.target.id === "changePasswordModal") closeChangePasswordModal();
-  });
+  document.getElementById("changePasswordModal")?.addEventListener("click", e => {})
 
-  // Nova pasta
-  document.getElementById("newFolderBtn")?.addEventListener("click", async () => {
-    const name = prompt("Nome da nova pasta:");
-    if (name?.trim()) await addFolder(name.trim());
-  });
-
-  // Conecta ao Firestore — o cache garante que qualquer dado existente
-  // já está visível antes desses callbacks rodarem pela primeira vez
-  subscribeLinks();
-  subscribeNotes();
-  subscribeFolders();
-}
+// Mostra/oculta elementos da UI baseado na view atual
 
 // ==================== LOGIN ====================
 async function attemptLogin() {
@@ -1070,9 +1146,11 @@ document.getElementById("loginPassword")?.addEventListener("keypress", async e =
 });
 
 renderAll = function() {
-  if (state.isNotesView) {
+  if (state.activeView === 'groups') {
+    renderGroups();
+  } else if (state.activeView === 'notes') {
     renderNotes();
-  } else {
+  } else { // 'links'
     renderCategories();
     renderLinks();
   }
@@ -1122,4 +1200,4 @@ window.restaurarLinksDoCache = async () => {
   if (!cached || cached.length === 0) { alert("Cache vazio."); return; }
   if (!confirm(`Reimportar ${cached.length} links do cache local para o Firestore?`)) return;
   await window.importarLinksEmLote(cached);
-};
+}
