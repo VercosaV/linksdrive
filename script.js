@@ -433,7 +433,7 @@ async function saveNewPassword() {
 */
 function subscribeLinks() {
   return linksRef.orderBy("category").onSnapshot(
-    { includeMetadataChanges: false }, // ignora eventos intermediários de sincronização
+    { includeMetadataChanges: false },
     (snapshot) => {
       const links = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setAllLinks(links);
@@ -492,6 +492,29 @@ function renderCategories() {
 
   const categoryCount = {};
   state.allLinks.forEach(l => {
+    categoryCount[l.category] = (categoryCount[l.category] || 0) + 1;
+  });
+
+  const categories = ["Todos", ...new Set(state.allLinks.map(l => l.category))].sort();
+  nav.innerHTML = "";
+  select.innerHTML = "";
+
+  categories.forEach(cat => {
+    const count = cat === "Todos" ? state.allLinks.length : (categoryCount[cat] || 0);
+    const btn = document.createElement("button");
+    btn.className = `cat-tab ${state.activeCategory === cat ? 'active' : ''}`;
+    btn.innerText = `${cat} (${count})`;
+    btn.onclick = () => { state.activeCategory = cat; renderAll(); };
+    nav.appendChild(btn);
+
+    if (cat !== "Todos") {
+      const opt = document.createElement("option");
+      opt.value = cat; opt.innerText = cat;
+      select.appendChild(opt);
+    }
+  });
+  select.innerHTML += `<option value="new">+ Nova Categoria...</option>`;
+}
 
 function renderGroups() {
   const groupsView = document.getElementById("groupsView");
@@ -517,6 +540,10 @@ function renderGroups() {
 
   categories.forEach(cat => {
     const count = categoryCount[cat] || 0;
+    
+    // Pegar os primeiros 4 links da categoria para prévia
+    const categoryLinks = state.allLinks.filter(l => (l.category || "Sem Categoria") === cat).slice(0, 4);
+    
     const card = document.createElement("div");
     card.className = "group-card";
     card.onclick = () => {
@@ -527,38 +554,35 @@ function renderGroups() {
       renderAll();
     };
 
+    // Gerar HTML da prévia de links
+    let previewHtml = '';
+    if (categoryLinks.length > 0) {
+      previewHtml = '<div class="group-preview">';
+      categoryLinks.forEach(link => {
+        let domain = "google.com";
+        try { domain = new URL(link.url).hostname; } catch(e) {}
+        previewHtml += `
+          <div class="group-preview-item" title="${escapeHtml(link.title)}">
+            <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=32" 
+                 onerror="this.parentElement.style.display='none'">
+          </div>
+        `;
+      });
+      if (count > 4) {
+        previewHtml += `<div class="group-preview-more">+${count - 4}</div>`;
+      }
+      previewHtml += '</div>';
+    }
+
     card.innerHTML = `
       <i class="fa-solid fa-folder"></i>
       <span class="group-name">${escapeHtml(cat)}</span>
       <span class="group-count">${count} link${count !== 1 ? 's' : ''}</span>
+      ${previewHtml}
     `;
 
     groupsGrid.appendChild(card);
   });
-}
-
-    categoryCount[l.category] = (categoryCount[l.category] || 0) + 1;
-  });
-
-  const categories = ["Todos", ...new Set(state.allLinks.map(l => l.category))].sort();
-  nav.innerHTML = "";
-  select.innerHTML = "";
-
-  categories.forEach(cat => {
-    const count = cat === "Todos" ? state.allLinks.length : (categoryCount[cat] || 0);
-    const btn = document.createElement("button");
-    btn.className = `cat-tab ${state.activeCategory === cat ? 'active' : ''}`;
-    btn.innerText = `${cat} (${count})`;
-    btn.onclick = () => { state.activeCategory = cat; renderAll(); };
-    nav.appendChild(btn);
-
-    if (cat !== "Todos") {
-      const opt = document.createElement("option");
-      opt.value = cat; opt.innerText = cat;
-      select.appendChild(opt);
-    }
-  });
-  select.innerHTML += `<option value="new">+ Nova Categoria...</option>`;
 }
 
 function renderLinks() {
@@ -936,40 +960,12 @@ function openExpandNote(noteId) {
 
 // ==================== TOGGLE VIEW ====================
 function toggleView() {
-  state.isNotesView = !state.isNotesView;
-  const linksView    = document.getElementById("linksView");
-  const notesView    = document.getElementById("notesView");
-  const addLinkBtn   = document.getElementById("addLinkBtn");
-  const addNoteBtn   = document.getElementById("addNoteBtn");
-  const searchWrap   = document.getElementById("searchWrap");
-  const sortWrap     = document.getElementById("sortWrap");
-  const toggleBtn    = document.getElementById("toggleBtn");
-  const linkSizeWrap = document.getElementById("linkSizeWrap");
-  const exportWrap   = document.getElementById("exportWrap");
-
-  if (!linksView || !notesView) return;
-
-  if (state.isNotesView) {
-    linksView.style.display = "none";
-    notesView.style.display = "block";
-    addLinkBtn?.classList.add("hide");
-    addNoteBtn?.classList.remove("hide");
-    searchWrap?.classList.add("hide");
-    sortWrap?.classList.add("hide");
-    linkSizeWrap?.classList.add("hide");
-    exportWrap?.classList.add("hide");
-    if (toggleBtn) toggleBtn.innerHTML = `<i class="fa-solid fa-link"></i><span>Links</span>`;
-  } else {
-    linksView.style.display = "block";
-    notesView.style.display = "none";
-    addLinkBtn?.classList.remove("hide");
-    addNoteBtn?.classList.add("hide");
-    searchWrap?.classList.remove("hide");
-    sortWrap?.classList.remove("hide");
-    linkSizeWrap?.classList.remove("hide");
-    exportWrap?.classList.remove("hide");
-    if (toggleBtn) toggleBtn.innerHTML = `<i class="fa-solid fa-pen-to-square"></i><span>Notas</span>`;
-  }
+  // Alterna entre: groups -> links -> notes -> groups
+  const views = ['groups', 'links', 'notes'];
+  const currentIdx = views.indexOf(state.activeView);
+  state.activeView = views[(currentIdx + 1) % views.length];
+  
+  updateUILayout();
   renderAll();
 }
 
@@ -1026,8 +1022,19 @@ function updateUILayout() {
   const addLinkBtn = document.getElementById("addLinkBtn");
   const addNoteBtn = document.getElementById("addNoteBtn");
   const toggleBtn = document.getElementById("toggleBtn");
+  
+  // Views
+  const linksView = document.getElementById("linksView");
+  const groupsView = document.getElementById("groupsView");
+  const notesView = document.getElementById("notesView");
+  
   if (!catScroll || !linkSizeWrap || !exportWrap || !searchWrap || !sortWrap || !addLinkBtn || !addNoteBtn || !toggleBtn) return;
 
+  // Reset - oculta todas as views primeiro
+  if (linksView) linksView.style.display = "none";
+  if (groupsView) groupsView.style.display = "none";
+  if (notesView) notesView.style.display = "none";
+  
   // Reset
   catScroll.style.display = "flex";
   linkSizeWrap.style.display = "block";
@@ -1039,13 +1046,17 @@ function updateUILayout() {
   toggleBtn.innerHTML = '<i class="fa-solid fa-layer-group"></i><span>Grupos</span>';
 
   if (state.activeView === 'groups') {
-    // Ocultar categorias ao mostrar grupos
+    // Exibir view de grupos
+    if (groupsView) groupsView.style.display = "block";
+    // Ocultar elementos desnecessários na view de grupos
     catScroll.style.display = "none";
     linkSizeWrap.style.display = "none";
     exportWrap.style.display = "none";
     searchWrap.style.display = "none";
     sortWrap.style.display = "none";
   } else if (state.activeView === 'notes') {
+    // Exibir view de notas
+    if (notesView) notesView.style.display = "block";
     catScroll.style.display = "none";
     linkSizeWrap.style.display = "none";
     exportWrap.style.display = "none";
@@ -1054,6 +1065,9 @@ function updateUILayout() {
     addLinkBtn.classList.add("hide");
     addNoteBtn.classList.remove("hide");
     toggleBtn.innerHTML = '<i class="fa-solid fa-link"></i><span>Links</span>';
+  } else {
+    // View de links (padrão)
+    if (linksView) linksView.style.display = "block";
   }
 }
 
@@ -1068,6 +1082,11 @@ function initDashboard() {
     renderAll();
     setBadge(false); // mostra "cache" até confirmar que Firestore respondeu
   }
+
+  // Inscreve para receber atualizações em tempo real do Firestore
+  subscribeLinks();
+  subscribeNotes();
+  subscribeFolders();
 
   // Event listeners — links
   document.getElementById("addLinkBtn")?.addEventListener("click", openLinkModal);

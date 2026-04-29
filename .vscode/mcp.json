@@ -1,8 +1,13 @@
 {
-  "servers": {
+  "mcpServers": {
     "sqlite": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sqlite", "--db", "path/to/db.sqlite"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sqlite",
+        "--db",
+        "path/to/db.sqlite"
+      ]
     },
     "filesystem": {
       "type": "stdio",
@@ -11,6 +16,12 @@
         "-y",
         "@modelcontextprotocol/server-filesystem",
         "/caminho/absoluto/para/seu/projeto" 
+      ]
+    },
+    "linksdrive": {
+      "command": "node",
+      "args": [
+        "C:\\linksdrive\\linksdrive-mcp\\index.js"
       ]
     }
   }

@@ -455,51 +455,105 @@ body {
 /* ==================== GRUPOS ==================== */
 .groups-grid {
   display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   margin-top: 16px;
 }
-@media(max-width: 480px) {
-  .groups-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+@media(max-width: 600px) {
+  .groups-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
 }
 
 .group-card {
-  background: var(--surface2);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 18px 12px;
+  border-radius: 16px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  gap: 12px;
   cursor: pointer;
-  transition: all .18s cubic-bezier(.4,0,.2,1);
+  transition: all .25s cubic-bezier(.4,0,.2,1);
   position: relative;
+  overflow: hidden;
+}
+.group-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), #60a5fa);
+  opacity: 0;
+  transition: opacity .25s;
 }
 .group-card:hover {
   background: var(--surface);
   border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(59,130,246,.15);
+}
+.group-card:hover::before {
+  opacity: 1;
 }
 .group-card i {
-  font-size: 2.2rem;
+  font-size: 2rem;
   color: var(--accent);
-  opacity: .8;
+  opacity: .9;
+  margin-bottom: 4px;
 }
 .group-name {
-  font-weight: 600;
-  font-size: .9rem;
+  font-weight: 700;
+  font-size: 1rem;
   text-align: center;
   color: var(--tx);
+  letter-spacing: -0.3px;
 }
 .group-count {
   font-size: .75rem;
   color: var(--tx3);
-  background: rgba(0,0,0,.05);
-  padding: 3px 10px;
-  border-radius: 12px;
+  background: var(--surface2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Prévia de links no card de grupo */
+.group-preview {
+  display: flex;
+  gap: 4px;
   margin-top: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.group-preview-item {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .6rem;
+  color: var(--tx3);
+  overflow: hidden;
+}
+.group-preview-item img {
+  width: 16px;
+  height: 16px;
+}
+.group-preview-more {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--accent-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .65rem;
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .group-header {
