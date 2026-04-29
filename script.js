@@ -637,8 +637,7 @@ function renderLinks() {
 
     const catSpan = card.querySelector('.link-cat-badge');
     const editIcon = document.createElement("i");
-    editIcon.className = "fa-solid fa-pencil";
-    editIcon.style.cssText = "font-size:.65rem;margin-left:6px;cursor:pointer;opacity:.6;";
+    editIcon.className = "fa-solid fa-pencil edit-cat-icon";
     editIcon.onclick = (e) => { e.stopPropagation(); openEditCatModal(link.id, link.category); };
     catSpan.appendChild(editIcon);
 

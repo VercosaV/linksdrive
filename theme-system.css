@@ -79,6 +79,17 @@ Este arquivo define a estrutura completa de customização de cores
   --note-toolbar-border: var(--border-primary);
   --note-shadow: 0 2px 12px rgba(0,0,0,.18);
   --note-shadow-hover: 0 10px 32px rgba(0,0,0,.28);
+  --note-gradient: none; /* para gradiente opcional */
+  --note-gradient-overlay: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.3) 100%);
+
+  /* --- BOTÕES E INTERAÇÕES --- */
+  --button-link-bg: rgba(255,255,255,.04);
+  --button-link-border: var(--border-primary);
+  --button-link-color: var(--text-tertiary);
+  --button-link-hover-bg: rgba(239,68,68,.14);
+  --button-link-hover-color: var(--danger);
+  --button-outline-active: var(--accent-primary);
+  --button-outline-hover: rgba(59,130,246,.28);
 
   /* --- MODAIS --- */
   --modal-bg: var(--surface-primary);

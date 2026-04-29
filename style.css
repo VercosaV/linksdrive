@@ -268,13 +268,38 @@ body {
 .link-cat-badge {
   font-size: .58rem; color: var(--tx3); background: var(--bg2);
   border-radius: 3px; padding: 1px 4px; white-space: nowrap; flex-shrink: 0;
+  display: flex; align-items: center; gap: 4px;
+}
+.edit-cat-icon {
+  font-size: .65rem; cursor: pointer; opacity: .6;
+  color: var(--text-tertiary);
+  transition: all .15s ease;
+  min-width: 16px; text-align: center;
+}
+.edit-cat-icon:hover {
+  opacity: 1;
+  color: var(--accent-primary);
+  transform: scale(1.1);
+}
+.edit-cat-icon:active {
+  transform: scale(0.95);
 }
 .link-del {
-  background: transparent; border: none; color: var(--tx3); cursor: pointer;
-  width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center;
-  justify-content: center; opacity: 0; transition: .15s; flex-shrink: 0; font-size: .65rem;
+  background: var(--button-link-bg); border: 1px solid var(--button-link-border); color: var(--button-link-color);
+  cursor: pointer; width: 20px; height: 20px; border-radius: 4px; display: flex;
+  align-items: center; justify-content: center; opacity: 0; transition: .15s; flex-shrink: 0;
+  font-size: .65rem;
 }
-.link-del:hover { background: rgba(239,68,68,.14); color: var(--danger); }
+.link-del:hover {
+  background: var(--button-link-hover-bg);
+  color: var(--button-link-hover-color);
+  border-color: var(--button-outline-hover);
+}
+.link-del:active {
+  transform: scale(0.95);
+  border-color: var(--button-outline-active);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
 .link-card:hover .link-del { opacity: 1; }
 @media(max-width:640px){ .link-del { opacity: 1; } }
 
@@ -318,10 +343,28 @@ body {
   box-shadow: 0 2px 12px rgba(0,0,0,.18);
   transition: transform .2s, box-shadow .2s;
   position: relative; resize: both; overflow: hidden;
+  background: linear-gradient(135deg, var(--note-bg-1) 0%, var(--note-bg-2) 100%);
+  position: relative;
 }
-.note-card:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(0,0,0,.28); }
+.note-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.3;
+  z-index: 1;
+}
+.note-card:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 10px 32px rgba(0,0,0,.28); }
 .note-card.dragging { opacity: .4; transform: scale(.96) rotate(1.5deg); }
 .note-card.drag-over { outline: 2px dashed rgba(0,0,0,.3); outline-offset: -3px; }
+.note-card.nc1 { background: linear-gradient(135deg, var(--note-bg-1) 0%, color-mix(in srgb, var(--note-bg-1) 80%, white) 100%); color: var(--note-text-1); }
+.note-card.nc2 { background: linear-gradient(135deg, var(--note-bg-2) 0%, color-mix(in srgb, var(--note-bg-2) 80%, white) 100%); color: var(--note-text-2); }
+.note-card.nc3 { background: linear-gradient(135deg, var(--note-bg-3) 0%, color-mix(in srgb, var(--note-bg-3) 80%, white) 100%); color: var(--note-text-3); }
+.note-card.nc4 { background: linear-gradient(135deg, var(--note-bg-4) 0%, color-mix(in srgb, var(--note-bg-4) 80%, white) 100%); color: var(--note-text-4); }
+.note-card.nc5 { background: linear-gradient(135deg, var(--note-bg-5) 0%, color-mix(in srgb, var(--note-bg-5) 80%, white) 100%); color: var(--note-text-5); }
+.note-card.nc6 { background: linear-gradient(135deg, var(--note-bg-6) 0%, color-mix(in srgb, var(--note-bg-6) 80%, white) 100%); color: var(--note-text-6); }
 
 .nc1{background:#FFF5E6;color:#8B5A2B;}
 .nc2{background:#E6F3FF;color:#1E4A76;}

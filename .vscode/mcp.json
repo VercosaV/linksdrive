@@ -23,6 +23,23 @@
       "args": [
         "C:\\linksdrive\\linksdrive-mcp\\index.js"
       ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "cole_seu_token_do_github_aqui"
+      }
     }
   }
 }
