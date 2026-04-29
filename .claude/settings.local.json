@@ -4,10 +4,10 @@
       "mcp__filesystem__read_text_file",
       "mcp__filesystem__edit_file",
       "Bash(python *)",
-      "Bash(node -c \"C:\\\\linksdrive\\\\script.js\")",
       "Bash(git checkout *)",
       "Bash(sed -i '1018 r /tmp/updateui_clean.js' \"C:\\\\linksdrive\\\\script.js\")",
-      "Bash(sed -n '1016,1025p' \"C:\\\\linksdrive\\\\script.js\")"
+      "Bash(sed -n '1016,1025p' \"C:\\\\linksdrive\\\\script.js\")",
+      "edit"
     ]
   }
 }

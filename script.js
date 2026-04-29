@@ -67,19 +67,21 @@ const foldersRef = db.collection("folders");
   extrapolar, então só fazemos backup de links (o mais crítico).
 */
 const CACHE_KEYS = {
-  links:   "cache_links_v1",
-  notes:   "cache_notes_v1",
+  links: "cache_links_v1",
+  notes: "cache_notes_v1",
   folders: "cache_folders_v1",
   linkSize: "linkCardSize",
-  auth:     "dashboard_auth",
-  salt:     "dashboard_salt",
-  hash:     "dashboard_hash",
+  groupSize: "groupCardSize",
+  theme: "dashboardTheme",
+  auth: "dashboard_auth",
+  salt: "dashboard_salt",
+  hash: "dashboard_hash",
 };
 
 function cacheWrite(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify(data));
-  } catch(e) {
+  } catch (e) {
     // QuotaExceededError: localStorage cheio. Silenciamos — não é crítico.
     console.warn("Cache localStorage cheio, ignorando:", e.message);
   }
@@ -89,24 +91,26 @@ function cacheRead(key) {
   try {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
-  } catch(e) {
+  } catch (e) {
     return null;
   }
 }
 
 // ==================== ESTADO GLOBAL ====================
 const state = {
-  allLinks:       cacheRead(CACHE_KEYS.links)   || [],
-  allNotes:       cacheRead(CACHE_KEYS.notes)   || [],
-  allFolders:     cacheRead(CACHE_KEYS.folders) || [],
+  allLinks: cacheRead(CACHE_KEYS.links) || [],
+  allNotes: cacheRead(CACHE_KEYS.notes) || [],
+  allFolders: cacheRead(CACHE_KEYS.folders) || [],
   activeCategory: "Todos",
-  searchTerm:     "",
+  searchTerm: "",
   activeView: "groups",
   activeGroup: null,
-  sortValue:      "manual",
-  isNotesView:    false,
-  activeFolder:   "Todas",
-  linkSize:       localStorage.getItem(CACHE_KEYS.linkSize) || "small",
+  sortValue: "manual",
+  isNotesView: false,
+  activeFolder: "Todas",
+  linkSize: localStorage.getItem(CACHE_KEYS.linkSize) || "small",
+  linkSize: localStorage.getItem(CACHE_KEYS.linkSize) || "small",
+  groupSize: localStorage.getItem(CACHE_KEYS.groupSize) || "small",
   /*
     firestoreReady: flag que indica se o Firestore já sincronizou pelo menos
     uma vez. Usamos para mostrar o badge "Cache" vs badge online.
@@ -114,7 +118,7 @@ const state = {
   firestoreReady: false,
 };
 
-let renderAll = () => {};
+let renderAll = () => { };
 
 function setAllLinks(links) {
   state.allLinks = links;
@@ -131,8 +135,8 @@ function setAllNotes(notes) {
 
 // ==================== BADGE ONLINE/OFFLINE ====================
 function setBadge(online) {
-  const badge  = document.getElementById("offlineBadge");
-  const label  = document.getElementById("offlineLabel");
+  const badge = document.getElementById("offlineBadge");
+  const label = document.getElementById("offlineLabel");
   if (!badge || !label) return;
   badge.classList.add("visible");
   if (online) {
@@ -169,7 +173,7 @@ function escapeHtml(str) {
 }
 
 function getColorCode(colorNum) {
-  const colors = { 1:'#FFE4E0', 2:'#E0F2FE', 3:'#E0F2E9', 4:'#FFF3E0', 5:'#F3E8FF', 6:'#FFE4F0' };
+  const colors = { 1: '#FFE4E0', 2: '#E0F2FE', 3: '#E0F2E9', 4: '#FFF3E0', 5: '#F3E8FF', 6: '#FFE4F0' };
   return colors[colorNum] || '#FFE4E0';
 }
 
@@ -239,8 +243,8 @@ function exportLinksAsJSON() {
 
   // — ARQUIVO 1: JSON estruturado —
   const jsonData = state.allLinks.map(l => ({
-    title:    l.title,
-    url:      l.url,
+    title: l.title,
+    url: l.url,
     category: l.category,
   }));
   downloadBlob(
@@ -278,8 +282,8 @@ function exportLinksAsJSON() {
 
   // Atualiza metadata do backup manual
   cacheWrite(BACKUP_META_KEY, {
-    count:          state.allLinks.length,
-    lastAutoSave:   new Date().toISOString(),
+    count: state.allLinks.length,
+    lastAutoSave: new Date().toISOString(),
     lastManualDate: now.toISOString(),
   });
 
@@ -293,9 +297,9 @@ function downloadBlob(content, filename, mimeType) {
     Depois revoga a URL para liberar memória.
   */
   const blob = new Blob([content], { type: mimeType + ";charset=utf-8;" });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
   a.download = filename;
   a.style.display = "none";
   document.body.appendChild(a);
@@ -307,9 +311,9 @@ function downloadBlob(content, filename, mimeType) {
 
 // ==================== TAMANHO DOS CARDS DE LINK ====================
 const LINK_SIZE_LABELS = {
-  small:  { label: "S", title: "Pequeno" },
-  medium: { label: "M", title: "Médio"   },
-  large:  { label: "G", title: "Grande"  }
+  small: { label: "S", title: "Pequeno" },
+  medium: { label: "M", title: "Médio" },
+  large: { label: "G", title: "Grande" }
 };
 const LINK_SIZE_ORDER = ["small", "medium", "large"];
 
@@ -391,7 +395,7 @@ function checkAuth() { return localStorage.getItem(CACHE_KEYS.auth) === "true"; 
 
 function openChangePasswordModal() {
   document.getElementById("changePasswordModal").style.display = "flex";
-  ["currentPassword","newPassword","confirmPassword"].forEach(id => {
+  ["currentPassword", "newPassword", "confirmPassword"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   document.getElementById("currentPassword")?.focus();
@@ -402,12 +406,12 @@ function closeChangePasswordModal() {
 
 async function saveNewPassword() {
   const current = document.getElementById("currentPassword")?.value;
-  const newPwd  = document.getElementById("newPassword")?.value;
+  const newPwd = document.getElementById("newPassword")?.value;
   const confirm = document.getElementById("confirmPassword")?.value;
   if (!current || !newPwd || !confirm) { showToast("Preencha todos os campos!", "error"); return; }
-  if (newPwd !== confirm)              { showToast("As senhas não coincidem!", "error"); return; }
-  if (newPwd.length < 4)              { showToast("Mínimo 4 caracteres!", "error"); return; }
-  if (!await verifyPassword(current))  { showToast("Senha atual incorreta!", "error"); return; }
+  if (newPwd !== confirm) { showToast("As senhas não coincidem!", "error"); return; }
+  if (newPwd.length < 4) { showToast("Mínimo 4 caracteres!", "error"); return; }
+  if (!await verifyPassword(current)) { showToast("Senha atual incorreta!", "error"); return; }
   await setPassword(newPwd);
   closeChangePasswordModal();
 }
@@ -540,10 +544,10 @@ function renderGroups() {
 
   categories.forEach(cat => {
     const count = categoryCount[cat] || 0;
-    
+
     // Pegar os primeiros 4 links da categoria para prévia
     const categoryLinks = state.allLinks.filter(l => (l.category || "Sem Categoria") === cat).slice(0, 4);
-    
+
     const card = document.createElement("div");
     card.className = "group-card";
     card.onclick = () => {
@@ -560,7 +564,7 @@ function renderGroups() {
       previewHtml = '<div class="group-preview">';
       categoryLinks.forEach(link => {
         let domain = "google.com";
-        try { domain = new URL(link.url).hostname; } catch(e) {}
+        try { domain = new URL(link.url).hostname; } catch (e) { }
         previewHtml += `
           <div class="group-preview-item" title="${escapeHtml(link.title)}">
             <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=32" 
@@ -586,14 +590,14 @@ function renderGroups() {
 }
 
 function renderLinks() {
-  const grid     = document.getElementById("linksGrid");
-  const empty    = document.getElementById("linksEmpty");
+  const grid = document.getElementById("linksGrid");
+  const empty = document.getElementById("linksEmpty");
   const skeleton = document.getElementById("linksSkeleton");
   if (!grid || !empty || !skeleton) return;
 
   const filtered = state.allLinks
     .filter(l => {
-      const matchCat    = state.activeCategory === "Todos" || l.category === state.activeCategory;
+      const matchCat = state.activeCategory === "Todos" || l.category === state.activeCategory;
       const matchSearch = l.title.toLowerCase().includes(state.searchTerm.toLowerCase());
       return matchCat && matchSearch;
     })
@@ -613,7 +617,7 @@ function renderLinks() {
 
   filtered.forEach(link => {
     let domain = "google.com";
-    try { domain = new URL(link.url).hostname; } catch(e) {}
+    try { domain = new URL(link.url).hostname; } catch (e) { }
 
     const card = document.createElement("div");
     card.className = "link-card";
@@ -631,7 +635,7 @@ function renderLinks() {
       if (confirm(`Excluir "${link.title}"?`)) await deleteLink(link.id);
     };
 
-    const catSpan  = card.querySelector('.link-cat-badge');
+    const catSpan = card.querySelector('.link-cat-badge');
     const editIcon = document.createElement("i");
     editIcon.className = "fa-solid fa-pencil";
     editIcon.style.cssText = "font-size:.65rem;margin-left:6px;cursor:pointer;opacity:.6;";
@@ -647,8 +651,8 @@ let currentEditLinkId = null;
 
 function openEditCatModal(linkId, currentCat) {
   currentEditLinkId = linkId;
-  const modal       = document.getElementById("editCatModal");
-  const select      = document.getElementById("editCatSelect");
+  const modal = document.getElementById("editCatModal");
+  const select = document.getElementById("editCatSelect");
   const newCatInput = document.getElementById("editNewCatInput");
   if (!modal || !select) return;
 
@@ -736,10 +740,10 @@ async function addNote() {
   const targetFolder = (state.activeFolder === "Todas") ? "Geral" : state.activeFolder;
   try {
     await notesRef.add({
-      content:   "",
-      color:     Math.floor(Math.random() * 6) + 1,
-      order:     state.allNotes.length,
-      folder:    targetFolder,
+      content: "",
+      color: Math.floor(Math.random() * 6) + 1,
+      order: state.allNotes.length,
+      folder: targetFolder,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast(`Nota criada em "${targetFolder}"`);
@@ -778,7 +782,7 @@ async function updateNoteOrder(sourceId, targetId) {
   newNotes.splice(ti, 0, removed);
 
   const start = Math.min(si, ti);
-  const end   = Math.max(si, ti);
+  const end = Math.max(si, ti);
 
   try {
     await Promise.all(
@@ -793,7 +797,7 @@ async function updateNoteOrder(sourceId, targetId) {
 }
 
 function renderNotes() {
-  const grid  = document.getElementById("notesGrid");
+  const grid = document.getElementById("notesGrid");
   const empty = document.getElementById("notesEmpty");
   if (!grid || !empty) return;
 
@@ -801,7 +805,7 @@ function renderNotes() {
   if (folderStrip) {
     folderStrip.innerHTML = "";
     ["Todas", ...state.allFolders].forEach(f => {
-      const btn   = document.createElement("button");
+      const btn = document.createElement("button");
       btn.className = `ftab ${state.activeFolder === f ? 'on' : ''}`;
       const count = f === "Todas"
         ? state.allNotes.length
@@ -829,19 +833,19 @@ function renderNotes() {
 
   if (notesToShow.length === 0) {
     empty.style.display = "flex";
-    grid.style.display  = "none";
+    grid.style.display = "none";
     return;
   }
   empty.style.display = "none";
-  grid.style.display  = "grid";
-  grid.innerHTML      = "";
+  grid.style.display = "grid";
+  grid.innerHTML = "";
 
   notesToShow.forEach(note => {
     const card = document.createElement("div");
-    card.className  = `note-card nc${note.color || 1}`;
-    card.draggable  = true;
+    card.className = `note-card nc${note.color || 1}`;
+    card.draggable = true;
     card.dataset.id = note.id;
-    if (note.width)  card.style.width  = note.width;
+    if (note.width) card.style.width = note.width;
     if (note.height) card.style.height = note.height;
 
     const date = note.timestamp
@@ -852,9 +856,9 @@ function renderNotes() {
       <div class="note-topbar">
         <div class="note-tbl">
           <div class="note-drag"><i class="fa-solid fa-grip-vertical"></i></div>
-          ${[1,2,3,4,5,6].map(c =>
-            `<div class="cdot" data-color="${c}" style="background:${getColorCode(c)}"></div>`
-          ).join('')}
+          ${[1, 2, 3, 4, 5, 6].map(c =>
+      `<div class="cdot" data-color="${c}" style="background:${getColorCode(c)}"></div>`
+    ).join('')}
         </div>
         <div class="note-tbr">
           <button class="note-btn expand-note" title="Expandir"><i class="fa-solid fa-expand"></i></button>
@@ -870,18 +874,18 @@ function renderNotes() {
         <select class="note-folder-sel">
           <option value="Geral">Geral</option>
           ${state.allFolders.map(f =>
-            `<option value="${f}" ${(note.folder||"Geral")===f?'selected':''}>${f}</option>`
-          ).join('')}
+      `<option value="${f}" ${(note.folder || "Geral") === f ? 'selected' : ''}>${f}</option>`
+    ).join('')}
         </select>
-        <span class="note-chars">${(note.content||'').length} car.</span>
+        <span class="note-chars">${(note.content || '').length} car.</span>
       </div>
     `;
 
     // Drag & drop
     card.addEventListener('dragstart', (e) => { card.classList.add('dragging'); dragSrc = card; e.dataTransfer.effectAllowed = 'move'; });
-    card.addEventListener('dragover',  (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
-    card.addEventListener('drop',      (e) => { e.preventDefault(); if (dragSrc !== card) updateNoteOrder(dragSrc.dataset.id, card.dataset.id); });
-    card.addEventListener('dragend',   ()  => { card.classList.remove('dragging'); });
+    card.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    card.addEventListener('drop', (e) => { e.preventDefault(); if (dragSrc !== card) updateNoteOrder(dragSrc.dataset.id, card.dataset.id); });
+    card.addEventListener('dragend', () => { card.classList.remove('dragging'); });
 
     // Cor
     card.querySelectorAll('.cdot').forEach(dot =>
@@ -897,7 +901,7 @@ function renderNotes() {
     });
 
     // Conteúdo com debounce
-    const bodyText  = card.querySelector('.note-body');
+    const bodyText = card.querySelector('.note-body');
     let bodyTimer;
     bodyText.addEventListener('input', () => {
       clearTimeout(bodyTimer);
@@ -925,22 +929,22 @@ function openExpandNote(noteId) {
   const note = state.allNotes.find(n => n.id === noteId);
   if (!note) return;
 
-  const overlay   = document.getElementById("expandOverlay");
+  const overlay = document.getElementById("expandOverlay");
   const titleInput = document.getElementById("expTitle");
-  const body      = document.getElementById("expBody");
+  const body = document.getElementById("expBody");
   const folderSel = document.getElementById("expFolder");
-  const tsSpan    = document.getElementById("expTs");
+  const tsSpan = document.getElementById("expTs");
   const charsSpan = document.getElementById("expChars");
   if (!overlay || !titleInput || !body) return;
 
   titleInput.value = note.title || "";
-  body.value       = note.content || "";
+  body.value = note.content || "";
   tsSpan.innerText = note.timestamp
     ? new Date(note.timestamp.seconds * 1000).toLocaleString("pt-BR") : "Agora";
-  charsSpan.innerText = `${(note.content||'').length} car.`;
+  charsSpan.innerText = `${(note.content || '').length} car.`;
 
   folderSel.innerHTML = ["Geral", ...state.allFolders].map(f =>
-    `<option value="${f}" ${(note.folder||"Geral")===f?'selected':''}>${f}</option>`
+    `<option value="${f}" ${(note.folder || "Geral") === f ? 'selected' : ''}>${f}</option>`
   ).join('');
 
   overlay.classList.add("open");
@@ -953,9 +957,9 @@ function openExpandNote(noteId) {
       charsSpan.innerText = `${body.value.length} car.`;
     }, 600);
   };
-  titleInput.oninput  = save;
-  body.oninput        = save;
-  folderSel.onchange  = save;
+  titleInput.oninput = save;
+  body.oninput = save;
+  folderSel.onchange = save;
 }
 
 // ==================== TOGGLE VIEW ====================
@@ -964,7 +968,7 @@ function toggleView() {
   const views = ['groups', 'links', 'notes'];
   const currentIdx = views.indexOf(state.activeView);
   state.activeView = views[(currentIdx + 1) % views.length];
-  
+
   updateUILayout();
   renderAll();
 }
@@ -976,7 +980,7 @@ function openLinkModal() {
   modal.style.display = "flex";
   document.getElementById("urlInput")?.focus();
 
-  const select     = document.getElementById("catSelect");
+  const select = document.getElementById("catSelect");
   const categories = [...new Set(state.allLinks.map(l => l.category))].sort();
   select.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('')
     + `<option value="new">+ Nova Categoria...</option>`;
@@ -984,14 +988,14 @@ function openLinkModal() {
 
 function closeLinkModal() {
   document.getElementById("linkModal").style.display = "none";
-  ["urlInput","titleInput"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  ["urlInput", "titleInput"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
   const nc = document.getElementById("newCatInput");
   if (nc) { nc.style.display = "none"; nc.value = ""; }
 }
 
 async function saveLinkHandler() {
-  let title    = document.getElementById("titleInput")?.value.trim();
-  let url      = document.getElementById("urlInput")?.value.trim();
+  let title = document.getElementById("titleInput")?.value.trim();
+  let url = document.getElementById("urlInput")?.value.trim();
   let category = document.getElementById("catSelect")?.value;
   if (category === "new") category = document.getElementById("newCatInput")?.value.trim();
 
@@ -1022,19 +1026,19 @@ function updateUILayout() {
   const addLinkBtn = document.getElementById("addLinkBtn");
   const addNoteBtn = document.getElementById("addNoteBtn");
   const toggleBtn = document.getElementById("toggleBtn");
-  
+
   // Views
   const linksView = document.getElementById("linksView");
   const groupsView = document.getElementById("groupsView");
   const notesView = document.getElementById("notesView");
-  
+
   if (!catScroll || !linkSizeWrap || !exportWrap || !searchWrap || !sortWrap || !addLinkBtn || !addNoteBtn || !toggleBtn) return;
 
   // Reset - oculta todas as views primeiro
   if (linksView) linksView.style.display = "none";
   if (groupsView) groupsView.style.display = "none";
   if (notesView) notesView.style.display = "none";
-  
+
   // Reset
   catScroll.style.display = "flex";
   linkSizeWrap.style.display = "block";
@@ -1076,6 +1080,12 @@ function initDashboard() {
   updateUILayout();
   document.getElementById("loginOverlay").style.display = "none";
 
+  // Inicializar tema
+  if (typeof applyTheme === 'function') applyTheme();
+
+  // Aplicar tamanho de grupo
+  if (typeof applyGroupSize === 'function') applyGroupSize();
+
   // Se temos dados em cache, renderiza imediatamente antes do Firestore responder
   // Isso dá a sensação de carregamento instantâneo ao usuário
   if (state.allLinks.length > 0 || state.allNotes.length > 0) {
@@ -1101,49 +1111,49 @@ function initDashboard() {
     if (nc) nc.style.display = e.target.value === "new" ? "block" : "none";
   });
 }
-  // Event listeners — notas
-  document.getElementById("addNoteBtn")?.addEventListener("click", addNote);
+// Event listeners — notas
+document.getElementById("addNoteBtn")?.addEventListener("click", addNote);
 
-  // Event listeners — tamanho
-  document.getElementById("linkSizeBtn")?.addEventListener("click", cycleLinkSize);
-  applyLinkSize();
+// Event listeners — tamanho
+document.getElementById("linkSizeBtn")?.addEventListener("click", cycleLinkSize);
+applyLinkSize();
 
-  // Event listeners — exportar links
-  document.getElementById("exportLinksBtn")?.addEventListener("click", exportLinksAsJSON);
-  refreshBackupBtnLabel();
+// Event listeners — exportar links
+document.getElementById("exportLinksBtn")?.addEventListener("click", exportLinksAsJSON);
+refreshBackupBtnLabel();
 
-  // Event listeners — navegação
-  document.getElementById("toggleBtn")?.addEventListener("click", toggleView);
-  document.getElementById("logoutBtn")?.addEventListener("click", logout);
-  document.getElementById("changePasswordBtn")?.addEventListener("click", openChangePasswordModal);
+// Event listeners — navegação
+document.getElementById("toggleBtn")?.addEventListener("click", toggleView);
+document.getElementById("logoutBtn")?.addEventListener("click", logout);
+document.getElementById("changePasswordBtn")?.addEventListener("click", openChangePasswordModal);
 
-  // Busca
-  document.getElementById("searchInput")?.addEventListener("input", e => {
-    state.searchTerm = e.target.value; renderAll();
-  });
+// Busca
+document.getElementById("searchInput")?.addEventListener("input", e => {
+  state.searchTerm = e.target.value; renderAll();
+});
 
-  // Editar categoria
-  document.getElementById("editCatClose")?.addEventListener("click", closeEditCatModal);
-  document.getElementById("editCatCancel")?.addEventListener("click", closeEditCatModal);
-  document.getElementById("saveEditCat")?.addEventListener("click", saveEditCategory);
-  document.getElementById("editCatSelect")?.addEventListener("change", e => {
-    const ni = document.getElementById("editNewCatInput");
-    if (ni) ni.style.display = e.target.value === "new" ? "block" : "none";
-  });
-  document.getElementById("editCatModal")?.addEventListener("click", e => {
-    if (e.target.id === "editCatModal") closeEditCatModal();
-  });
+// Editar categoria
+document.getElementById("editCatClose")?.addEventListener("click", closeEditCatModal);
+document.getElementById("editCatCancel")?.addEventListener("click", closeEditCatModal);
+document.getElementById("saveEditCat")?.addEventListener("click", saveEditCategory);
+document.getElementById("editCatSelect")?.addEventListener("change", e => {
+  const ni = document.getElementById("editNewCatInput");
+  if (ni) ni.style.display = e.target.value === "new" ? "block" : "none";
+});
+document.getElementById("editCatModal")?.addEventListener("click", e => {
+  if (e.target.id === "editCatModal") closeEditCatModal();
+});
 
-  // Expandir nota
-  const expandOverlay = document.getElementById("expandOverlay");
-  document.getElementById("expandClose")?.addEventListener("click", () => expandOverlay?.classList.remove("open"));
-  expandOverlay?.addEventListener("click", e => { if (e.target === expandOverlay) expandOverlay.classList.remove("open"); });
+// Expandir nota
+const expandOverlay = document.getElementById("expandOverlay");
+document.getElementById("expandClose")?.addEventListener("click", () => expandOverlay?.classList.remove("open"));
+expandOverlay?.addEventListener("click", e => { if (e.target === expandOverlay) expandOverlay.classList.remove("open"); });
 
-  // Senha
-  document.getElementById("changePasswordClose")?.addEventListener("click", closeChangePasswordModal);
-  document.getElementById("changePasswordCancel")?.addEventListener("click", closeChangePasswordModal);
-  document.getElementById("saveNewPassword")?.addEventListener("click", saveNewPassword);
-  document.getElementById("changePasswordModal")?.addEventListener("click", e => {})
+// Senha
+document.getElementById("changePasswordClose")?.addEventListener("click", closeChangePasswordModal);
+document.getElementById("changePasswordCancel")?.addEventListener("click", closeChangePasswordModal);
+document.getElementById("saveNewPassword")?.addEventListener("click", saveNewPassword);
+document.getElementById("changePasswordModal")?.addEventListener("click", e => { })
 
 // Mostra/oculta elementos da UI baseado na view atual
 
@@ -1164,7 +1174,53 @@ document.getElementById("loginPassword")?.addEventListener("keypress", async e =
   if (e.key === "Enter") { e.preventDefault(); await attemptLogin(); }
 });
 
-renderAll = function() {
+// ==================== EVENT LISTENERS - NOVAS FUNCIONALIDADES ====================
+
+  // Tamanho dos grupos (se função existir)
+  document.getElementById("groupSizeBtn")?.addEventListener("click",
+    typeof cycleGroupSize === 'function' ? cycleGroupSize : function() {
+      console.warn("cycleGroupSize não foi carregada do extensions.js");
+    }
+  );
+
+  // Temas
+  document.getElementById("themeBtn")?.addEventListener("click",
+    typeof openThemeModal === 'function' ? openThemeModal : function() {
+      console.warn("openThemeModal não foi carregada do extensions.js");
+    }
+  );
+
+  document.getElementById("themeClose")?.addEventListener("click",
+    typeof closeThemeModal === 'function' ? closeThemeModal : function() {
+      this.closest('.modal-overlay').style.display = 'none';
+    }
+  );
+
+  document.getElementById("themeCancel")?.addEventListener("click",
+    typeof closeThemeModal === 'function' ? closeThemeModal : function() {
+      this.closest('.modal-overlay').style.display = 'none';
+    }
+  );
+
+  document.getElementById("themeSave")?.addEventListener("click",
+    typeof saveThemeFromModal === 'function' ? saveThemeFromModal : function() {
+      console.warn("saveThemeFromModal não foi carregada do extensions.js");
+    }
+  );
+
+  // Seletor rápido de tema
+  document.getElementById("quickThemeSelect")?.addEventListener("change", (e) => {
+    if (e.target.value === "custom") {
+      document.getElementById("customColorsSection").style.display = "block";
+    } else {
+      document.getElementById("customColorsSection").style.display = "none";
+      if (typeof applyQuickTheme === 'function') {
+        applyQuickTheme(e.target.value);
+      }
+    }
+  });
+
+renderAll = function () {
   if (state.activeView === 'groups') {
     renderGroups();
   } else if (state.activeView === 'notes') {

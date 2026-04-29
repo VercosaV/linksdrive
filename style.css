@@ -572,3 +572,90 @@ body {
 #linkPasswordField {
   margin-top: 8px;
 }
+.groups-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    margin-top: 16px;
+  }
+
+  .groups-grid.size-small {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+
+  .groups-grid.size-medium {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .groups-grid.size-large {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+
+  /* Responsivo */
+  @media(max-width: 768px) {
+    .groups-grid {
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+    .groups-grid.size-small {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .groups-grid.size-medium {
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .groups-grid.size-large {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+  }
+
+  /* Ajustes internos dos cards */
+  .groups-grid.size-small .group-card {
+    padding: 16px;
+    gap: 10px;
+  }
+
+  .groups-grid.size-small .group-card i {
+    font-size: 1.5rem;
+  }
+
+  .groups-grid.size-small .group-name {
+    font-size: 0.9rem;
+  }
+
+  .groups-grid.size-small .group-count {
+    font-size: 0.7rem;
+    padding: 3px 10px;
+  }
+
+  .groups-grid.size-large .group-card {
+    padding: 24px;
+    gap: 16px;
+  }
+
+  .groups-grid.size-large .group-card i {
+    font-size: 2.5rem;
+  }
+
+  .groups-grid.size-large .group-name {
+    font-size: 1.1rem;
+  }
+
+  .groups-grid.size-large .group-count {
+    font-size: 0.85rem;
+    padding: 6px 16px;
+  }
+
+  /* Botão de tamanho dos grupos */
+  #groupSizeWrap {
+    display: block;
+  }
+
+  body[data-view="links"] #groupSizeWrap,
+  body[data-view="notes"] #groupSizeWrap {
+    display: none;
+  }
