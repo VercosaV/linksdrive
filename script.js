@@ -1081,7 +1081,7 @@ function initDashboard() {
   document.getElementById("loginOverlay").style.display = "none";
 
   // Inicializar tema
-  if (typeof applyTheme === 'function') applyTheme();
+  if (typeof initTheme === 'function') initTheme();
 
   // Aplicar tamanho de grupo
   if (typeof applyGroupSize === 'function') applyGroupSize();
