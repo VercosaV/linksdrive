@@ -116,6 +116,20 @@ Este arquivo define a estrutura completa de customização de cores
   --transition-fast: .15s;
   --transition-normal: .18s;
   --transition-slow: .25s;
+
+  /* melhorando e usando claude 04/05 */
+  /* Aliases que fazem os nomes antigos apontarem para os novos */
+--accent: var(--accent-primary);
+--accent2: var(--accent-primary-hover);
+--surface: var(--surface-primary);
+--surface2: var(--surface-secondary);
+--border: var(--border-primary);
+--border2: var(--border-secondary);
+--tx: var(--text-primary);
+--tx2: var(--text-secondary);
+--tx3: var(--text-tertiary);
+--bg: var(--bg-primary);
+--bg2: var(--bg-secondary);
 }
 
 /* =====================================================================
