@@ -702,3 +702,411 @@ body {
   body[data-view="notes"] #groupSizeWrap {
     display: none;
   }
+/* =============================================================
+   ADIÇÕES AO style.css — Cole no FINAL do arquivo
+   
+   Organização por seção:
+   1. Header com glassmorphism real
+   2. Lock icon para links protegidos
+   3. Cards de link com animações melhoradas
+   4. Cards de grupo mais polidos
+   5. Scrollbar customizada melhorada
+   6. Micro-interações nos botões
+============================================================= */
+ 
+ 
+/* ============================================================
+   1. HEADER — Glassmorphism real
+   
+   POR QUÊ: o header atual usa background sólido com pouca
+   transparência. Com backdrop-filter: blur() + fundo semi-
+   transparente, o conteúdo atrás fica visível mas desfocado,
+   criando profundidade visual sem peso visual extra.
+   
+   Suporte: Chrome, Firefox, Safari (com prefixo -webkit-)
+============================================================ */
+.hdr {
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  /* Sombra sutil para separação visual do conteúdo */
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03);
+}
+ 
+/* Logo com animação de brilho no hover */
+.logo-mark {
+  position: relative;
+  overflow: hidden;
+}
+.logo-mark::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.3), transparent);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.logo-mark:hover::after {
+  opacity: 1;
+}
+
+/* ============================================================
+   2. LINKS PROTEGIDOS — Ícone de cadeado + estilização especial
+   
+   POR QUÊ: o usuário precisa de feedback visual imediato de que
+   um link requer senha antes mesmo de clicar. O cadeado + borda
+   âmbar comunicam "protegido" de forma universal.
+============================================================ */
+ 
+/* Ícone de cadeado no card */
+.link-lock {
+  font-size: 0.6rem;
+  color: #d97706;       /* âmbar — cor universal para "aviso/proteção" */
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 4px;
+  padding: 2px 5px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.15s;
+}
+ 
+/* Card com link protegido — borda âmbar sutil */
+.link-card.is-protected {
+  border-color: rgba(245, 158, 11, 0.25);
+}
+ 
+/* Barra lateral âmbar ao invés de azul para links protegidos */
+.link-card.is-protected::before {
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+}
+ 
+/* No hover, o cadeado fica mais visível */
+.link-card.is-protected:hover .link-lock {
+  background: rgba(245, 158, 11, 0.2);
+  color: #b45309;
+  transform: scale(1.05);
+}
+ 
+/* Nos tamanhos médio e grande, o cadeado cresce proporcionalmente */
+.links-grid.size-medium .link-lock {
+  font-size: 0.7rem;
+  padding: 3px 7px;
+}
+.links-grid.size-large .link-lock {
+  font-size: 0.78rem;
+  padding: 4px 8px;
+}
+ 
+/* Modal de senha do link — destaque âmbar no header */
+#linkPasswordModal .modal-hdr h3 i {
+  color: #d97706 !important;
+}
+
+/* ============================================================
+   3. CARDS DE LINK — Animações e visual melhorados
+   
+   POR QUÊ: o card atual tem hover simples. Adicionamos uma
+   sombra colorida que "vaza" a cor do accent, e um gradiente
+   sutil no background para dar profundidade sem peso visual.
+============================================================ */
+ 
+.link-card {
+  /* Substituímos a borda sólida por uma com transição de cor */
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+ 
+.link-card:hover {
+  /* Sombra colorida — mais moderna que sombra preta */
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.12), 0 1px 4px rgba(0,0,0,0.06) !important;
+  transform: translateY(-2px) !important;
+}
+ 
+/* Imagem (favicon) com sombra sutil no hover */
+.link-card:hover img {
+  transform: scale(1.08);
+  transition: transform 0.2s;
+}
+ 
+/* Título do link — trunca com fade em vez de "..." abrupto */
+.link-title {
+  /* mask-image cria fade gradual no final do texto */
+  /* Compatível com Chrome/Safari; Firefox usa apenas text-overflow */
+  mask-image: linear-gradient(90deg, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, black 80%, transparent 100%);
+}
+
+/* ============================================================
+   4. CARDS DE GRUPO — Mais polidos com gradiente no ícone
+   
+   POR QUÊ: o ícone de pasta era uma cor flat. Com um gradiente
+   no container e uma sombra colorida, ele ganha personalidade
+   sem precisar de imagens externas.
+============================================================ */
+ 
+.group-card {
+  /* Gradiente sutil no background para profundidade */
+  background: linear-gradient(
+    160deg,
+    var(--surface-primary, #ffffff) 0%,
+    var(--surface-secondary, #f8fafc) 100%
+  ) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+ 
+.group-card:hover {
+  box-shadow:
+    0 12px 32px rgba(59, 130, 246, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+ 
+/* Ícone da pasta com fundo gradiente */
+.group-card i {
+  /* Container circular para o ícone */
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(96, 165, 250, 0.08));
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 12px;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  transition: all 0.25s;
+}
+ 
+.group-card:hover i {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(96, 165, 250, 0.15));
+  transform: scale(1.1) rotate(-3deg);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
+}
+ 
+/* Contador de links no grupo — mais moderno */
+.group-count {
+  background: linear-gradient(90deg, var(--surface-secondary, #f1f5f9), var(--bg-secondary, #fff)) !important;
+  border: 1px solid var(--border-primary, #e2e8f0);
+  font-weight: 600 !important;
+  letter-spacing: -0.2px;
+}
+ 
+/* Prévia de favicons no grupo — com borda branca para separação */
+.group-preview-item img {
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* ============================================================
+   5. BOTÕES GLOBAIS — Micro-interações mais expressivas
+   
+   POR QUÊ: o clique sem feedback táctil parece sem vida.
+   O :active com scale(0.96) simula a sensação de pressionar
+   um botão físico — melhora muito a percepção de qualidade.
+============================================================ */
+ 
+.btn {
+  /* Adiciona transição para o transform (já existe para outros props) */
+  transition: background 0.18s, transform 0.12s, box-shadow 0.18s, color 0.18s !important;
+}
+ 
+/* Todos os botões "afundam" ao clicar */
+.btn:active,
+.btn-ghost:active,
+.btn-primary:active {
+  transform: translateY(0) scale(0.96) !important;
+}
+ 
+/* Botão primário com brilho no hover */
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-primary, #3b82f6), var(--accent-primary-hover, #2563eb)) !important;
+}
+ 
+.btn-primary:hover {
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* ============================================================
+   6. CATEGORIA ATIVA — Indicador visual mais expressivo
+   
+   POR QUÊ: a tab ativa atual é quase idêntica à inativa.
+   Adicionamos uma bolinha indicadora embaixo da tab ativa,
+   padrão familiar de dashboards modernos (ex: Notion, Linear).
+============================================================ */
+ 
+.cat-tab {
+  position: relative;
+  transition: all 0.18s !important;
+}
+ 
+.cat-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;  /* abaixo da tab, na borda do header */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: var(--accent-primary, #3b82f6);
+  border-radius: 2px;
+  animation: tabIndicator 0.2s ease-out;
+}
+ 
+@keyframes tabIndicator {
+  from { width: 0; opacity: 0; }
+  to   { width: 20px; opacity: 1; }
+}
+
+/* ============================================================
+   7. BADGE OFFLINE/ONLINE — Animação de pulso quando offline
+   
+   POR QUÊ: o ponto estático não comunica urgência. O pulso
+   anima a atenção do usuário para o estado do dado sem ser
+   intrusivo como um alert().
+============================================================ */
+ 
+.offline-badge:not(.online) .offline-dot {
+  animation: pulseDot 1.8s ease-in-out infinite;
+}
+ 
+@keyframes pulseDot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.7; }
+}
+ 
+/* Quando online, a bolinha fica verde e para de pulsar */
+.offline-badge.online .offline-dot {
+  background: var(--success, #22c55e);
+  animation: none;
+  box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
+}
+
+/* ============================================================
+   8. NOTAS — Sombra colorida conforme a cor da nota
+   
+   POR QUÊ: sombra preta em cima de nota laranja parece dissonante.
+   Sombras coloridas (mesmo que sutis) criam harmonia visual.
+   Usamos a cor de texto da nota (mais saturada) com baixa opacidade.
+============================================================ */
+ 
+.note-card.nc1 { box-shadow: 0 4px 20px rgba(139, 90, 43, 0.15); }
+.note-card.nc2 { box-shadow: 0 4px 20px rgba(30, 74, 118, 0.15); }
+.note-card.nc3 { box-shadow: 0 4px 20px rgba(46, 125, 50, 0.15); }
+.note-card.nc4 { box-shadow: 0 4px 20px rgba(196, 92, 30, 0.15); }
+.note-card.nc5 { box-shadow: 0 4px 20px rgba(106, 27, 154, 0.15); }
+.note-card.nc6 { box-shadow: 0 4px 20px rgba(185, 28, 46, 0.15); }
+ 
+/* No hover, a sombra colorida fica mais intensa */
+.note-card:hover.nc1 { box-shadow: 0 12px 36px rgba(139, 90, 43, 0.25); }
+.note-card:hover.nc2 { box-shadow: 0 12px 36px rgba(30, 74, 118, 0.25); }
+.note-card:hover.nc3 { box-shadow: 0 12px 36px rgba(46, 125, 50, 0.25); }
+.note-card:hover.nc4 { box-shadow: 0 12px 36px rgba(196, 92, 30, 0.25); }
+.note-card:hover.nc5 { box-shadow: 0 12px 36px rgba(106, 27, 154, 0.25); }
+.note-card:hover.nc6 { box-shadow: 0 12px 36px rgba(185, 28, 46, 0.25); }
+
+/* ============================================================
+   9. TOAST — Entrada com spring (physics-based)
+   
+   POR QUÊ: a animação padrão (linear) parece mecânica.
+   O spring (cubic-bezier com overshoot) faz o toast "pular"
+   levemente ao aparecer, como se tivesse momentum — sensação
+   muito mais natural e premium.
+============================================================ */
+ 
+.toast {
+  animation: toastSpring 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+}
+ 
+@keyframes toastSpring {
+  from {
+    opacity: 0;
+    transform: translateX(120%) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* ============================================================
+   10. MODAL — Entrada com fade + scale elegante
+   
+   POR QUÊ: o slideUp atual é bom mas o modal-box em si não tem
+   animação própria. Combinando fade do overlay com scale do box,
+   a experiência parece mais fluida e intencional.
+============================================================ */
+ 
+.modal-overlay {
+  animation: overlayFadeIn 0.2s ease-out;
+}
+ 
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+ 
+.modal-box {
+  animation: modalPop 0.25s cubic-bezier(0.34, 1.4, 0.64, 1) !important;
+}
+ 
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ============================================================
+   11. MODO ESCURO — Ajustes específicos para o data-theme="dark"
+   
+   POR QUÊ: no tema escuro, o header glassmorphism precisa de
+   ajuste pois o blur de fundo claro sobre escuro fica estranho.
+   Ajustamos a opacidade e a cor base para manter a legibilidade.
+============================================================ */
+ 
+[data-theme="dark"] .hdr {
+  background: rgba(15, 23, 42, 0.88) !important;
+  border-bottom-color: rgba(51, 65, 85, 0.8) !important;
+}
+ 
+[data-theme="dark"] .link-card {
+  background: linear-gradient(160deg, #1e293b 0%, #1a2540 100%);
+}
+ 
+[data-theme="dark"] .group-card {
+  background: linear-gradient(160deg, #1e293b 0%, #1a2540 100%) !important;
+}
+
+/* ============================================================
+   12. SCROLLBAR — Mais fina e com cores do tema
+   
+   POR QUÊ: a scrollbar padrão do navegador é grossa e dissonante
+   com o design. A customizada é fina e usa as cores do sistema.
+============================================================ */
+ 
+::-webkit-scrollbar {
+  width: 4px !important;
+  height: 4px !important;
+}
+ 
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+ 
+::-webkit-scrollbar-thumb {
+  background: var(--border-secondary, #cbd5e1) !important;
+  border-radius: 10px !important;
+}
+ 
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary, #64748b) !important;
+}
