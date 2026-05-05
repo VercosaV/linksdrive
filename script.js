@@ -109,7 +109,6 @@ const state = {
   isNotesView: false,
   activeFolder: "Todas",
   linkSize: localStorage.getItem(CACHE_KEYS.linkSize) || "small",
-  linkSize: localStorage.getItem(CACHE_KEYS.linkSize) || "small",
   groupSize: localStorage.getItem(CACHE_KEYS.groupSize) || "small",
   /*
     firestoreReady: flag que indica se o Firestore já sincronizou pelo menos
@@ -587,6 +586,7 @@ function renderGroups() {
 
     groupsGrid.appendChild(card);
   });
+  if (typeof applyGroupSize === 'function') applyGroupSize();
 }
 
 function renderLinks() {
@@ -668,6 +668,8 @@ function renderLinks() {
 
 // ==================== MODAL EDITAR CATEGORIA ====================
 let currentEditLinkId = null;
+let currentProtectedLink = null; // Guarda referência ao link em processo de verificação
+let dragSrc = null;
 
 function openEditCatModal(linkId, currentCat) {
   currentEditLinkId = linkId;
@@ -795,8 +797,7 @@ async function deleteFolder(folderName) {
 }
 
 // ==================== NOTAS ====================
-let dragSrc = null;
-let currentProtectedLink = null; // Guarda referência ao link em processo de verificação
+
 
 function subscribeNotes() {
   return notesRef.orderBy("order", "asc").onSnapshot(
