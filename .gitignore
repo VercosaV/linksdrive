@@ -1,4 +1,4 @@
 /linksdrive-mcp/serviceAccountKey.json
 /requirements.txt
-/node_modules
+node_modules/
 /linksdrive-mcp/node_modules/

@@ -1283,6 +1283,15 @@ document.getElementById("linkPasswordInput")?.addEventListener("keypress", async
 }
 // Event listeners — notas
 document.getElementById("addNoteBtn")?.addEventListener("click", addNote);
+// Botão "Nova pasta" — abre prompt e cria a pasta via `addFolder`
+document.getElementById("newFolderBtn")?.addEventListener("click", async () => {
+  const name = prompt("Nome da nova pasta:");
+  if (!name) return;
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  if (state.allFolders && state.allFolders.includes(trimmed)) { showToast("Já existe uma pasta com esse nome.", "error"); return; }
+  await addFolder(trimmed);
+});
 
 // Event listeners — tamanho
 document.getElementById("linkSizeBtn")?.addEventListener("click", cycleLinkSize);
