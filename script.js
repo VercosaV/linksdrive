@@ -109,7 +109,6 @@ const state = {
   isNotesView: false,
   activeFolder: "Todas",
   linkSize: localStorage.getItem(CACHE_KEYS.linkSize) || "small",
-  linkSize: localStorage.getItem(CACHE_KEYS.linkSize) || "small",
   groupSize: localStorage.getItem(CACHE_KEYS.groupSize) || "small",
   /*
     firestoreReady: flag que indica se o Firestore já sincronizou pelo menos
@@ -587,6 +586,7 @@ function renderGroups() {
 
     groupsGrid.appendChild(card);
   });
+  if (typeof applyGroupSize === 'function') applyGroupSize();
 }
 
 function renderLinks() {
@@ -594,7 +594,7 @@ function renderLinks() {
   const empty = document.getElementById("linksEmpty");
   const skeleton = document.getElementById("linksSkeleton");
   if (!grid || !empty || !skeleton) return;
-
+ 
   const filtered = state.allLinks
     .filter(l => {
       const matchCat = state.activeCategory === "Todos" || l.category === state.activeCategory;
@@ -602,51 +602,74 @@ function renderLinks() {
       return matchCat && matchSearch;
     })
     .sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
-
+ 
   skeleton.style.display = "none";
   grid.style.display = "grid";
   grid.innerHTML = "";
   applyLinkSize();
-
+ 
   if (filtered.length === 0) {
     empty.style.display = "flex";
     grid.style.display = "none";
     return;
   }
   empty.style.display = "none";
-
+ 
   filtered.forEach(link => {
     let domain = "google.com";
     try { domain = new URL(link.url).hostname; } catch (e) { }
-
+ 
     const card = document.createElement("div");
-    card.className = "link-card";
-    card.onclick = (e) => { if (!e.target.closest('.link-del')) window.open(link.url, '_blank'); };
+    // Se protegido, adiciona classe extra para estilização (cadeado, borda diferente)
+    card.className = `link-card${link.protected ? " is-protected" : ""}`;
+ 
+    // MUDANÇA PRINCIPAL: verifica proteção antes de abrir
+    card.onclick = (e) => {
+      // Ignora cliques nos botões internos (deletar, editar categoria)
+      if (e.target.closest(".link-del") || e.target.closest(".edit-cat-icon")) return;
+ 
+      if (link.protected) {
+        // Link protegido → abre modal de senha
+        openLinkPasswordModal(link);
+      } else {
+        // Link normal → abre diretamente
+        window.open(link.url, "_blank");
+      }
+    };
+ 
     card.innerHTML = `
       <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=64"
            onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
       <span class="link-title">${escapeHtml(link.title)}</span>
       <span class="link-cat-badge">${escapeHtml(link.category)}</span>
+      ${link.protected ? '<span class="link-lock" title="Link protegido com senha"><i class="fa-solid fa-lock"></i></span>' : ""}
       <button class="link-del" aria-label="Deletar"><i class="fa-solid fa-trash"></i></button>
     `;
-
-    card.querySelector('.link-del').onclick = async (e) => {
+ 
+    card.querySelector(".link-del").onclick = async (e) => {
       e.stopPropagation();
       if (confirm(`Excluir "${link.title}"?`)) await deleteLink(link.id);
     };
-
-    const catSpan = card.querySelector('.link-cat-badge');
+ 
+    const catSpan = card.querySelector(".link-cat-badge");
     const editIcon = document.createElement("i");
     editIcon.className = "fa-solid fa-pencil edit-cat-icon";
-    editIcon.onclick = (e) => { e.stopPropagation(); openEditCatModal(link.id, link.category); };
+    editIcon.onclick = (e) => {
+      e.stopPropagation();
+      openEditCatModal(link.id, link.category);
+    };
     catSpan.appendChild(editIcon);
-
+ 
     grid.appendChild(card);
   });
 }
 
+
+
 // ==================== MODAL EDITAR CATEGORIA ====================
 let currentEditLinkId = null;
+let currentProtectedLink = null; // Guarda referência ao link em processo de verificação
+let dragSrc = null;
 
 function openEditCatModal(linkId, currentCat) {
   currentEditLinkId = linkId;
@@ -668,6 +691,66 @@ function closeEditCatModal() {
   document.getElementById("editCatModal").style.display = "none";
   currentEditLinkId = null;
 }
+
+function openLinkPasswordModal(link) {
+  // Guarda o link para uso posterior na verificação
+  currentProtectedLink = link;
+ 
+  const modal = document.getElementById("linkPasswordModal");
+  const urlDisplay = document.getElementById("linkPasswordUrl");
+  const pwdInput = document.getElementById("linkPasswordInput");
+ 
+  // Mostra a URL mas não a senha — apenas informativo
+  if (urlDisplay) urlDisplay.value = link.url;
+  if (pwdInput) pwdInput.value = ""; // Limpa campo anterior
+ 
+  if (modal) modal.style.display = "flex";
+ 
+  // Foca no campo de senha após a animação do modal terminar
+  // O timeout de 100ms é necessário porque o display:flex
+  // precisa de um ciclo de render antes do focus funcionar
+  setTimeout(() => pwdInput?.focus(), 100);
+}
+ 
+function closeLinkPasswordModal() {
+  document.getElementById("linkPasswordModal").style.display = "none";
+  document.getElementById("linkPasswordInput").value = "";
+  currentProtectedLink = null; // Limpa referência — segurança
+}
+// Verifica a senha e abre o link se correta
+// É async porque hashPassword usa Web Crypto API (assíncrona)
+
+async function verifyAndOpenLink() {
+  if (!currentProtectedLink) return;
+ 
+  const inputPwd = document.getElementById("linkPasswordInput")?.value;
+  if (!inputPwd) {
+    showToast("Digite a senha!", "error");
+    return;
+  }
+ 
+  try {
+    // Recalcula o hash com o mesmo salt que foi usado ao salvar
+    // Se os hashes baterem, a senha está correta
+    // IMPORTANTE: nunca comparamos senhas em texto puro — sempre hashes
+    const computedHash = await hashPassword(inputPwd, currentProtectedLink.passwordSalt);
+ 
+    if (computedHash === currentProtectedLink.passwordHash) {
+      // Senha correta — abre o link e fecha o modal
+      window.open(currentProtectedLink.url, "_blank");
+      closeLinkPasswordModal();
+      showToast("Link aberto!", "success");
+    } else {
+      // Senha errada — seleciona o campo para redigitar facilmente
+      showToast("Senha incorreta!", "error");
+      document.getElementById("linkPasswordInput")?.select();
+    }
+  } catch (err) {
+    console.error("Erro ao verificar senha do link:", err);
+    showToast("Erro ao verificar senha.", "error");
+  }
+}
+
 
 async function saveEditCategory() {
   if (!currentEditLinkId) return;
@@ -714,7 +797,7 @@ async function deleteFolder(folderName) {
 }
 
 // ==================== NOTAS ====================
-let dragSrc = null;
+
 
 function subscribeNotes() {
   return notesRef.orderBy("order", "asc").onSnapshot(
@@ -987,25 +1070,64 @@ function openLinkModal() {
 
 function closeLinkModal() {
   document.getElementById("linkModal").style.display = "none";
-  ["urlInput", "titleInput"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+  ["urlInput", "titleInput", "linkPasswordField"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+ 
+  // Desmarca o checkbox e esconde o campo de senha
+  const checkbox = document.getElementById("protectWithPassword");
+  if (checkbox) checkbox.checked = false;
+  const pwdField = document.getElementById("linkPasswordField");
+  if (pwdField) pwdField.style.display = "none";
+ 
   const nc = document.getElementById("newCatInput");
   if (nc) { nc.style.display = "none"; nc.value = ""; }
 }
+
 
 async function saveLinkHandler() {
   let title = document.getElementById("titleInput")?.value.trim();
   let url = document.getElementById("urlInput")?.value.trim();
   let category = document.getElementById("catSelect")?.value;
   if (category === "new") category = document.getElementById("newCatInput")?.value.trim();
-
-  if (!title || !url || !category) { showToast("Preencha todos os campos!", "error"); return; }
+ 
+  // Validações básicas
+  if (!title || !url || !category) {
+    showToast("Preencha todos os campos!", "error");
+    return;
+  }
   if (!url.startsWith("http")) url = `https://${url}`;
   if (state.allLinks.some(l => l.url.toLowerCase() === url.toLowerCase())) {
-    showToast("Este link já existe!", "error"); return;
+    showToast("Este link já existe!", "error");
+    return;
   }
-
+ 
+  // Lê os campos de proteção com senha
+  const protectWithPwd = document.getElementById("protectWithPassword")?.checked;
+  const linkPwd = document.getElementById("linkPasswordField")?.value?.trim();
+ 
+  // Objeto base do link
+  let linkData = { title, url, category };
+ 
+  // Se proteção ativada E senha preenchida, gera credenciais
+  if (protectWithPwd && linkPwd) {
+    if (linkPwd.length < 3) {
+      showToast("Senha do link deve ter ao menos 3 caracteres!", "error");
+      return;
+    }
+    // generateSalt() e hashPassword() já existem no código (usadas na autenticação do dashboard)
+    // Reutilizamos a mesma infraestrutura PBKDF2 para consistência
+    const salt = await generateSalt();
+    const hash = await hashPassword(linkPwd, salt);
+ 
+    linkData.protected = true;      // Flag booleana para verificação rápida
+    linkData.passwordSalt = salt;   // Salt único por link (evita rainbow tables)
+    linkData.passwordHash = hash;   // Hash derivado via PBKDF2-SHA256
+  }
+ 
   try {
-    await addLink({ title, url, category });
+    await addLink(linkData);
     closeLinkModal();
     state.activeCategory = category;
     renderAll();
@@ -1013,6 +1135,8 @@ async function saveLinkHandler() {
     showToast("Erro ao salvar link", "error");
   }
 }
+
+
 
 // ==================== INICIALIZAÇÃO ====================
 // Mostra/oculta elementos da UI baseado na view atual
@@ -1103,6 +1227,54 @@ function initDashboard() {
   document.getElementById("modalClose")?.addEventListener("click", closeLinkModal);
   document.getElementById("modalCancel")?.addEventListener("click", closeLinkModal);
   document.getElementById("linkModal")?.addEventListener("click", e => { if (e.target.id === "linkModal") closeLinkModal(); });
+  document.getElementById("newFolderBtn")?.addEventListener("click", () => {
+  // Por simplicidade usamos prompt() — substitua por um modal se preferir
+  const folderName = prompt("Nome da nova pasta:")?.trim();
+  if (!folderName) return;
+ 
+  // Valida duplicata antes de chamar o Firestore
+  if (state.allFolders.includes(folderName)) {
+    showToast(`Pasta "${folderName}" já existe!`, "error");
+    return;
+  }
+ 
+  // Valida caracteres especiais básicos
+  if (folderName.length < 1 || folderName.length > 40) {
+    showToast("Nome deve ter entre 1 e 40 caracteres!", "error");
+    return;
+  }
+ 
+  addFolder(folderName);
+});
+
+  // Checkbox "Proteger com senha" — mostra/esconde o campo de senha
+document.getElementById("protectWithPassword")?.addEventListener("change", (e) => {
+  const pwdField = document.getElementById("linkPasswordField");
+  if (pwdField) {
+    pwdField.style.display = e.target.checked ? "block" : "none";
+    if (e.target.checked) pwdField.focus();
+    else pwdField.value = "";
+  }
+});
+
+  document.getElementById("linkPasswordClose")?.addEventListener("click", closeLinkPasswordModal);
+document.getElementById("linkPasswordCancel")?.addEventListener("click", closeLinkPasswordModal);
+document.getElementById("linkPasswordSubmit")?.addEventListener("click", verifyAndOpenLink);
+document.getElementById("linkPasswordModal")?.addEventListener("click", e => {
+  if (e.target.id === "linkPasswordModal") closeLinkPasswordModal();
+});
+
+  // Permite confirmar senha com Enter
+document.getElementById("linkPasswordInput")?.addEventListener("keypress", async (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    await verifyAndOpenLink();
+  }
+});
+
+  
+
+  
 
   const catSelect = document.getElementById("catSelect");
   catSelect?.addEventListener("change", e => {
@@ -1284,3 +1456,4 @@ window.restaurarLinksDoCache = async () => {
   if (!confirm(`Reimportar ${cached.length} links do cache local para o Firestore?`)) return;
   await window.importarLinksEmLote(cached);
 }
+
