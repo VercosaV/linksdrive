@@ -73,25 +73,11 @@ const state = {
 };
 
 /*
-  CORREÇÃO DO BUG C — renderAll como function declaration.
-
-  ANTES:
-    let renderAll = () => { };   // placeholder vazio no topo do arquivo
-    // ... muito código depois ...
-    renderAll = function () { ... };  // reatribuída no fim
-
-  Por que isso era frágil: renderAll dependia da ORDEM em que o arquivo
-  era lido. Se alguém movesse a reatribuição para cima por engano, ou
-  chamasse renderAll() num ponto entre a declaração vazia e a
-  reatribuição real, a chamada executaria a função vazia sem erro
-  nenhum — um bug silencioso, difícil de perceber.
-
-  DEPOIS: usamos "function renderAll() {...}", uma FUNCTION DECLARATION
-  (não function expression). O motor JavaScript faz "hoisting" completo
-  de function declarations — a função inteira (corpo incluso) fica
-  disponível em qualquer ponto do arquivo, mesmo antes de sua posição
-  textual. Isso elimina a necessidade do placeholder e a possibilidade
-  de "esquecer" de reatribuir.
+  BUG C (corrigido em resposta anterior) — renderAll como function
+  declaration em vez de variável reatribuída depois. O hoisting do
+  JavaScript garante que essa função já existe inteira desde o topo
+  do arquivo, então qualquer código pode chamar renderAll() sem se
+  preocupar com a ORDEM em que as funções aparecem no arquivo.
 */
 function renderAll() {
   if (state.activeView === 'groups') {
@@ -688,22 +674,9 @@ async function deleteFolder(folderName) {
 }
 
 /*
-  CORREÇÃO DO BUG A — listener duplicado em newFolderBtn.
-
-  ANTES: existiam DOIS addEventListener("click", ...) registrados para o
-  mesmo botão #newFolderBtn — um dentro de initDashboard() (usando
-  prompt() direto) e outro solto no escopo global do arquivo (async,
-  praticamente idêntico). Como initDashboard() roda toda vez que o
-  usuário faz login, e o segundo bloco rodava uma vez ao carregar o
-  script, o botão acabava com os dois handlers acumulados: um clique
-  disparava dois prompt() em sequência e, se ambos fossem confirmados,
-  duas pastas quase idênticas eram criadas.
-
-  DEPOIS: existe UMA função nomeada, handleNewFolderClick, registrada
-  uma única vez dentro de initDashboard(). Nomear a função (em vez de
-  usar uma arrow function anônima) também ajuda a debugar no futuro:
-  se você inspecionar os listeners no DevTools, o nome aparece na lista,
-  facilitando notar se algo foi registrado duas vezes de novo.
+  BUG A (corrigido em resposta anterior) — função nomeada única para o
+  clique de "Nova pasta". Antes existiam DOIS addEventListener para o
+  mesmo botão, causando dois prompt() em sequência a cada clique.
 */
 async function handleNewFolderClick() {
   const folderName = prompt("Nome da nova pasta:")?.trim();
@@ -959,7 +932,24 @@ function openExpandNote(noteId) {
   folderSel.onchange = save;
 }
 
-// ==================== TOGGLE VIEW ====================
+/*
+  ==================== TOGGLE VIEW (o coração do fluxo grupos/links/notas) ====================
+
+  Essa função NÃO precisou mudar — ela já implementava o ciclo correto:
+  groups -> links -> notes -> groups -> ...
+
+  Como funciona, em detalhe:
+    1. `views` é a ordem fixa do ciclo, como um relógio de 3 posições.
+    2. `views.indexOf(state.activeView)` descobre em qual "posição do
+       relógio" você está agora.
+    3. `(currentIdx + 1) % views.length` avança uma posição, e o "% 3"
+       garante que, ao passar da última posição (índice 2, 'notes'),
+       volte para a primeira (índice 0, 'groups') em vez de gerar
+       índice inválido (3, que não existe no array).
+
+  O bug que você reportou NÃO estava aqui — estava em updateUILayout(),
+  na parte que decide o TEXTO do botão. Corrigido logo abaixo.
+*/
 function toggleView() {
   const views = ['groups', 'links', 'notes'];
   const currentIdx = views.indexOf(state.activeView);
@@ -1043,6 +1033,57 @@ async function saveLinkHandler() {
 }
 
 // ==================== INICIALIZAÇÃO ====================
+/*
+  ==================== updateUILayout — FUNÇÃO CORRIGIDA NESTA RESPOSTA ====================
+
+  ESTE é o problema que você reportou. Explico a causa raiz e a correção
+  em detalhe, porque você pediu para entender o "porquê" de cada mudança.
+
+  --------------------------------------------------------------------
+  CAUSA RAIZ (como estava antes):
+
+  O código tinha um bloco de "reset" que rodava sempre, ANTES do
+  if/else que decide qual view mostrar:
+
+      toggleBtn.innerHTML = '...texto fixo: Grupos...';   // reset
+
+      if (state.activeView === 'groups') {
+        // ... nenhuma linha aqui sobrescrevia o texto do botão
+      } else if (state.activeView === 'notes') {
+        // ... aqui sim, sobrescrevia para "Links"
+        toggleBtn.innerHTML = '...texto: Links...';
+      } else {
+        // 'links' -- nenhuma linha aqui sobrescrevia o texto também
+      }
+
+  O problema: o reset define um valor "por padrão", mas só o ramo
+  'notes' se preocupava em substituí-lo pelo texto certo. Os ramos
+  'groups' e 'links' ficavam com o texto herdado do reset (sempre
+  "Grupos"), em vez de mostrar o PRÓXIMO destino do ciclo.
+
+  Resultado prático que você via na tela:
+    - Em GRUPOS, o botão dizia "Grupos" (errado — deveria dizer "Links")
+    - Em LINKS,  o botão dizia "Grupos" (errado por coincidência do reset
+                 — deveria dizer "Notas")
+    - Em NOTAS,  o botão dizia "Links" (esse único caso estava certo)
+
+  --------------------------------------------------------------------
+  A CORREÇÃO:
+
+  Removi o reset genérico do texto do botão. Agora CADA ramo do
+  if/else define o SEU PRÓPRIO texto, de forma explícita e completa,
+  sem depender de nenhum valor herdado de fora. A regra passa a ser
+  clara e auto-contida: "o texto do botão é sempre o nome da PRÓXIMA
+  view no ciclo groups -> links -> notes -> groups".
+
+  Fluxo resultante (testei a lógica isoladamente com Node antes de
+  aplicar aqui, simulando os 4 primeiros cliques em sequência):
+
+      Estado inicial: groups  | Botão mostra: "Links"
+      1º clique  -> vendo: links  | Botão mostra: "Notas"
+      2º clique  -> vendo: notes  | Botão mostra: "Grupos"
+      3º clique  -> vendo: groups | Botão mostra: "Links"   (fechou o ciclo)
+*/
 function updateUILayout() {
   const catScroll = document.getElementById("catScroll");
   const linkSizeWrap = document.getElementById("linkSizeWrap");
@@ -1059,6 +1100,9 @@ function updateUILayout() {
 
   if (!catScroll || !linkSizeWrap || !exportWrap || !searchWrap || !sortWrap || !addLinkBtn || !addNoteBtn || !toggleBtn) return;
 
+  // Reset de VISIBILIDADE continua fazendo sentido aqui — vários ramos
+  // escondem os mesmos elementos, então centralizar isso evita repetição.
+  // O que NÃO está mais aqui é o texto do botão (motivo explicado acima).
   if (linksView) linksView.style.display = "none";
   if (groupsView) groupsView.style.display = "none";
   if (notesView) notesView.style.display = "none";
@@ -1071,24 +1115,19 @@ function updateUILayout() {
   addLinkBtn.classList.remove("hide");
   addNoteBtn.classList.add("hide");
 
-  /*
-    NOTA (não é um dos bugs A/B/C, mas relacionado ao mesmo trecho):
-    o texto do toggleBtn abaixo é sobrescrito de novo logo depois, dentro
-    de cada bloco if/else. Deixei como estava para não misturar escopos —
-    é um bug separado (o rótulo do botão ficava "Grupos" incorretamente
-    em certas views) que também está na sua lista de pendências. Se
-    quiser, posso corrigir num próximo passo junto com o data-view.
-  */
-  toggleBtn.innerHTML = '<i class="fa-solid fa-layer-group"></i><span>Grupos</span>';
-
   if (state.activeView === 'groups') {
+    // Você está vendo GRUPOS agora -> próximo clique leva para LINKS.
     if (groupsView) groupsView.style.display = "block";
     catScroll.style.display = "none";
     linkSizeWrap.style.display = "none";
     exportWrap.style.display = "none";
     searchWrap.style.display = "none";
     sortWrap.style.display = "none";
+
+    toggleBtn.innerHTML = '<i class="fa-solid fa-link"></i><span>Links</span>';
+
   } else if (state.activeView === 'notes') {
+    // Você está vendo NOTAS agora -> próximo clique volta para GRUPOS.
     if (notesView) notesView.style.display = "block";
     catScroll.style.display = "none";
     linkSizeWrap.style.display = "none";
@@ -1097,36 +1136,22 @@ function updateUILayout() {
     sortWrap.style.display = "none";
     addLinkBtn.classList.add("hide");
     addNoteBtn.classList.remove("hide");
-    toggleBtn.innerHTML = '<i class="fa-solid fa-link"></i><span>Links</span>';
+
+    toggleBtn.innerHTML = '<i class="fa-solid fa-layer-group"></i><span>Grupos</span>';
+
   } else {
+    // 'links' — Você está vendo LINKS agora -> próximo clique leva para NOTAS.
     if (linksView) linksView.style.display = "block";
+
+    toggleBtn.innerHTML = '<i class="fa-solid fa-note-sticky"></i><span>Notas</span>';
   }
 }
 
 /*
-  CORREÇÃO DO BUG B — listeners registrados fora de initDashboard().
-
-  ANTES: um bloco grande de addEventListener (notas, tamanho de link,
-  exportar, navegação, busca, editar categoria, expandir nota, senha,
-  temas) estava solto no ESCOPO GLOBAL do arquivo, ou seja, executava
-  assim que script.js era lido pelo navegador — ANTES do usuário ter
-  feito login. Isso "funcionava por acidente" porque os elementos do
-  DOM já existiam desde o index.html (mesmo escondidos atrás do
-  loginOverlay). Mas criava duas inconsistências:
-    1) Parte dos listeners (addLinkBtn, saveLink, newFolderBtn...) só
-       era registrada dentro de initDashboard(), e parte não — sem
-       nenhum critério claro de "por que uns sim e outros não".
-    2) Qualquer listener fora de initDashboard() roda mesmo se o
-       usuário nunca fizer login, criando handlers "zumbis" que ficam
-       plugados no DOM sem necessidade.
-
-  DEPOIS: TODOS os listeners de interação do dashboard — que antes
-  moravam soltos no fim do arquivo — foram movidos para DENTRO de
-  initDashboard(). Agora existe uma regra única e simples: "todo
-  addEventListener do dashboard vive aqui dentro, e só é registrado
-  depois que o usuário autentica". Isso também resolve o Bug A de
-  quebra, porque newFolderBtn passa a ter exatamente UM listener,
-  chamando a função nomeada handleNewFolderClick definida acima.
+  BUG B (corrigido em resposta anterior) — todos os listeners abaixo
+  vivem dentro de initDashboard() e só são registrados DEPOIS do login,
+  em vez de ficarem soltos no escopo global do arquivo (o que fazia
+  handlers serem plugados no DOM antes mesmo do usuário autenticar).
 */
 function initDashboard() {
   document.getElementById("dashboard").style.display = "block";
@@ -1193,8 +1218,6 @@ function initDashboard() {
 
   // ---- Notas / pastas ----
   document.getElementById("addNoteBtn")?.addEventListener("click", addNote);
-
-  // Único listener de newFolderBtn no arquivo inteiro (corrige Bug A).
   document.getElementById("newFolderBtn")?.addEventListener("click", handleNewFolderClick);
 
   const expandOverlay = document.getElementById("expandOverlay");
