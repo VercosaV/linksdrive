@@ -12,32 +12,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-/*
-  OTIMIZAÇÃO PRINCIPAL: persistência offline do Firestore.
-
-  O Firestore tem um sistema de cache embutido. Com enablePersistence(),
-  ele salva os documentos no IndexedDB do navegador (como um banco de dados
-  local no disco do usuário). Isso significa:
-
-  1. Na PRIMEIRA abertura: busca tudo do servidor (leituras normais).
-  2. Nas aberturas SEGUINTES: serve os dados do cache LOCAL sem consumir
-     nenhuma leitura do Firestore — só sincroniza o delta (o que mudou).
-  3. Se o Firestore já está em cache, onSnapshot() dispara imediatamente
-     com os dados locais e depois atualiza se houver mudanças no servidor.
-
-  Sem isso, cada vez que você abre o dashboard = N leituras completas.
-  Com isso, cada abertura = 0 leituras (se nada mudou no servidor).
-
-  Por que isso importa para o Spark plan (gratuito)?
-  → O limite são 50.000 leituras/dia. Com 3 coleções (links, notes, folders)
-    e onSnapshot ativo, cada abertura do app consomia todos os documentos
-    de cada coleção. Com persistência, você abre 1000 vezes por dia
-    sem gastar uma leitura sequer.
-*/
 db.enablePersistence({ synchronizeTabs: true })
   .catch(err => {
-    // Pode falhar em modo privado (sem IndexedDB) ou se outra aba já tiver
-    // ativado. Não é fatal — o app funciona normalmente, só sem cache local.
     if (err.code === 'failed-precondition') {
       console.warn('Cache offline desativado: múltiplas abas abertas.');
     } else if (err.code === 'unimplemented') {
@@ -50,22 +26,6 @@ const notesRef = db.collection("notes");
 const foldersRef = db.collection("folders");
 
 // ==================== CACHE KEYS (localStorage) ====================
-/*
-  Além do cache do Firestore (IndexedDB), mantemos um cache manual no
-  localStorage para duas finalidades específicas:
-
-  1. BACKUP DE LINKS: toda vez que os links mudam, salvamos um JSON completo
-     em localStorage. Se o Firestore falhar ou a conta for excluída, os dados
-     ainda existem localmente.
-
-  2. SNAPSHOT LOCAL RÁPIDO: na inicialização, carregamos os dados do
-     localStorage ANTES do Firestore responder. O usuário vê os dados
-     instantaneamente, sem esqueleto de loading.
-
-  Importante: o localStorage tem limite de ~5MB por domínio. Para links e
-  pastas isso é mais do que suficiente. Notas com muito conteúdo poderiam
-  extrapolar, então só fazemos backup de links (o mais crítico).
-*/
 const CACHE_KEYS = {
   links: "cache_links_v1",
   notes: "cache_notes_v1",
@@ -82,7 +42,6 @@ function cacheWrite(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (e) {
-    // QuotaExceededError: localStorage cheio. Silenciamos — não é crítico.
     console.warn("Cache localStorage cheio, ignorando:", e.message);
   }
 }
@@ -110,20 +69,44 @@ const state = {
   activeFolder: "Todas",
   linkSize: localStorage.getItem(CACHE_KEYS.linkSize) || "small",
   groupSize: localStorage.getItem(CACHE_KEYS.groupSize) || "small",
-  /*
-    firestoreReady: flag que indica se o Firestore já sincronizou pelo menos
-    uma vez. Usamos para mostrar o badge "Cache" vs badge online.
-  */
   firestoreReady: false,
 };
 
-let renderAll = () => { };
+/*
+  CORREÇÃO DO BUG C — renderAll como function declaration.
+
+  ANTES:
+    let renderAll = () => { };   // placeholder vazio no topo do arquivo
+    // ... muito código depois ...
+    renderAll = function () { ... };  // reatribuída no fim
+
+  Por que isso era frágil: renderAll dependia da ORDEM em que o arquivo
+  era lido. Se alguém movesse a reatribuição para cima por engano, ou
+  chamasse renderAll() num ponto entre a declaração vazia e a
+  reatribuição real, a chamada executaria a função vazia sem erro
+  nenhum — um bug silencioso, difícil de perceber.
+
+  DEPOIS: usamos "function renderAll() {...}", uma FUNCTION DECLARATION
+  (não function expression). O motor JavaScript faz "hoisting" completo
+  de function declarations — a função inteira (corpo incluso) fica
+  disponível em qualquer ponto do arquivo, mesmo antes de sua posição
+  textual. Isso elimina a necessidade do placeholder e a possibilidade
+  de "esquecer" de reatribuir.
+*/
+function renderAll() {
+  if (state.activeView === 'groups') {
+    renderGroups();
+  } else if (state.activeView === 'notes') {
+    renderNotes();
+  } else { // 'links'
+    renderCategories();
+    renderLinks();
+  }
+}
 
 function setAllLinks(links) {
   state.allLinks = links;
-  // Toda vez que os links mudam, persiste no localStorage como backup
   cacheWrite(CACHE_KEYS.links, links);
-  // Também atualiza o backup em JSON para download
   updateLinkBackupMeta();
 }
 
@@ -141,7 +124,6 @@ function setBadge(online) {
   if (online) {
     badge.classList.add("online");
     label.textContent = "Sincronizado";
-    // Some o badge após 3s quando online — só interessa mostrar se offline
     setTimeout(() => badge.classList.remove("visible"), 3000);
   } else {
     badge.classList.remove("online");
@@ -177,40 +159,15 @@ function getColorCode(colorNum) {
 }
 
 // ==================== BACKUP DE LINKS ====================
-/*
-  Sistema de backup duplo para os links:
-
-  CAMADA 1 — localStorage (automático):
-    Atualizado a cada mudança via setAllLinks(). Zero cliques do usuário.
-    Sobrevive a falhas de rede e erros do Firestore.
-    Limite: ~5MB. Para links (texto puro), aguenta milhares deles.
-
-  CAMADA 2 — Download de arquivo (manual):
-    O usuário clica em "Exportar Links" e faz download de um arquivo JSON.
-    Esse arquivo pode ser guardado no computador, Google Drive, etc.
-    Formato JSON escolhido por ser: legível, importável pelo importarLinksEmLote(),
-    e por representar fielmente a estrutura dos dados (título + url + categoria).
-
-  Por que JSON e não TXT?
-  → TXT seria mais legível para humanos, mas perderia a categoria e seria
-    mais difícil de reimportar. Com JSON, um único comando no console restaura
-    tudo: importarLinksEmLote(data).
-    Ainda assim, geramos também um .txt legível no mesmo download (ver abaixo).
-
-  Metadata de backup: guardamos no localStorage quando foi o último backup
-  para informar o usuário no botão.
-*/
 const BACKUP_META_KEY = "links_backup_meta";
 
 function updateLinkBackupMeta() {
-  // Apenas atualiza o contador de links no metadata — não faz I/O pesado
   const existing = cacheRead(BACKUP_META_KEY) || {};
   cacheWrite(BACKUP_META_KEY, {
     ...existing,
     count: state.allLinks.length,
     lastAutoSave: new Date().toISOString(),
   });
-  // Atualiza o texto do botão de backup se ele existir
   refreshBackupBtnLabel();
 }
 
@@ -224,23 +181,14 @@ function refreshBackupBtnLabel() {
 }
 
 function exportLinksAsJSON() {
-  /*
-    Gera e faz download de dois arquivos:
-    1. links_backup.json  — reimportável via importarLinksEmLote()
-    2. links_backup.txt   — legível por humanos, organizado por categoria
-
-    Usamos a técnica de criar um <a> temporário com blob URL para disparar
-    o download sem servidor — tudo no front-end.
-  */
   if (state.allLinks.length === 0) {
     showToast("Nenhum link para exportar.", "error");
     return;
   }
 
   const now = new Date();
-  const dateStr = now.toISOString().slice(0, 10); // "2025-04-09"
+  const dateStr = now.toISOString().slice(0, 10);
 
-  // — ARQUIVO 1: JSON estruturado —
   const jsonData = state.allLinks.map(l => ({
     title: l.title,
     url: l.url,
@@ -252,8 +200,6 @@ function exportLinksAsJSON() {
     "application/json"
   );
 
-  // — ARQUIVO 2: TXT legível por categoria —
-  // Agrupamos os links por categoria antes de gerar o texto
   const byCategory = {};
   state.allLinks.forEach(l => {
     if (!byCategory[l.category]) byCategory[l.category] = [];
@@ -266,7 +212,6 @@ function exportLinksAsJSON() {
 
   categories.forEach(cat => {
     txt += `\n[${cat}]\n`;
-    // Ordena os links da categoria alfabeticamente
     byCategory[cat]
       .sort((a, b) => a.title.localeCompare(b.title))
       .forEach(l => {
@@ -274,12 +219,10 @@ function exportLinksAsJSON() {
       });
   });
 
-  // Pequeno delay para o browser não bloquear dois downloads simultâneos
   setTimeout(() => {
     downloadBlob(txt, `links_backup_${dateStr}.txt`, "text/plain");
   }, 300);
 
-  // Atualiza metadata do backup manual
   cacheWrite(BACKUP_META_KEY, {
     count: state.allLinks.length,
     lastAutoSave: new Date().toISOString(),
@@ -290,11 +233,6 @@ function exportLinksAsJSON() {
 }
 
 function downloadBlob(content, filename, mimeType) {
-  /*
-    Cria um Blob (objeto binário em memória) com o conteúdo,
-    gera uma URL temporária para ele e simula um clique num link <a>.
-    Depois revoga a URL para liberar memória.
-  */
   const blob = new Blob([content], { type: mimeType + ";charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -304,7 +242,6 @@ function downloadBlob(content, filename, mimeType) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  // Libera a URL do blob da memória após o download iniciar
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
@@ -360,10 +297,9 @@ async function verifyPassword(password) {
   const salt = localStorage.getItem(CACHE_KEYS.salt);
   const storedHash = localStorage.getItem(CACHE_KEYS.hash);
 
-  // Primeira execução: aceita apenas senha padrão e cria credenciais
   if (!salt || !storedHash) {
     if (password !== DEFAULT_PASSWORD) {
-      return false; // Recusa senhas não-padrão na primeira execução
+      return false;
     }
     await setPassword(DEFAULT_PASSWORD);
     return true;
@@ -416,24 +352,6 @@ async function saveNewPassword() {
 }
 
 // ==================== LINKS ====================
-/*
-  POR QUE CONTINUAR USANDO onSnapshot() COM PERSISTÊNCIA ATIVA?
-
-  O onSnapshot() com persistência é a combinação mais eficiente possível:
-  - Dispara imediatamente com dados do CACHE (custo: 0 leituras)
-  - Recebe apenas o DIFF do servidor quando algo muda (custo: só os docs alterados)
-  - Sem persistência, cada snapshot = todos os documentos relidos do servidor
-
-  Alternativa descartada: substituir por get() + polling.
-  → get() com cache ainda consome 1 leitura por documento na primeira vez.
-  → Polling (setInterval) forçaria leituras mesmo sem mudanças.
-  → onSnapshot com persistência é superior em todos os eixos.
-
-  NOTA sobre o limite Spark:
-  50.000 leituras/dia. Com persistência, cada documento só é "lido" quando
-  muda no servidor. Se você não editar nada, pode abrir o app 10.000 vezes
-  no dia sem gastar uma única leitura adicional.
-*/
 function subscribeLinks() {
   return linksRef.orderBy("category").onSnapshot(
     { includeMetadataChanges: false },
@@ -446,7 +364,6 @@ function subscribeLinks() {
     },
     (error) => {
       console.error("Erro no Firebase:", error);
-      // Se falhar mas temos cache, continuamos funcionando
       if (state.allLinks.length > 0) {
         setBadge(false);
         showToast("Usando dados do cache local.", "error");
@@ -524,14 +441,12 @@ function renderGroups() {
   const groupsGrid = document.getElementById("groupsGrid");
   if (!groupsView || !groupsGrid) return;
 
-  // Contagem de links por categoria
   const categoryCount = {};
   state.allLinks.forEach(l => {
     const cat = l.category || "Sem Categoria";
     categoryCount[cat] = (categoryCount[cat] || 0) + 1;
   });
 
-  // Criar array de categorias únicas
   const categories = [...new Set(state.allLinks.map(l => l.category || "Sem Categoria"))].sort();
 
   groupsGrid.innerHTML = "";
@@ -543,21 +458,17 @@ function renderGroups() {
 
   categories.forEach(cat => {
     const count = categoryCount[cat] || 0;
-
-    // Pegar os primeiros 4 links da categoria para prévia
     const categoryLinks = state.allLinks.filter(l => (l.category || "Sem Categoria") === cat).slice(0, 4);
 
     const card = document.createElement("div");
     card.className = "group-card";
     card.onclick = () => {
-      // Navegar para a view de links com a categoria selecionada
       state.activeView = 'links';
       state.activeCategory = cat;
       updateUILayout();
       renderAll();
     };
 
-    // Gerar HTML da prévia de links
     let previewHtml = '';
     if (categoryLinks.length > 0) {
       previewHtml = '<div class="group-preview">';
@@ -594,7 +505,7 @@ function renderLinks() {
   const empty = document.getElementById("linksEmpty");
   const skeleton = document.getElementById("linksSkeleton");
   if (!grid || !empty || !skeleton) return;
- 
+
   const filtered = state.allLinks
     .filter(l => {
       const matchCat = state.activeCategory === "Todos" || l.category === state.activeCategory;
@@ -602,41 +513,36 @@ function renderLinks() {
       return matchCat && matchSearch;
     })
     .sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
- 
+
   skeleton.style.display = "none";
   grid.style.display = "grid";
   grid.innerHTML = "";
   applyLinkSize();
- 
+
   if (filtered.length === 0) {
     empty.style.display = "flex";
     grid.style.display = "none";
     return;
   }
   empty.style.display = "none";
- 
+
   filtered.forEach(link => {
     let domain = "google.com";
     try { domain = new URL(link.url).hostname; } catch (e) { }
- 
+
     const card = document.createElement("div");
-    // Se protegido, adiciona classe extra para estilização (cadeado, borda diferente)
     card.className = `link-card${link.protected ? " is-protected" : ""}`;
- 
-    // MUDANÇA PRINCIPAL: verifica proteção antes de abrir
+
     card.onclick = (e) => {
-      // Ignora cliques nos botões internos (deletar, editar categoria)
       if (e.target.closest(".link-del") || e.target.closest(".edit-cat-icon")) return;
- 
+
       if (link.protected) {
-        // Link protegido → abre modal de senha
         openLinkPasswordModal(link);
       } else {
-        // Link normal → abre diretamente
-        window.open(link.url, "_blank");
+        window.open(link.url, "_blank", "noopener,noreferrer");
       }
     };
- 
+
     card.innerHTML = `
       <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=64"
            onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
@@ -645,12 +551,12 @@ function renderLinks() {
       ${link.protected ? '<span class="link-lock" title="Link protegido com senha"><i class="fa-solid fa-lock"></i></span>' : ""}
       <button class="link-del" aria-label="Deletar"><i class="fa-solid fa-trash"></i></button>
     `;
- 
+
     card.querySelector(".link-del").onclick = async (e) => {
       e.stopPropagation();
       if (confirm(`Excluir "${link.title}"?`)) await deleteLink(link.id);
     };
- 
+
     const catSpan = card.querySelector(".link-cat-badge");
     const editIcon = document.createElement("i");
     editIcon.className = "fa-solid fa-pencil edit-cat-icon";
@@ -659,16 +565,14 @@ function renderLinks() {
       openEditCatModal(link.id, link.category);
     };
     catSpan.appendChild(editIcon);
- 
+
     grid.appendChild(card);
   });
 }
 
-
-
 // ==================== MODAL EDITAR CATEGORIA ====================
 let currentEditLinkId = null;
-let currentProtectedLink = null; // Guarda referência ao link em processo de verificação
+let currentProtectedLink = null;
 let dragSrc = null;
 
 function openEditCatModal(linkId, currentCat) {
@@ -693,55 +597,43 @@ function closeEditCatModal() {
 }
 
 function openLinkPasswordModal(link) {
-  // Guarda o link para uso posterior na verificação
   currentProtectedLink = link;
- 
+
   const modal = document.getElementById("linkPasswordModal");
   const urlDisplay = document.getElementById("linkPasswordUrl");
   const pwdInput = document.getElementById("linkPasswordInput");
- 
-  // Mostra a URL mas não a senha — apenas informativo
+
   if (urlDisplay) urlDisplay.value = link.url;
-  if (pwdInput) pwdInput.value = ""; // Limpa campo anterior
- 
+  if (pwdInput) pwdInput.value = "";
+
   if (modal) modal.style.display = "flex";
- 
-  // Foca no campo de senha após a animação do modal terminar
-  // O timeout de 100ms é necessário porque o display:flex
-  // precisa de um ciclo de render antes do focus funcionar
+
   setTimeout(() => pwdInput?.focus(), 100);
 }
- 
+
 function closeLinkPasswordModal() {
   document.getElementById("linkPasswordModal").style.display = "none";
   document.getElementById("linkPasswordInput").value = "";
-  currentProtectedLink = null; // Limpa referência — segurança
+  currentProtectedLink = null;
 }
-// Verifica a senha e abre o link se correta
-// É async porque hashPassword usa Web Crypto API (assíncrona)
 
 async function verifyAndOpenLink() {
   if (!currentProtectedLink) return;
- 
+
   const inputPwd = document.getElementById("linkPasswordInput")?.value;
   if (!inputPwd) {
     showToast("Digite a senha!", "error");
     return;
   }
- 
+
   try {
-    // Recalcula o hash com o mesmo salt que foi usado ao salvar
-    // Se os hashes baterem, a senha está correta
-    // IMPORTANTE: nunca comparamos senhas em texto puro — sempre hashes
     const computedHash = await hashPassword(inputPwd, currentProtectedLink.passwordSalt);
- 
+
     if (computedHash === currentProtectedLink.passwordHash) {
-      // Senha correta — abre o link e fecha o modal
-      window.open(currentProtectedLink.url, "_blank");
+      window.open(currentProtectedLink.url, "_blank", "noopener,noreferrer");
       closeLinkPasswordModal();
       showToast("Link aberto!", "success");
     } else {
-      // Senha errada — seleciona o campo para redigitar facilmente
       showToast("Senha incorreta!", "error");
       document.getElementById("linkPasswordInput")?.select();
     }
@@ -750,7 +642,6 @@ async function verifyAndOpenLink() {
     showToast("Erro ao verificar senha.", "error");
   }
 }
-
 
 async function saveEditCategory() {
   if (!currentEditLinkId) return;
@@ -796,9 +687,42 @@ async function deleteFolder(folderName) {
   }
 }
 
+/*
+  CORREÇÃO DO BUG A — listener duplicado em newFolderBtn.
+
+  ANTES: existiam DOIS addEventListener("click", ...) registrados para o
+  mesmo botão #newFolderBtn — um dentro de initDashboard() (usando
+  prompt() direto) e outro solto no escopo global do arquivo (async,
+  praticamente idêntico). Como initDashboard() roda toda vez que o
+  usuário faz login, e o segundo bloco rodava uma vez ao carregar o
+  script, o botão acabava com os dois handlers acumulados: um clique
+  disparava dois prompt() em sequência e, se ambos fossem confirmados,
+  duas pastas quase idênticas eram criadas.
+
+  DEPOIS: existe UMA função nomeada, handleNewFolderClick, registrada
+  uma única vez dentro de initDashboard(). Nomear a função (em vez de
+  usar uma arrow function anônima) também ajuda a debugar no futuro:
+  se você inspecionar os listeners no DevTools, o nome aparece na lista,
+  facilitando notar se algo foi registrado duas vezes de novo.
+*/
+async function handleNewFolderClick() {
+  const folderName = prompt("Nome da nova pasta:")?.trim();
+  if (!folderName) return;
+
+  if (state.allFolders.includes(folderName)) {
+    showToast(`Pasta "${folderName}" já existe!`, "error");
+    return;
+  }
+
+  if (folderName.length < 1 || folderName.length > 40) {
+    showToast("Nome deve ter entre 1 e 40 caracteres!", "error");
+    return;
+  }
+
+  await addFolder(folderName);
+}
+
 // ==================== NOTAS ====================
-
-
 function subscribeNotes() {
   return notesRef.orderBy("order", "asc").onSnapshot(
     { includeMetadataChanges: false },
@@ -815,10 +739,6 @@ function subscribeNotes() {
 }
 
 async function addNote() {
-  /*
-    CORREÇÃO: usa state.activeFolder para criar a nota na pasta certa.
-    "Todas" não é uma pasta real — usamos "Geral" como fallback.
-  */
   const targetFolder = (state.activeFolder === "Todas") ? "Geral" : state.activeFolder;
   try {
     await notesRef.add({
@@ -963,18 +883,15 @@ function renderNotes() {
       </div>
     `;
 
-    // Drag & drop
     card.addEventListener('dragstart', (e) => { card.classList.add('dragging'); dragSrc = card; e.dataTransfer.effectAllowed = 'move'; });
     card.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
     card.addEventListener('drop', (e) => { e.preventDefault(); if (dragSrc !== card) updateNoteOrder(dragSrc.dataset.id, card.dataset.id); });
     card.addEventListener('dragend', () => { card.classList.remove('dragging'); });
 
-    // Cor
     card.querySelectorAll('.cdot').forEach(dot =>
       dot.addEventListener('click', (e) => { e.stopPropagation(); updateNote(note.id, { color: parseInt(dot.dataset.color) }); })
     );
 
-    // Título com debounce
     const titleInput = card.querySelector('.note-title-input');
     let titleTimer;
     titleInput.addEventListener('input', () => {
@@ -982,7 +899,6 @@ function renderNotes() {
       titleTimer = setTimeout(() => updateNote(note.id, { title: titleInput.value }), 600);
     });
 
-    // Conteúdo com debounce
     const bodyText = card.querySelector('.note-body');
     let bodyTimer;
     bodyText.addEventListener('input', () => {
@@ -993,7 +909,6 @@ function renderNotes() {
       }, 600);
     });
 
-    // Pasta
     const folderSel = card.querySelector('.note-folder-sel');
     folderSel.addEventListener('change', () => updateNote(note.id, { folder: folderSel.value }));
 
@@ -1046,7 +961,6 @@ function openExpandNote(noteId) {
 
 // ==================== TOGGLE VIEW ====================
 function toggleView() {
-  // Alterna entre: groups -> links -> notes -> groups
   const views = ['groups', 'links', 'notes'];
   const currentIdx = views.indexOf(state.activeView);
   state.activeView = views[(currentIdx + 1) % views.length];
@@ -1074,25 +988,22 @@ function closeLinkModal() {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
- 
-  // Desmarca o checkbox e esconde o campo de senha
+
   const checkbox = document.getElementById("protectWithPassword");
   if (checkbox) checkbox.checked = false;
   const pwdField = document.getElementById("linkPasswordField");
   if (pwdField) pwdField.style.display = "none";
- 
+
   const nc = document.getElementById("newCatInput");
   if (nc) { nc.style.display = "none"; nc.value = ""; }
 }
-
 
 async function saveLinkHandler() {
   let title = document.getElementById("titleInput")?.value.trim();
   let url = document.getElementById("urlInput")?.value.trim();
   let category = document.getElementById("catSelect")?.value;
   if (category === "new") category = document.getElementById("newCatInput")?.value.trim();
- 
-  // Validações básicas
+
   if (!title || !url || !category) {
     showToast("Preencha todos os campos!", "error");
     return;
@@ -1102,30 +1013,25 @@ async function saveLinkHandler() {
     showToast("Este link já existe!", "error");
     return;
   }
- 
-  // Lê os campos de proteção com senha
+
   const protectWithPwd = document.getElementById("protectWithPassword")?.checked;
   const linkPwd = document.getElementById("linkPasswordField")?.value?.trim();
- 
-  // Objeto base do link
+
   let linkData = { title, url, category };
- 
-  // Se proteção ativada E senha preenchida, gera credenciais
+
   if (protectWithPwd && linkPwd) {
     if (linkPwd.length < 3) {
       showToast("Senha do link deve ter ao menos 3 caracteres!", "error");
       return;
     }
-    // generateSalt() e hashPassword() já existem no código (usadas na autenticação do dashboard)
-    // Reutilizamos a mesma infraestrutura PBKDF2 para consistência
     const salt = await generateSalt();
     const hash = await hashPassword(linkPwd, salt);
- 
-    linkData.protected = true;      // Flag booleana para verificação rápida
-    linkData.passwordSalt = salt;   // Salt único por link (evita rainbow tables)
-    linkData.passwordHash = hash;   // Hash derivado via PBKDF2-SHA256
+
+    linkData.protected = true;
+    linkData.passwordSalt = salt;
+    linkData.passwordHash = hash;
   }
- 
+
   try {
     await addLink(linkData);
     closeLinkModal();
@@ -1136,10 +1042,7 @@ async function saveLinkHandler() {
   }
 }
 
-
-
 // ==================== INICIALIZAÇÃO ====================
-// Mostra/oculta elementos da UI baseado na view atual
 function updateUILayout() {
   const catScroll = document.getElementById("catScroll");
   const linkSizeWrap = document.getElementById("linkSizeWrap");
@@ -1150,19 +1053,16 @@ function updateUILayout() {
   const addNoteBtn = document.getElementById("addNoteBtn");
   const toggleBtn = document.getElementById("toggleBtn");
 
-  // Views
   const linksView = document.getElementById("linksView");
   const groupsView = document.getElementById("groupsView");
   const notesView = document.getElementById("notesView");
 
   if (!catScroll || !linkSizeWrap || !exportWrap || !searchWrap || !sortWrap || !addLinkBtn || !addNoteBtn || !toggleBtn) return;
 
-  // Reset - oculta todas as views primeiro
   if (linksView) linksView.style.display = "none";
   if (groupsView) groupsView.style.display = "none";
   if (notesView) notesView.style.display = "none";
 
-  // Reset
   catScroll.style.display = "flex";
   linkSizeWrap.style.display = "block";
   exportWrap.style.display = "block";
@@ -1170,19 +1070,25 @@ function updateUILayout() {
   sortWrap.style.display = "block";
   addLinkBtn.classList.remove("hide");
   addNoteBtn.classList.add("hide");
+
+  /*
+    NOTA (não é um dos bugs A/B/C, mas relacionado ao mesmo trecho):
+    o texto do toggleBtn abaixo é sobrescrito de novo logo depois, dentro
+    de cada bloco if/else. Deixei como estava para não misturar escopos —
+    é um bug separado (o rótulo do botão ficava "Grupos" incorretamente
+    em certas views) que também está na sua lista de pendências. Se
+    quiser, posso corrigir num próximo passo junto com o data-view.
+  */
   toggleBtn.innerHTML = '<i class="fa-solid fa-layer-group"></i><span>Grupos</span>';
 
   if (state.activeView === 'groups') {
-    // Exibir view de grupos
     if (groupsView) groupsView.style.display = "block";
-    // Ocultar elementos desnecessários na view de grupos
     catScroll.style.display = "none";
     linkSizeWrap.style.display = "none";
     exportWrap.style.display = "none";
     searchWrap.style.display = "none";
     sortWrap.style.display = "none";
   } else if (state.activeView === 'notes') {
-    // Exibir view de notas
     if (notesView) notesView.style.display = "block";
     catScroll.style.display = "none";
     linkSizeWrap.style.display = "none";
@@ -1193,149 +1099,168 @@ function updateUILayout() {
     addNoteBtn.classList.remove("hide");
     toggleBtn.innerHTML = '<i class="fa-solid fa-link"></i><span>Links</span>';
   } else {
-    // View de links (padrão)
     if (linksView) linksView.style.display = "block";
   }
 }
 
+/*
+  CORREÇÃO DO BUG B — listeners registrados fora de initDashboard().
+
+  ANTES: um bloco grande de addEventListener (notas, tamanho de link,
+  exportar, navegação, busca, editar categoria, expandir nota, senha,
+  temas) estava solto no ESCOPO GLOBAL do arquivo, ou seja, executava
+  assim que script.js era lido pelo navegador — ANTES do usuário ter
+  feito login. Isso "funcionava por acidente" porque os elementos do
+  DOM já existiam desde o index.html (mesmo escondidos atrás do
+  loginOverlay). Mas criava duas inconsistências:
+    1) Parte dos listeners (addLinkBtn, saveLink, newFolderBtn...) só
+       era registrada dentro de initDashboard(), e parte não — sem
+       nenhum critério claro de "por que uns sim e outros não".
+    2) Qualquer listener fora de initDashboard() roda mesmo se o
+       usuário nunca fizer login, criando handlers "zumbis" que ficam
+       plugados no DOM sem necessidade.
+
+  DEPOIS: TODOS os listeners de interação do dashboard — que antes
+  moravam soltos no fim do arquivo — foram movidos para DENTRO de
+  initDashboard(). Agora existe uma regra única e simples: "todo
+  addEventListener do dashboard vive aqui dentro, e só é registrado
+  depois que o usuário autentica". Isso também resolve o Bug A de
+  quebra, porque newFolderBtn passa a ter exatamente UM listener,
+  chamando a função nomeada handleNewFolderClick definida acima.
+*/
 function initDashboard() {
   document.getElementById("dashboard").style.display = "block";
   updateUILayout();
   document.getElementById("loginOverlay").style.display = "none";
 
-  // Inicializar tema
   if (typeof initTheme === 'function') initTheme();
-
-  // Aplicar tamanho de grupo
   if (typeof applyGroupSize === 'function') applyGroupSize();
 
-  // Se temos dados em cache, renderiza imediatamente antes do Firestore responder
-  // Isso dá a sensação de carregamento instantâneo ao usuário
   if (state.allLinks.length > 0 || state.allNotes.length > 0) {
     renderAll();
-    setBadge(false); // mostra "cache" até confirmar que Firestore respondeu
+    setBadge(false);
   }
 
-  // Inscreve para receber atualizações em tempo real do Firestore
   subscribeLinks();
   subscribeNotes();
   subscribeFolders();
 
-  // Event listeners — links
+  // ---- Links ----
   document.getElementById("addLinkBtn")?.addEventListener("click", openLinkModal);
   document.getElementById("saveLink")?.addEventListener("click", saveLinkHandler);
   document.getElementById("modalClose")?.addEventListener("click", closeLinkModal);
   document.getElementById("modalCancel")?.addEventListener("click", closeLinkModal);
   document.getElementById("linkModal")?.addEventListener("click", e => { if (e.target.id === "linkModal") closeLinkModal(); });
-  document.getElementById("newFolderBtn")?.addEventListener("click", () => {
-  // Por simplicidade usamos prompt() — substitua por um modal se preferir
-  const folderName = prompt("Nome da nova pasta:")?.trim();
-  if (!folderName) return;
- 
-  // Valida duplicata antes de chamar o Firestore
-  if (state.allFolders.includes(folderName)) {
-    showToast(`Pasta "${folderName}" já existe!`, "error");
-    return;
-  }
- 
-  // Valida caracteres especiais básicos
-  if (folderName.length < 1 || folderName.length > 40) {
-    showToast("Nome deve ter entre 1 e 40 caracteres!", "error");
-    return;
-  }
- 
-  addFolder(folderName);
-});
-
-  // Checkbox "Proteger com senha" — mostra/esconde o campo de senha
-document.getElementById("protectWithPassword")?.addEventListener("change", (e) => {
-  const pwdField = document.getElementById("linkPasswordField");
-  if (pwdField) {
-    pwdField.style.display = e.target.checked ? "block" : "none";
-    if (e.target.checked) pwdField.focus();
-    else pwdField.value = "";
-  }
-});
-
-  document.getElementById("linkPasswordClose")?.addEventListener("click", closeLinkPasswordModal);
-document.getElementById("linkPasswordCancel")?.addEventListener("click", closeLinkPasswordModal);
-document.getElementById("linkPasswordSubmit")?.addEventListener("click", verifyAndOpenLink);
-document.getElementById("linkPasswordModal")?.addEventListener("click", e => {
-  if (e.target.id === "linkPasswordModal") closeLinkPasswordModal();
-});
-
-  // Permite confirmar senha com Enter
-document.getElementById("linkPasswordInput")?.addEventListener("keypress", async (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    await verifyAndOpenLink();
-  }
-});
-
-  
-
-  
 
   const catSelect = document.getElementById("catSelect");
   catSelect?.addEventListener("change", e => {
     const nc = document.getElementById("newCatInput");
     if (nc) nc.style.display = e.target.value === "new" ? "block" : "none";
   });
+
+  document.getElementById("editCatClose")?.addEventListener("click", closeEditCatModal);
+  document.getElementById("editCatCancel")?.addEventListener("click", closeEditCatModal);
+  document.getElementById("saveEditCat")?.addEventListener("click", saveEditCategory);
+  document.getElementById("editCatSelect")?.addEventListener("change", e => {
+    const ni = document.getElementById("editNewCatInput");
+    if (ni) ni.style.display = e.target.value === "new" ? "block" : "none";
+  });
+  document.getElementById("editCatModal")?.addEventListener("click", e => {
+    if (e.target.id === "editCatModal") closeEditCatModal();
+  });
+
+  document.getElementById("protectWithPassword")?.addEventListener("change", (e) => {
+    const pwdField = document.getElementById("linkPasswordField");
+    if (pwdField) {
+      pwdField.style.display = e.target.checked ? "block" : "none";
+      if (e.target.checked) pwdField.focus();
+      else pwdField.value = "";
+    }
+  });
+
+  document.getElementById("linkPasswordClose")?.addEventListener("click", closeLinkPasswordModal);
+  document.getElementById("linkPasswordCancel")?.addEventListener("click", closeLinkPasswordModal);
+  document.getElementById("linkPasswordSubmit")?.addEventListener("click", verifyAndOpenLink);
+  document.getElementById("linkPasswordModal")?.addEventListener("click", e => {
+    if (e.target.id === "linkPasswordModal") closeLinkPasswordModal();
+  });
+  document.getElementById("linkPasswordInput")?.addEventListener("keypress", async (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      await verifyAndOpenLink();
+    }
+  });
+
+  // ---- Notas / pastas ----
+  document.getElementById("addNoteBtn")?.addEventListener("click", addNote);
+
+  // Único listener de newFolderBtn no arquivo inteiro (corrige Bug A).
+  document.getElementById("newFolderBtn")?.addEventListener("click", handleNewFolderClick);
+
+  const expandOverlay = document.getElementById("expandOverlay");
+  document.getElementById("expandClose")?.addEventListener("click", () => expandOverlay?.classList.remove("open"));
+  expandOverlay?.addEventListener("click", e => { if (e.target === expandOverlay) expandOverlay.classList.remove("open"); });
+
+  // ---- Tamanho / exportação ----
+  document.getElementById("linkSizeBtn")?.addEventListener("click", cycleLinkSize);
+  applyLinkSize();
+
+  document.getElementById("exportLinksBtn")?.addEventListener("click", exportLinksAsJSON);
+  refreshBackupBtnLabel();
+
+  document.getElementById("groupSizeBtn")?.addEventListener("click",
+    typeof cycleGroupSize === 'function' ? cycleGroupSize : function () {
+      console.warn("cycleGroupSize não foi carregada do extensions.js");
+    }
+  );
+
+  // ---- Navegação ----
+  document.getElementById("toggleBtn")?.addEventListener("click", toggleView);
+  document.getElementById("logoutBtn")?.addEventListener("click", logout);
+  document.getElementById("changePasswordBtn")?.addEventListener("click", openChangePasswordModal);
+
+  // ---- Busca ----
+  document.getElementById("searchInput")?.addEventListener("input", e => {
+    state.searchTerm = e.target.value; renderAll();
+  });
+
+  // ---- Senha ----
+  document.getElementById("changePasswordClose")?.addEventListener("click", closeChangePasswordModal);
+  document.getElementById("changePasswordCancel")?.addEventListener("click", closeChangePasswordModal);
+  document.getElementById("saveNewPassword")?.addEventListener("click", saveNewPassword);
+
+  // ---- Temas ----
+  document.getElementById("themeBtn")?.addEventListener("click",
+    typeof openThemeModal === 'function' ? openThemeModal : function () {
+      console.warn("openThemeModal não foi carregada do extensions.js");
+    }
+  );
+  document.getElementById("themeClose")?.addEventListener("click",
+    typeof closeThemeModal === 'function' ? closeThemeModal : function () {
+      this.closest('.modal-overlay').style.display = 'none';
+    }
+  );
+  document.getElementById("themeCancel")?.addEventListener("click",
+    typeof closeThemeModal === 'function' ? closeThemeModal : function () {
+      this.closest('.modal-overlay').style.display = 'none';
+    }
+  );
+  document.getElementById("themeSave")?.addEventListener("click",
+    typeof saveThemeFromModal === 'function' ? saveThemeFromModal : function () {
+      console.warn("saveThemeFromModal não foi carregada do extensions.js");
+    }
+  );
+  document.getElementById("quickThemeSelect")?.addEventListener("change", (e) => {
+    if (e.target.value === "custom") {
+      document.getElementById("customColorsSection").style.display = "block";
+    } else {
+      document.getElementById("customColorsSection").style.display = "none";
+      if (typeof applyQuickTheme === 'function') {
+        applyQuickTheme(e.target.value);
+      }
+    }
+  });
 }
-// Event listeners — notas
-document.getElementById("addNoteBtn")?.addEventListener("click", addNote);
-// Botão "Nova pasta" — abre prompt e cria a pasta via `addFolder`
-document.getElementById("newFolderBtn")?.addEventListener("click", async () => {
-  const name = prompt("Nome da nova pasta:");
-  if (!name) return;
-  const trimmed = name.trim();
-  if (!trimmed) return;
-  if (state.allFolders && state.allFolders.includes(trimmed)) { showToast("Já existe uma pasta com esse nome.", "error"); return; }
-  await addFolder(trimmed);
-});
-
-// Event listeners — tamanho
-document.getElementById("linkSizeBtn")?.addEventListener("click", cycleLinkSize);
-applyLinkSize();
-
-// Event listeners — exportar links
-document.getElementById("exportLinksBtn")?.addEventListener("click", exportLinksAsJSON);
-refreshBackupBtnLabel();
-
-// Event listeners — navegação
-document.getElementById("toggleBtn")?.addEventListener("click", toggleView);
-document.getElementById("logoutBtn")?.addEventListener("click", logout);
-document.getElementById("changePasswordBtn")?.addEventListener("click", openChangePasswordModal);
-
-// Busca
-document.getElementById("searchInput")?.addEventListener("input", e => {
-  state.searchTerm = e.target.value; renderAll();
-});
-
-// Editar categoria
-document.getElementById("editCatClose")?.addEventListener("click", closeEditCatModal);
-document.getElementById("editCatCancel")?.addEventListener("click", closeEditCatModal);
-document.getElementById("saveEditCat")?.addEventListener("click", saveEditCategory);
-document.getElementById("editCatSelect")?.addEventListener("change", e => {
-  const ni = document.getElementById("editNewCatInput");
-  if (ni) ni.style.display = e.target.value === "new" ? "block" : "none";
-});
-document.getElementById("editCatModal")?.addEventListener("click", e => {
-  if (e.target.id === "editCatModal") closeEditCatModal();
-});
-
-// Expandir nota
-const expandOverlay = document.getElementById("expandOverlay");
-document.getElementById("expandClose")?.addEventListener("click", () => expandOverlay?.classList.remove("open"));
-expandOverlay?.addEventListener("click", e => { if (e.target === expandOverlay) expandOverlay.classList.remove("open"); });
-
-// Senha
-document.getElementById("changePasswordClose")?.addEventListener("click", closeChangePasswordModal);
-document.getElementById("changePasswordCancel")?.addEventListener("click", closeChangePasswordModal);
-document.getElementById("saveNewPassword")?.addEventListener("click", saveNewPassword);
-document.getElementById("changePasswordModal")?.addEventListener("click", e => { })
-
-// Mostra/oculta elementos da UI baseado na view atual
 
 // ==================== LOGIN ====================
 async function attemptLogin() {
@@ -1353,63 +1278,6 @@ document.getElementById("loginBtn")?.addEventListener("click", attemptLogin);
 document.getElementById("loginPassword")?.addEventListener("keypress", async e => {
   if (e.key === "Enter") { e.preventDefault(); await attemptLogin(); }
 });
-
-// ==================== EVENT LISTENERS - NOVAS FUNCIONALIDADES ====================
-
-  // Tamanho dos grupos (se função existir)
-  document.getElementById("groupSizeBtn")?.addEventListener("click",
-    typeof cycleGroupSize === 'function' ? cycleGroupSize : function() {
-      console.warn("cycleGroupSize não foi carregada do extensions.js");
-    }
-  );
-
-  // Temas
-  document.getElementById("themeBtn")?.addEventListener("click",
-    typeof openThemeModal === 'function' ? openThemeModal : function() {
-      console.warn("openThemeModal não foi carregada do extensions.js");
-    }
-  );
-
-  document.getElementById("themeClose")?.addEventListener("click",
-    typeof closeThemeModal === 'function' ? closeThemeModal : function() {
-      this.closest('.modal-overlay').style.display = 'none';
-    }
-  );
-
-  document.getElementById("themeCancel")?.addEventListener("click",
-    typeof closeThemeModal === 'function' ? closeThemeModal : function() {
-      this.closest('.modal-overlay').style.display = 'none';
-    }
-  );
-
-  document.getElementById("themeSave")?.addEventListener("click",
-    typeof saveThemeFromModal === 'function' ? saveThemeFromModal : function() {
-      console.warn("saveThemeFromModal não foi carregada do extensions.js");
-    }
-  );
-
-  // Seletor rápido de tema
-  document.getElementById("quickThemeSelect")?.addEventListener("change", (e) => {
-    if (e.target.value === "custom") {
-      document.getElementById("customColorsSection").style.display = "block";
-    } else {
-      document.getElementById("customColorsSection").style.display = "none";
-      if (typeof applyQuickTheme === 'function') {
-        applyQuickTheme(e.target.value);
-      }
-    }
-  });
-
-renderAll = function () {
-  if (state.activeView === 'groups') {
-    renderGroups();
-  } else if (state.activeView === 'notes') {
-    renderNotes();
-  } else { // 'links'
-    renderCategories();
-    renderLinks();
-  }
-};
 
 // Inicialização: carrega o dashboard se já autenticado, senão mostra login
 if (checkAuth()) {
@@ -1445,15 +1313,9 @@ window.resetSenha = async () => {
   showToast("Senha resetada para admin123");
 };
 
-/*
-  UTILITÁRIO EXTRA: restaurar links a partir do cache local
-  Caso o Firestore esteja vazio mas o localStorage tenha dados, use:
-  window.restaurarLinksDoCache()
-*/
 window.restaurarLinksDoCache = async () => {
   const cached = cacheRead(CACHE_KEYS.links);
   if (!cached || cached.length === 0) { alert("Cache vazio."); return; }
   if (!confirm(`Reimportar ${cached.length} links do cache local para o Firestore?`)) return;
   await window.importarLinksEmLote(cached);
 }
-
