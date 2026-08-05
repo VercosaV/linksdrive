@@ -760,6 +760,8 @@ function renderNotes() {
   grid.style.display = "grid";
   grid.innerHTML = "";
 
+  const noteColorsList =  ;
+
   notesToShow.forEach(note => {
     const card = document.createElement("div");
     card.className = `note-card nc${note.color || 1}`;
@@ -770,13 +772,15 @@ function renderNotes() {
       ? new Date(note.timestamp.seconds * 1000).toLocaleString("pt-BR")
       : "Agora";
 
+    const colorDotsHtml = noteColorsList.map(c =>
+      `<div class="cdot" data-color="${c}" style="background:${getColorCode(c)}"></div>`
+    ).join('');
+
     card.innerHTML = `
       <div class="note-topbar">
         <div class="note-tbl">
           <div class="note-drag"><i class="fa-solid fa-grip-vertical"></i></div>
-          ${.map(c =>
-            `<div class="cdot" data-color="${c}" style="background:${getColorCode(c)}"></div>`
-          ).join('')}
+          ${colorDotsHtml}
         </div>
         <div class="note-tbr">
           <button class="note-btn expand-note" title="Expandir"><i class="fa-solid fa-expand"></i></button>
