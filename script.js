@@ -1,30 +1,19 @@
 // ==================== CONFIGURAÇÃO FIREBASE ====================
-const firebaseConfig = {
-  apiKey: "AIzaSyBc3ryOJEFBQlJIUpy835Anej0OulZqHEQ",
-  authDomain: "linksdrive-4012c.firebaseapp.com",
-  projectId: "linksdrive-4012c",
-  storageBucket: "linksdrive-4012c.firebasestorage.app",
-  messagingSenderId: "91948654259",
-  appId: "1:91948654259:web:2b596baed6d1ab78cc5ac6",
-  measurementId: "G-V1EZDLJQ2K"
-};
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const auth = firebase.auth();
 
-db.enablePersistence({ synchronizeTabs: true })
-  .catch(err => {
-    if (err.code === 'failed-precondition') {
-      console.warn('Cache offline desativado: múltiplas abas abertas.');
-    } else if (err.code === 'unimplemented') {
-      console.warn('Cache offline não suportado neste navegador.');
-    }
-  });
+let linksRef = db.collection("links");
+let notesRef = db.collection("notes");
+let foldersRef = db.collection("folders");
 
-const linksRef = db.collection("links");
-const notesRef = db.collection("notes");
-const foldersRef = db.collection("folders");
-
+function setCollectionRefs(uid) {
+  if (uid) {
+    linksRef = db.collection("users").doc(uid).collection("links");
+    notesRef = db.collection("users").doc(uid).collection("notes");
+    foldersRef = db.collection("folders");
+  }
+}
 // ==================== CACHE KEYS (localStorage) ====================
 const CACHE_KEYS = {
   links: "cache_links_v1",
@@ -1286,20 +1275,74 @@ function initDashboard() {
 }
 
 // ==================== LOGIN ====================
-async function attemptLogin() {
-  const pwd = document.getElementById("loginPassword")?.value;
-  if (!pwd) return;
-  if (await login(pwd)) {
+// ==================== AUTENTICAÇÃO FIREBASE AUTH ====================
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    setCollectionRefs(user.uid);
+    state.user = user;
+    document.getElementById("loginOverlay").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
     initDashboard();
   } else {
-    const err = document.getElementById("loginError");
-    if (err) err.innerText = "Senha incorreta!";
+    document.getElementById("dashboard").style.display = "none";
+    document.getElementById("loginOverlay").style.display = "flex";
   }
+});
+
+document.getElementById("googleLoginBtn")?.addEventListener("click", () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch((err) => {
+    const errDiv = document.getElementById("loginError");
+    if (errDiv) errDiv.innerText = "Erro Google Sign-In: " + err.message;
+  });
+});
+
+document.getElementById("loginBtn")?.addEventListener("click", () => {
+  const email = document.getElementById("loginEmail")?.value?.trim();
+  const pwd = document.getElementById("loginPassword")?.value;
+  if (!email || !pwd) {
+    const errDiv = document.getElementById("loginError");
+    if (errDiv) errDiv.innerText = "Informe e-mail e senha.";
+    return;
+  }
+  auth.signInWithEmailAndPassword(email, pwd).catch((err) => {
+    const errDiv = document.getElementById("loginError");
+    if (errDiv) errDiv.innerText = "Erro de Login: " + err.message;
+  });
+});
+
+document.getElementById("registerBtn")?.addEventListener("click", () => {
+  const email = document.getElementById("loginEmail")?.value?.trim();
+  const pwd = document.getElementById("loginPassword")?.value;
+  if (!email || !pwd) {
+    const errDiv = document.getElementById("loginError");
+    if (errDiv) errDiv.innerText = "Informe e-mail e senha para cadastro.";
+    return;
+  }
+  auth.createUserWithEmailAndPassword(email, pwd).then(() => {
+    showToast("Conta criada com sucesso!", "success");
+  }).catch((err) => {
+    const errDiv = document.getElementById("loginError");
+    if (errDiv) errDiv.innerText = "Erro ao cadastrar: " + err.message;
+  });
+});
+
+function logout() {
+  auth.signOut().then(() => window.location.reload());
 }
 
-document.getElementById("loginBtn")?.addEventListener("click", attemptLogin);
-document.getElementById("loginPassword")?.addEventListener("keypress", async e => {
-  if (e.key === "Enter") { e.preventDefault(); await attemptLogin(); }
+window.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    const searchInput = document.getElementById("searchInput");
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.select();
+    }
+  }
+  if (e.key === "Escape") {
+    closeLinkModal();
+  }
 });
 
 // Inicialização: carrega o dashboard se já autenticado, senão mostra login

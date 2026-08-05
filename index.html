@@ -15,6 +15,9 @@
   <!-- Firebase v8 (global) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#3b82f6">
 </head>
 
 <body>
@@ -22,11 +25,26 @@
   <!-- TELA DE LOGIN -->
   <div id="loginOverlay" class="login-overlay">
     <div class="login-box">
-      <div class="login-icon"><i class="fa-solid fa-lock"></i></div>
-      <h2>Acesso Restrito</h2>
-      <p>Digite a senha para acessar o dashboard</p>
-      <input type="password" id="loginPassword" placeholder="Senha" autocomplete="off">
-      <button id="loginBtn" class="btn-login">Entrar</button>
+      <div class="login-icon"><i class="fa-solid fa-layer-group"></i></div>
+      <h2>Acesso ao LinksDrive</h2>
+      <p>Entre com sua conta do Google ou E-mail</p>
+      
+      <button id="googleLoginBtn" class="btn-login btn-google" style="background:#ffffff; color:#333; border:1px solid #ccc; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:600; width:100%; cursor:pointer;">
+        <i class="fa-brands fa-google" style="color:#4285F4;"></i> Entrar com Google
+      </button>
+
+      <div style="margin: 15px 0; text-align: center; border-bottom: 1px solid var(--border); line-height: 0.1em;">
+        <span style="background:#fff; padding:0 10px; color:var(--tx3); font-size:0.8rem;">ou e-mail</span>
+      </div>
+
+      <input type="email" id="loginEmail" placeholder="E-mail" autocomplete="username" style="margin-bottom:10px; width:100%;">
+      <input type="password" id="loginPassword" placeholder="Senha" autocomplete="current-password" style="width:100%;">
+      
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button id="loginBtn" class="btn-login" style="flex:1;">Entrar</button>
+        <button id="registerBtn" class="btn-ghost" style="flex:1; border:1px solid var(--border); padding:8px; border-radius:8px; font-weight:600;">Criar Conta</button>
+      </div>
+
       <div id="loginError" class="login-error"></div>
     </div>
   </div>
@@ -47,7 +65,7 @@
           <div class="hdr-actions">
             <div class="search-wrap" id="searchWrap">
               <i class="fa-solid fa-search"></i>
-              <input type="text" id="searchInput" placeholder="Buscar link…">
+              <input type="text" id="searchInput" placeholder="Buscar link… (Ctrl+K)">
             </div>
             <div class="sort-wrap" id="sortWrap">
               <label><i class="fa-solid fa-arrow-up-wide-short"></i></label>
@@ -72,13 +90,6 @@
               </button>
             </div>
 
-            <!--
-            Botão de exportar links.
-            Gera dois arquivos simultâneos:
-              - links_backup_YYYY-MM-DD.json  (reimportável)
-              - links_backup_YYYY-MM-DD.txt   (legível por humanos)
-            Fica visível apenas na view de links.
-          -->
             <div id="exportWrap">
               <button class="btn btn-ghost" id="exportLinksBtn" title="Exportar links como JSON + TXT">
                 <i class="fa-solid fa-file-export"></i>
@@ -87,17 +98,12 @@
             </div>
 
             <button class="btn btn-primary" id="addLinkBtn"><i class="fa-solid fa-plus"></i><span>Link</span></button>
-            <button class="btn btn-primary hide" id="addNoteBtn"><i
-                class="fa-solid fa-plus"></i><span>Nota</span></button>
-            <button class="btn btn-ghost" id="toggleBtn"><i
-                class="fa-solid fa-pen-to-square"></i><span>Notas</span></button>
-            <button class="btn btn-ghost" id="changePasswordBtn"><i
-                class="fa-solid fa-key"></i><span>Senha</span></button>
+            <button class="btn btn-primary hide" id="addNoteBtn"><i class="fa-solid fa-plus"></i><span>Nota</span></button>
+            <button class="btn btn-ghost" id="toggleBtn"><i class="fa-solid fa-pen-to-square"></i><span>Notas</span></button>
             <button class="btn btn-ghost" id="themeBtn" title="Personalizar tema">
               <i class="fa-solid fa-palette"></i>
               <span>Tema</span></button>
-            <button class="btn btn-ghost" id="logoutBtn"><i
-                class="fa-solid fa-sign-out-alt"></i><span>Sair</span></button>
+            <button class="btn btn-ghost" id="logoutBtn"><i class="fa-solid fa-sign-out-alt"></i><span>Sair</span></button>
           </div>
         </div>
         <div class="cat-scroll" id="catScroll">
@@ -124,7 +130,6 @@
         </div>
       </div>
 
-
       <!-- VIEW GRUPOS -->
       <div id="groupsView" style="display:none">
         <div id="groupsGrid" class="groups-grid"></div>
@@ -142,6 +147,7 @@
           <div id="groupLinksGrid" class="links-grid"></div>
         </div>
       </div>
+
       <!-- VIEW NOTAS -->
       <div id="notesView" style="display:none">
         <div class="notes-toolbar">
@@ -158,7 +164,7 @@
       </div>
     </div>
 
-    <!-- MODAL: ADICIONAR LINK -->
+    <!-- MODAIS E COMPONENTES -->
     <div id="linkModal" class="modal-overlay">
       <div class="modal-box">
         <div class="modal-hdr">
@@ -172,14 +178,6 @@
           <select id="catSelect"></select>
           <input id="newCatInput" type="text" placeholder="Nome da nova categoria…" style="display:none;margin-top:8px">
         </div>
-        <div class="form-row">
-          <label>Proteger com senha</label>
-          <div style="display:flex;align-items:center;gap:8px">
-            <input type="checkbox" id="protectWithPassword">
-            <span>Habilitar senha</span>
-          </div>
-          <input type="password" id="linkPasswordField" placeholder="Senha do link" style="display:none;margin-top:8px">
-        </div>
         <div class="modal-actions">
           <button class="btn-cancel" id="modalCancel">Cancelar</button>
           <button class="btn btn-primary" id="saveLink">Salvar</button>
@@ -187,154 +185,21 @@
       </div>
     </div>
 
-    <!-- MODAL: EDITAR CATEGORIA DO LINK -->
-    <div id="editCatModal" class="modal-overlay">
-      <div class="modal-box">
-        <div class="modal-hdr">
-          <h3><i class="fa-solid fa-tag" style="color:var(--accent);margin-right:7px"></i>Alterar Categoria</h3>
-          <button class="modal-close" id="editCatClose"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="form-row">
-          <label>Nova Categoria</label>
-          <select id="editCatSelect"></select>
-          <input id="editNewCatInput" type="text" placeholder="Nome da nova categoria…"
-            style="display:none;margin-top:8px">
-        </div>
-        <div class="modal-actions">
-          <button class="btn-cancel" id="editCatCancel">Cancelar</button>
-          <button class="btn btn-primary" id="saveEditCat">Salvar</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL: INSERIR SENHA DO LINK -->
-    <div id="linkPasswordModal" class="modal-overlay">
-      <div class="modal-box">
-        <div class="modal-hdr">
-          <h3><i class="fa-solid fa-lock" style="color:var(--accent);margin-right:7px"></i>Link Protegido</h3>
-          <button class="modal-close" id="linkPasswordClose"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="form-row">
-          <label>URL</label>
-          <input id="linkPasswordUrl" type="text" readonly style="background:#f5f5f5">
-        </div>
-        <div class="form-row">
-          <label>Digite a senha</label>
-          <input type="password" id="linkPasswordInput" placeholder="Senha do link" autocomplete="off">
-        </div>
-        <div class="modal-actions">
-          <button class="btn-cancel" id="linkPasswordCancel">Cancelar</button>
-          <button class="btn btn-primary" id="linkPasswordSubmit">Abrir Link</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL: EXPANDIR NOTA -->
-    <div id="expandOverlay" class="expand-overlay">
-      <div class="expand-box">
-        <div class="expand-topbar">
-          <div style="display:flex;align-items:center;gap:7px;flex:1;min-width:0">
-            <span id="expDots" style="display:flex;gap:4px;flex-shrink:0"></span>
-            <input id="expTitle" class="expand-title" type="text" placeholder="Título da nota…">
-          </div>
-          <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
-            <select id="expFolder" class="note-folder-sel" style="max-width:130px"></select>
-            <button class="note-btn" id="expandClose"><i class="fa-solid fa-xmark"></i></button>
-          </div>
-        </div>
-        <textarea id="expBody" class="expand-body" placeholder="Escreva à vontade…"></textarea>
-        <div class="expand-footer">
-          <span class="note-ts" id="expTs"></span>
-          <span class="note-chars" id="expChars">0 car.</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL: ALTERAR SENHA -->
-    <div id="changePasswordModal" class="modal-overlay">
-      <div class="modal-box">
-        <div class="modal-hdr">
-          <h3><i class="fa-solid fa-key" style="color:var(--accent);margin-right:7px"></i>Alterar Senha</h3>
-          <button class="modal-close" id="changePasswordClose"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="form-row">
-          <label>Senha Atual</label>
-          <input type="password" id="currentPassword" placeholder="Digite sua senha atual">
-        </div>
-        <div class="form-row">
-          <label>Nova Senha</label>
-          <input type="password" id="newPassword" placeholder="Nova senha">
-        </div>
-        <div class="form-row">
-          <label>Confirmar Nova Senha</label>
-          <input type="password" id="confirmPassword" placeholder="Confirme a nova senha">
-        </div>
-        <div class="modal-actions">
-          <button class="btn-cancel" id="changePasswordCancel">Cancelar</button>
-          <button class="btn btn-primary" id="saveNewPassword">Salvar</button>
-        </div>
-      </div>
-    </div>
-
     <div id="toastWrap" class="toast-wrap"></div>
-
-    <!-- MODAL: CONFIGURAÇÃO DE TEMAS -->
-    <div id="themeModal" class="modal-overlay">
-      <div class="modal-box" style="max-width: 500px;">
-        <div class="modal-hdr">
-          <h3><i class="fa-solid fa-palette" style="color:var(--accent-primary);margin-right:7px"></i>Personalizar Tema
-          </h3>
-          <button class="modal-close" id="themeClose"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="form-row">
-          <label>Tema Rápido</label>
-          <select id="quickThemeSelect" style="width: 100%;">
-            <option value="default">Padrão (Azul)</option>
-            <option value="dark">Escuro</option>
-            <option value="purple">Roxo</option>
-            <option value="green">Verde</option>
-            <option value="orange">Laranja</option>
-            <option value="custom">Customizado...</option>
-          </select>
-        </div>
-        <div id="customColorsSection" style="margin-top: 16px; display: none;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div class="form-row"><label>Fundo Principal</label><input type="color" id="bgPrimary" value="#f8fafc">
-            </div>
-            <div class="form-row"><label>Fundo Secundário</label><input type="color" id="bgSecondary" value="#ffffff">
-            </div>
-            <div class="form-row"><label>Superfície Primária</label><input type="color" id="surfacePrimary"
-                value="#ffffff"></div>
-            <div class="form-row"><label>Superfície Secundária</label><input type="color" id="surfaceSecondary"
-                value="#f1f5f9"></div>
-            <div class="form-row"><label>Borda Primária</label><input type="color" id="borderPrimary" value="#e2e8f0">
-            </div>
-            <div class="form-row"><label>Borda Secundária</label><input type="color" id="borderSecondary"
-                value="#cbd5e1"></div>
-            <div class="form-row"><label>Texto Primário</label><input type="color" id="textPrimary" value="#0f172a">
-            </div>
-            <div class="form-row"><label>Texto Secundário</label><input type="color" id="textSecondary" value="#334155">
-            </div>
-            <div class="form-row"><label>Texto Terciário</label><input type="color" id="textTertiary" value="#64748b">
-            </div>
-            <div class="form-row"><label>Acento Primário</label><input type="color" id="accentPrimary" value="#3b82f6">
-            </div>
-            <div class="form-row"><label>Acento Hover</label><input type="color" id="accentPrimaryHover"
-                value="#2563eb"></div>
-            <div class="form-row"><label>Perigo</label><input type="color" id="danger" value="#ef4444"></div>
-            <div class="form-row"><label>Sucesso</label><input type="color" id="success" value="#22c55e"></div>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button class="btn-cancel" id="themeCancel">Cancelar</button>
-          <button class="btn btn-primary" id="themeSave">Aplicar Tema</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <script src="extensions.js"></script>
   <script src="script.js"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker registrado:', reg.scope))
+          .catch(err => console.error('Erro no Service Worker:', err));
+      });
+    }
+  </script>
 </body>
 
 </html>
