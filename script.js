@@ -760,7 +760,7 @@ function renderNotes() {
   grid.style.display = "grid";
   grid.innerHTML = "";
 
-  const noteColorsList = null;
+  const noteColorsList = 
 
   notesToShow.forEach(note => {
     const card = document.createElement("div");
