@@ -90,12 +90,18 @@
               </button>
             </div>
 
-            <div id="exportWrap">
+            <!-- Botões de Importar e Exportar Links -->
+            <div id="exportWrap" style="display:flex; gap:6px;">
+              <button class="btn btn-ghost" id="importLinksBtn" title="Importar links (.json ou .txt)">
+                <i class="fa-solid fa-file-import"></i>
+                <span>Importar</span>
+              </button>
               <button class="btn btn-ghost" id="exportLinksBtn" title="Exportar links como JSON + TXT">
                 <i class="fa-solid fa-file-export"></i>
                 <span>Exportar</span>
               </button>
             </div>
+            <input type="file" id="linkFileInput" accept=".json,.txt" style="display:none;">
 
             <button class="btn btn-primary" id="addLinkBtn"><i class="fa-solid fa-plus"></i><span>Link</span></button>
             <button class="btn btn-primary hide" id="addNoteBtn"><i class="fa-solid fa-plus"></i><span>Nota</span></button>
@@ -155,6 +161,11 @@
           <button class="btn-new-folder" id="newFolderBtn">
             <i class="fa-solid fa-folder-plus"></i> Nova pasta
           </button>
+          <div style="margin-left:auto; display:flex; gap:6px;">
+            <button class="btn btn-ghost" id="importNotesBtn" title="Importar notas (.json)"><i class="fa-solid fa-file-import"></i><span>Importar Notas</span></button>
+            <button class="btn btn-ghost" id="exportNotesBtn" title="Exportar notas (.json)"><i class="fa-solid fa-file-export"></i><span>Exportar Notas</span></button>
+          </div>
+          <input type="file" id="noteFileInput" accept=".json" style="display:none;">
         </div>
         <div id="notesGrid" class="notes-grid"></div>
         <div id="notesEmpty" class="empty-state" style="display:none">

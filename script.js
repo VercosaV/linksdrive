@@ -158,7 +158,7 @@ function getColorCode(colorNum) {
   return colors[colorNum] || '#FFE4E0';
 }
 
-// ==================== BACKUP DE LINKS ====================
+// ==================== BACKUP E IMPORTAÇÃO/EXPORTAÇÃO ====================
 const BACKUP_META_KEY = "links_backup_meta";
 
 function updateLinkBackupMeta() {
@@ -224,6 +224,127 @@ function exportLinksAsJSON() {
   }, 300);
 
   showToast(`${state.allLinks.length} links exportados (JSON + TXT)!`, "success");
+}
+
+function parseLinksTxt(txtContent) {
+  const lines = txtContent.split('\n');
+  const links = [];
+  let currentCategory = "Geral";
+  let currentTitle = "";
+
+  for (let line of lines) {
+    line = line.trim();
+    if (!line || line.startsWith("MyDashboard") || line.startsWith("Gerado em") || line.startsWith("Total") || line.startsWith("===")) continue;
+    if (line.startsWith("[") && line.endsWith("]")) {
+      currentCategory = line.slice(1, -1);
+      continue;
+    }
+    if (line.startsWith("http://") || line.startsWith("https://")) {
+      if (currentTitle) {
+        links.push({ title: currentTitle, url: line, category: currentCategory });
+        currentTitle = "";
+      }
+    } else {
+      currentTitle = line;
+    }
+  }
+  return links;
+}
+
+async function handleLinkFileImport(file) {
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      let linksArray = [];
+      const content = e.target.result;
+      if (file.name.endsWith('.json')) {
+        linksArray = JSON.parse(content);
+      } else {
+        linksArray = parseLinksTxt(content);
+      }
+
+      let salvos = 0, ignorados = 0;
+      for (const link of linksArray) {
+        if (!link.url) continue;
+        const normUrl = link.url.trim().toLowerCase();
+        if (state.allLinks.some(l => l.url && l.url.trim().toLowerCase() === normUrl)) {
+          ignorados++;
+          continue;
+        }
+        await addLink({
+          title: link.title || "Sem Título",
+          url: link.url,
+          category: link.category || "Geral"
+        });
+        salvos++;
+      }
+      showToast(`Importação de links: ${salvos} salvos (${ignorados} duplicados ignorados).`, "success");
+    } catch (err) {
+      console.error(err);
+      showToast("Erro ao processar o arquivo de links.", "error");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function exportNotesAsJSON() {
+  if (state.allNotes.length === 0) {
+    showToast("Nenhuma nota para exportar.", "error");
+    return;
+  }
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10);
+  const data = {
+    folders: state.allFolders,
+    notes: state.allNotes.map(n => ({
+      title: n.title || "",
+      content: n.content || "",
+      color: n.color || 1,
+      folder: n.folder || "Geral",
+      order: n.order || 0
+    }))
+  };
+  downloadBlob(JSON.stringify(data, null, 2), `notas_backup_${dateStr}.json`, "application/json");
+  showToast(`${state.allNotes.length} notas exportadas com sucesso!`, "success");
+}
+
+async function handleNoteFileImport(file) {
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const notesArray = data.notes || (Array.isArray(data) ? data : []);
+      const foldersArray = data.folders || [];
+
+      for (const f of foldersArray) {
+        if (f && f !== "Geral" && !state.allFolders.includes(f)) {
+          await addFolder(f);
+        }
+      }
+
+      let salvos = 0, ignorados = 0;
+      for (const n of notesArray) {
+        if (state.allNotes.some(ex => ex.title === n.title && ex.content === n.content)) {
+          ignorados++;
+          continue;
+        }
+        await notesRef.add({
+          title: n.title || "",
+          content: n.content || "",
+          color: n.color || 1,
+          folder: n.folder || "Geral",
+          order: state.allNotes.length + salvos,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        salvos++;
+      }
+      showToast(`Notas importadas: ${salvos} salvas (${ignorados} duplicadas ignoradas).`, "success");
+    } catch (err) {
+      console.error(err);
+      showToast("Erro ao importar arquivo de notas.", "error");
+    }
+  };
+  reader.readAsText(file);
 }
 
 function downloadBlob(content, filename, mimeType) {
@@ -499,6 +620,15 @@ function subscribeNotes() {
   );
 }
 
+async function addFolder(folderName) {
+  try {
+    await foldersRef.doc(folderName).set({ name: folderName, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    showToast(`Pasta "${folderName}" criada!`);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
 function toggleView() {
   const views = ['groups', 'links', 'notes'];
   const currentIdx = views.indexOf(state.activeView);
@@ -577,6 +707,28 @@ function initDashboard() {
   subscribeLinks();
   subscribeNotes();
   subscribeFolders();
+
+  // ---- Importação/Exportação por arquivo UI ----
+  document.getElementById("importLinksBtn")?.addEventListener("click", () => {
+    document.getElementById("linkFileInput")?.click();
+  });
+  document.getElementById("linkFileInput")?.addEventListener("change", (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleLinkFileImport(e.target.files[0]);
+      e.target.value = "";
+    }
+  });
+
+  document.getElementById("exportNotesBtn")?.addEventListener("click", exportNotesAsJSON);
+  document.getElementById("importNotesBtn")?.addEventListener("click", () => {
+    document.getElementById("noteFileInput")?.click();
+  });
+  document.getElementById("noteFileInput")?.addEventListener("change", (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleNoteFileImport(e.target.files[0]);
+      e.target.value = "";
+    }
+  });
 
   document.getElementById("addLinkBtn")?.addEventListener("click", () => {
     document.getElementById("linkModal").style.display = "flex";
