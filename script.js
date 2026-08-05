@@ -716,6 +716,28 @@ async function updateNoteOrder(sourceId, targetId) {
   }
 }
 
+// Função auxiliar para tratar qualquer formato de data com segurança
+function formatNoteDate(timestamp) {
+  if (!timestamp) return "Agora";
+  try {
+    if (typeof timestamp === 'object') {
+      const sec = timestamp.seconds || timestamp._seconds;
+      if (sec) return new Date(sec * 1000).toLocaleString("pt-BR");
+      if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+        return timestamp.toDate().toLocaleString("pt-BR");
+      }
+    }
+    if (typeof timestamp === 'number') {
+      return new Date(timestamp).toLocaleString("pt-BR");
+    }
+    if (typeof timestamp === 'string') {
+      const d = new Date(timestamp);
+      if (!isNaN(d.getTime())) return d.toLocaleString("pt-BR");
+    }
+  } catch (e) { }
+  return "Agora";
+}
+
 function renderNotes() {
   const grid = document.getElementById("notesGrid");
   const empty = document.getElementById("notesEmpty");
@@ -763,82 +785,84 @@ function renderNotes() {
   const noteColorsList = 
 
   notesToShow.forEach(note => {
-    const card = document.createElement("div");
-    card.className = `note-card nc${note.color || 1}`;
-    card.draggable = true;
-    card.dataset.id = note.id;
+    try {
+      const card = document.createElement("div");
+      card.className = `note-card nc${note.color || 1}`;
+      card.draggable = true;
+      card.dataset.id = note.id;
 
-    const date = note.timestamp
-      ? new Date(note.timestamp.seconds * 1000).toLocaleString("pt-BR")
-      : "Agora";
+      const dateStr = formatNoteDate(note.timestamp);
 
-    const colorDotsHtml = noteColorsList.map(c =>
-      `<div class="cdot" data-color="${c}" style="background:${getColorCode(c)}"></div>`
-    ).join('');
+      const colorDotsHtml = noteColorsList.map(c =>
+        `<div class="cdot" data-color="${c}" style="background:${getColorCode(c)}"></div>`
+      ).join('');
 
-    card.innerHTML = `
-      <div class="note-topbar">
-        <div class="note-tbl">
-          <div class="note-drag"><i class="fa-solid fa-grip-vertical"></i></div>
-          ${colorDotsHtml}
+      card.innerHTML = `
+        <div class="note-topbar">
+          <div class="note-tbl">
+            <div class="note-drag"><i class="fa-solid fa-grip-vertical"></i></div>
+            ${colorDotsHtml}
+          </div>
+          <div class="note-tbr">
+            <button class="note-btn expand-note" title="Expandir"><i class="fa-solid fa-expand"></i></button>
+            <button class="note-btn danger delete-note" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+          </div>
         </div>
-        <div class="note-tbr">
-          <button class="note-btn expand-note" title="Expandir"><i class="fa-solid fa-expand"></i></button>
-          <button class="note-btn danger delete-note" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+        <div class="note-title-wrap">
+          <input class="note-title-input" type="text" placeholder="Título" value="${escapeHtml(note.title || '')}">
         </div>
-      </div>
-      <div class="note-title-wrap">
-        <input class="note-title-input" type="text" placeholder="Título" value="${escapeHtml(note.title || '')}">
-      </div>
-      <textarea class="note-body" placeholder="Escreva algo...">${escapeHtml(note.content || '')}</textarea>
-      <div class="note-footer">
-        <span class="note-ts">${date}</span>
-        <select class="note-folder-sel">
-          <option value="Geral">Geral</option>
-          ${state.allFolders.map(f =>
-            `<option value="${f}" ${(note.folder || "Geral") === f ? 'selected' : ''}>${f}</option>`
-          ).join('')}
-        </select>
-        <span class="note-chars">${(note.content || '').length} car.</span>
-      </div>
-    `;
+        <textarea class="note-body" placeholder="Escreva algo...">${escapeHtml(note.content || '')}</textarea>
+        <div class="note-footer">
+          <span class="note-ts">${dateStr}</span>
+          <select class="note-folder-sel">
+            <option value="Geral">Geral</option>
+            ${state.allFolders.map(f =>
+              `<option value="${f}" ${(note.folder || "Geral") === f ? 'selected' : ''}>${f}</option>`
+            ).join('')}
+          </select>
+          <span class="note-chars">${(note.content || '').length} car.</span>
+        </div>
+      `;
 
-    card.addEventListener('dragstart', (e) => { card.classList.add('dragging'); dragSrc = card; e.dataTransfer.effectAllowed = 'move'; });
-    card.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
-    card.addEventListener('drop', (e) => { e.preventDefault(); if (dragSrc !== card) updateNoteOrder(dragSrc.dataset.id, card.dataset.id); });
-    card.addEventListener('dragend', () => { card.classList.remove('dragging'); });
+      card.addEventListener('dragstart', (e) => { card.classList.add('dragging'); dragSrc = card; e.dataTransfer.effectAllowed = 'move'; });
+      card.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+      card.addEventListener('drop', (e) => { e.preventDefault(); if (dragSrc !== card) updateNoteOrder(dragSrc.dataset.id, card.dataset.id); });
+      card.addEventListener('dragend', () => { card.classList.remove('dragging'); });
 
-    card.querySelectorAll('.cdot').forEach(dot =>
-      dot.addEventListener('click', (e) => { e.stopPropagation(); updateNote(note.id, { color: parseInt(dot.dataset.color) }); })
-    );
+      card.querySelectorAll('.cdot').forEach(dot =>
+        dot.addEventListener('click', (e) => { e.stopPropagation(); updateNote(note.id, { color: parseInt(dot.dataset.color) }); })
+      );
 
-    const titleInput = card.querySelector('.note-title-input');
-    let titleTimer;
-    titleInput.addEventListener('input', () => {
-      clearTimeout(titleTimer);
-      titleTimer = setTimeout(() => updateNote(note.id, { title: titleInput.value }), 600);
-    });
+      const titleInput = card.querySelector('.note-title-input');
+      let titleTimer;
+      titleInput.addEventListener('input', () => {
+        clearTimeout(titleTimer);
+        titleTimer = setTimeout(() => updateNote(note.id, { title: titleInput.value }), 600);
+      });
 
-    const bodyText = card.querySelector('.note-body');
-    let bodyTimer;
-    bodyText.addEventListener('input', () => {
-      clearTimeout(bodyTimer);
-      bodyTimer = setTimeout(() => {
-        updateNote(note.id, { content: bodyText.value });
-        card.querySelector('.note-chars').innerText = `${bodyText.value.length} car.`;
-      }, 600);
-    });
+      const bodyText = card.querySelector('.note-body');
+      let bodyTimer;
+      bodyText.addEventListener('input', () => {
+        clearTimeout(bodyTimer);
+        bodyTimer = setTimeout(() => {
+          updateNote(note.id, { content: bodyText.value });
+          card.querySelector('.note-chars').innerText = `${bodyText.value.length} car.`;
+        }, 600);
+      });
 
-    const folderSel = card.querySelector('.note-folder-sel');
-    folderSel.addEventListener('change', () => updateNote(note.id, { folder: folderSel.value }));
+      const folderSel = card.querySelector('.note-folder-sel');
+      folderSel.addEventListener('change', () => updateNote(note.id, { folder: folderSel.value }));
 
-    card.querySelector('.expand-note').addEventListener('click', (e) => { e.stopPropagation(); openExpandNote(note.id); });
-    card.querySelector('.delete-note').addEventListener('click', async (e) => {
-      e.stopPropagation();
-      if (confirm("Excluir esta nota?")) await deleteNote(note.id);
-    });
+      card.querySelector('.expand-note').addEventListener('click', (e) => { e.stopPropagation(); openExpandNote(note.id); });
+      card.querySelector('.delete-note').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (confirm("Excluir esta nota?")) await deleteNote(note.id);
+      });
 
-    grid.appendChild(card);
+      grid.appendChild(card);
+    } catch (err) {
+      console.error("Erro ao renderizar nota individual:", note.id, err);
+    }
   });
 }
 
