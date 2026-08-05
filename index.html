@@ -90,7 +90,7 @@
               </button>
             </div>
 
-            <!-- Botões de Importar e Exportar Links -->
+            <!-- Importação e Exportação de Links -->
             <div id="exportWrap" style="display:flex; gap:6px;">
               <button class="btn btn-ghost" id="importLinksBtn" title="Importar links (.json ou .txt)">
                 <i class="fa-solid fa-file-import"></i>
@@ -106,6 +106,7 @@
             <button class="btn btn-primary" id="addLinkBtn"><i class="fa-solid fa-plus"></i><span>Link</span></button>
             <button class="btn btn-primary hide" id="addNoteBtn"><i class="fa-solid fa-plus"></i><span>Nota</span></button>
             <button class="btn btn-ghost" id="toggleBtn"><i class="fa-solid fa-pen-to-square"></i><span>Notas</span></button>
+            <button class="btn btn-ghost" id="changePasswordBtn"><i class="fa-solid fa-key"></i><span>Senha</span></button>
             <button class="btn btn-ghost" id="themeBtn" title="Personalizar tema">
               <i class="fa-solid fa-palette"></i>
               <span>Tema</span></button>
@@ -175,7 +176,7 @@
       </div>
     </div>
 
-    <!-- MODAIS E COMPONENTES -->
+    <!-- MODAL: ADICIONAR LINK -->
     <div id="linkModal" class="modal-overlay">
       <div class="modal-box">
         <div class="modal-hdr">
@@ -192,6 +193,110 @@
         <div class="modal-actions">
           <button class="btn-cancel" id="modalCancel">Cancelar</button>
           <button class="btn btn-primary" id="saveLink">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: EDITAR CATEGORIA DO LINK -->
+    <div id="editCatModal" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-hdr">
+          <h3><i class="fa-solid fa-tag" style="color:var(--accent);margin-right:7px"></i>Alterar Categoria</h3>
+          <button class="modal-close" id="editCatClose"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="form-row">
+          <label>Nova Categoria</label>
+          <select id="editCatSelect"></select>
+          <input id="editNewCatInput" type="text" placeholder="Nome da nova categoria…" style="display:none;margin-top:8px">
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" id="editCatCancel">Cancelar</button>
+          <button class="btn btn-primary" id="saveEditCat">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: EXPANDIR NOTA -->
+    <div id="expandOverlay" class="expand-overlay">
+      <div class="expand-box">
+        <div class="expand-topbar">
+          <div style="display:flex;align-items:center;gap:7px;flex:1;min-width:0">
+            <span id="expDots" style="display:flex;gap:4px;flex-shrink:0"></span>
+            <input id="expTitle" class="expand-title" type="text" placeholder="Título da nota…">
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
+            <select id="expFolder" class="note-folder-sel" style="max-width:130px"></select>
+            <button class="note-btn" id="expandClose"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+        <textarea id="expBody" class="expand-body" placeholder="Escreva à vontade…"></textarea>
+        <div class="expand-footer">
+          <span class="note-ts" id="expTs"></span>
+          <span class="note-chars" id="expChars">0 car.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: DEFINIR / ALTERAR SENHA -->
+    <div id="changePasswordModal" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-hdr">
+          <h3><i class="fa-solid fa-key" style="color:var(--accent);margin-right:7px"></i>Definir / Alterar Senha</h3>
+          <button class="modal-close" id="changePasswordClose"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="form-row">
+          <label>Nova Senha</label>
+          <input type="password" id="newPassword" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="form-row">
+          <label>Confirmar Nova Senha</label>
+          <input type="password" id="confirmPassword" placeholder="Confirme a nova senha">
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" id="changePasswordCancel">Cancelar</button>
+          <button class="btn btn-primary" id="saveNewPassword">Salvar Senha</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: CONFIGURAÇÃO DE TEMAS -->
+    <div id="themeModal" class="modal-overlay">
+      <div class="modal-box" style="max-width: 500px;">
+        <div class="modal-hdr">
+          <h3><i class="fa-solid fa-palette" style="color:var(--accent-primary);margin-right:7px"></i>Personalizar Tema</h3>
+          <button class="modal-close" id="themeClose"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="form-row">
+          <label>Tema Rápido</label>
+          <select id="quickThemeSelect" style="width: 100%;">
+            <option value="default">Padrão (Azul)</option>
+            <option value="dark">Escuro</option>
+            <option value="purple">Roxo</option>
+            <option value="green">Verde</option>
+            <option value="orange">Laranja</option>
+            <option value="custom">Customizado...</option>
+          </select>
+        </div>
+        <div id="customColorsSection" style="margin-top: 16px; display: none;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-row"><label>Fundo Principal</label><input type="color" id="bgPrimary" value="#f8fafc"></div>
+            <div class="form-row"><label>Fundo Secundário</label><input type="color" id="bgSecondary" value="#ffffff"></div>
+            <div class="form-row"><label>Superfície Primária</label><input type="color" id="surfacePrimary" value="#ffffff"></div>
+            <div class="form-row"><label>Superfície Secundária</label><input type="color" id="surfaceSecondary" value="#f1f5f9"></div>
+            <div class="form-row"><label>Borda Primária</label><input type="color" id="borderPrimary" value="#e2e8f0"></div>
+            <div class="form-row"><label>Borda Secundária</label><input type="color" id="borderSecondary" value="#cbd5e1"></div>
+            <div class="form-row"><label>Texto Primário</label><input type="color" id="textPrimary" value="#0f172a"></div>
+            <div class="form-row"><label>Texto Secundário</label><input type="color" id="textSecondary" value="#334155"></div>
+            <div class="form-row"><label>Texto Terciário</label><input type="color" id="textTertiary" value="#64748b"></div>
+            <div class="form-row"><label>Acento Primário</label><input type="color" id="accentPrimary" value="#3b82f6"></div>
+            <div class="form-row"><label>Acento Hover</label><input type="color" id="accentPrimaryHover" value="#2563eb"></div>
+            <div class="form-row"><label>Perigo</label><input type="color" id="danger" value="#ef4444"></div>
+            <div class="form-row"><label>Sucesso</label><input type="color" id="success" value="#22c55e"></div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" id="themeCancel">Cancelar</button>
+          <button class="btn btn-primary" id="themeSave">Aplicar Tema</button>
         </div>
       </div>
     </div>
