@@ -101,6 +101,20 @@ function setAllNotes(notes) {
   cacheWrite(CACHE_KEYS.notes, notes);
 }
 
+// ==================== UTILITÁRIOS DE DOMÍNIO E FAVICON ====================
+function getMainDomain(url) {
+  try {
+    const hostname = new URL(url).hostname;
+    const parts = hostname.split('.');
+    if (parts.length > 2 && !hostname.endsWith('.gov.br') && !hostname.endsWith('.com.br')) {
+      return parts.slice(-2).join('.');
+    }
+    return hostname;
+  } catch (e) {
+    return 'google.com';
+  }
+}
+
 // ==================== BADGE ONLINE/OFFLINE ====================
 function setBadge(online) {
   const badge = document.getElementById("offlineBadge");
@@ -377,12 +391,11 @@ function renderGroups() {
     if (categoryLinks.length > 0) {
       previewHtml = '<div class="group-preview">';
       categoryLinks.forEach(link => {
-        let domain = "google.com";
-        try { domain = new URL(link.url).hostname; } catch (e) { }
+        const domain = getMainDomain(link.url);
         previewHtml += `
           <div class="group-preview-item" title="${escapeHtml(link.title)}">
             <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=32" 
-                 onerror="this.parentElement.style.display='none'">
+                 onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'">
           </div>
         `;
       });
@@ -431,8 +444,7 @@ function renderLinks() {
   empty.style.display = "none";
 
   filtered.forEach(link => {
-    let domain = "google.com";
-    try { domain = new URL(link.url).hostname; } catch (e) { }
+    const domain = getMainDomain(link.url);
 
     const card = document.createElement("div");
     card.className = "link-card";
