@@ -781,7 +781,7 @@ function renderNotes() {
   grid.style.display = "grid";
   grid.innerHTML = "";
 
-  const noteColorsList = [1, 2, 3, 4, 5, 6];
+  const noteColorsList =  [1, 2, 3, 4, 5, 6];
 
   notesToShow.forEach(note => {
     try {

@@ -1110,3 +1110,69 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-tertiary, #64748b) !important;
 }
+
+/* ============================================================
+   REGRAS DE RESPONSIVIDADE PARA CELULAR E DISPOSITIVOS MÓVEIS
+   Cole este bloco no FINAL do seu arquivo style.css completo
+============================================================ */
+
+@media (max-width: 640px) {
+  /* Ajustes no Cabeçalho */
+  .hdr-inner { padding: 0.5rem 0.75rem 0 !important; }
+  .hdr-top { gap: 0.5rem !important; margin-bottom: 0.5rem !important; }
+  .logo { font-size: 1rem !important; }
+  .logo-mark { width: 28px !important; height: 28px !important; font-size: 0.8rem !important; }
+  
+  /* Organização dos Botões e Busca no Celular */
+  .hdr-actions { gap: 4px !important; width: 100% !important; justify-content: space-between !important; }
+  .search-wrap { order: -1 !important; width: 100% !important; flex: 1 1 100% !important; margin-bottom: 4px !important; }
+  .search-wrap input { padding: 6px 10px 6px 30px !important; font-size: 16px !important; width: 100% !important; }
+
+  .btn { padding: 6px 10px !important; font-size: 0.75rem !important; touch-action: manipulation; }
+  
+  .main { padding: 0.75rem !important; }
+
+  /* Grid de Links no Celular */
+  .links-grid {
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)) !important;
+    gap: 6px !important;
+  }
+  .link-card { padding: 6px 8px !important; gap: 6px !important; }
+  .link-card img { width: 16px !important; height: 16px !important; }
+  .link-title { font-size: 0.75rem !important; }
+  .link-cat-badge { font-size: 0.55rem !important; padding: 1px 4px !important; }
+  .link-del { opacity: 1 !important; width: 20px !important; height: 20px !important; }
+
+  /* Grid de Grupos no Celular */
+  .groups-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .group-card { padding: 10px !important; gap: 8px !important; }
+  .group-card i { font-size: 1.3rem !important; }
+  .group-name { font-size: 0.82rem !important; }
+  .group-count { font-size: 0.65rem !important; padding: 2px 8px !important; }
+
+  /* Grid de Notas no Celular (Largura Total) */
+  .notes-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  .note-card { min-height: 160px !important; width: 100% !important; min-width: 0 !important; }
+
+  /* Barra de Ferramentas das Notas */
+  .notes-toolbar { flex-direction: column !important; align-items: stretch !important; gap: 6px !important; }
+  .folder-strip { width: 100% !important; overflow-x: auto !important; flex-wrap: nowrap !important; padding-bottom: 4px !important; }
+  .folder-strip::-webkit-scrollbar { display: none !important; }
+  .ftab { padding: 4px 10px !important; font-size: 0.72rem !important; flex-shrink: 0 !important; }
+  .btn-new-folder { font-size: 0.72rem !important; padding: 4px 10px !important; align-self: flex-start !important; }
+
+  /* Modais no Celular */
+  .modal-box { padding: 16px !important; max-height: 90vh !important; }
+  .expand-box { height: 88vh !important; border-radius: 16px !important; }
+}
+
+@media (max-width: 380px) {
+  .links-grid { grid-template-columns: 1fr !important; }
+  .groups-grid { grid-template-columns: 1fr 1fr !important; }
+}
