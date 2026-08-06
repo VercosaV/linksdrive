@@ -716,28 +716,6 @@ async function updateNoteOrder(sourceId, targetId) {
   }
 }
 
-// Função auxiliar para tratar qualquer formato de data com segurança
-function formatNoteDate(timestamp) {
-  if (!timestamp) return "Agora";
-  try {
-    if (typeof timestamp === 'object') {
-      const sec = timestamp.seconds || timestamp._seconds;
-      if (sec) return new Date(sec * 1000).toLocaleString("pt-BR");
-      if (timestamp.toDate && typeof timestamp.toDate === 'function') {
-        return timestamp.toDate().toLocaleString("pt-BR");
-      }
-    }
-    if (typeof timestamp === 'number') {
-      return new Date(timestamp).toLocaleString("pt-BR");
-    }
-    if (typeof timestamp === 'string') {
-      const d = new Date(timestamp);
-      if (!isNaN(d.getTime())) return d.toLocaleString("pt-BR");
-    }
-  } catch (e) { }
-  return "Agora";
-}
-
 function renderNotes() {
   const grid = document.getElementById("notesGrid");
   const empty = document.getElementById("notesEmpty");
