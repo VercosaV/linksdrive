@@ -722,7 +722,7 @@ function renderNotes() {
   if (!grid || !empty) return;
 
   // Declarado no início para evitar o erro de inicialização (TDZ)
-  const noteColorsList = null;
+const noteColorsList = Array.from({ length: 6 }, (_, i) => i + 1);
 
   const folderStrip = document.getElementById("folderStrip");
   if (folderStrip) {
