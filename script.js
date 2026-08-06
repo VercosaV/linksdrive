@@ -101,7 +101,7 @@ function setAllNotes(notes) {
   cacheWrite(CACHE_KEYS.notes, notes);
 }
 
-// ==================== UTILITÁRIOS DE DOMÍNIO E FAVICON ====================
+// ==================== UTILITÁRIOS ====================
 function getMainDomain(url) {
   try {
     const hostname = new URL(url).hostname;
@@ -113,6 +113,27 @@ function getMainDomain(url) {
   } catch (e) {
     return 'google.com';
   }
+}
+
+function formatNoteDate(timestamp) {
+  if (!timestamp) return "Agora";
+  try {
+    if (typeof timestamp === 'object') {
+      const sec = timestamp.seconds || timestamp._seconds;
+      if (sec) return new Date(sec * 1000).toLocaleString("pt-BR");
+      if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+        return timestamp.toDate().toLocaleString("pt-BR");
+      }
+    }
+    if (typeof timestamp === 'number') {
+      return new Date(timestamp).toLocaleString("pt-BR");
+    }
+    if (typeof timestamp === 'string') {
+      const d = new Date(timestamp);
+      if (!isNaN(d.getTime())) return d.toLocaleString("pt-BR");
+    }
+  } catch (e) { }
+  return "Agora";
 }
 
 // ==================== BADGE ONLINE/OFFLINE ====================
@@ -721,9 +742,6 @@ function renderNotes() {
   const empty = document.getElementById("notesEmpty");
   if (!grid || !empty) return;
 
-  // Declarado no início para evitar o erro de inicialização (TDZ)
-  const noteColorsList = ;
-
   const folderStrip = document.getElementById("folderStrip");
   if (folderStrip) {
     folderStrip.innerHTML = "";
@@ -762,6 +780,8 @@ function renderNotes() {
   empty.style.display = "none";
   grid.style.display = "grid";
   grid.innerHTML = "";
+
+  const noteColorsList =;
 
   notesToShow.forEach(note => {
     try {
