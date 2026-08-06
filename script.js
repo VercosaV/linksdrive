@@ -721,6 +721,9 @@ function renderNotes() {
   const empty = document.getElementById("notesEmpty");
   if (!grid || !empty) return;
 
+  // Declarado no início para evitar o erro de inicialização (TDZ)
+  const noteColorsList = null;
+
   const folderStrip = document.getElementById("folderStrip");
   if (folderStrip) {
     folderStrip.innerHTML = "";
@@ -759,8 +762,6 @@ function renderNotes() {
   empty.style.display = "none";
   grid.style.display = "grid";
   grid.innerHTML = "";
-
-  const noteColorsList = 
 
   notesToShow.forEach(note => {
     try {
