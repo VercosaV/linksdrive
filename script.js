@@ -308,6 +308,52 @@ async function handleLinkFileImport(file) {
   reader.readAsText(file);
 }
 
+function closeLinkModal() {
+  const modal = document.getElementById("linkModal");
+  if (modal) modal.style.display = "none";
+
+  ["urlInput", "titleInput"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+
+  const select = document.getElementById("catSelect");
+  if (select) select.selectedIndex = 0;
+
+  const nc = document.getElementById("newCatInput");
+  if (nc) { nc.style.display = "none"; nc.value = ""; }
+}
+
+async function saveLinkHandler() {
+  const title = document.getElementById("titleInput")?.value.trim();
+  let url = document.getElementById("urlInput")?.value.trim();
+
+  const catSelect = document.getElementById("catSelect");
+  let category = catSelect?.value;
+  if (category === "new") {
+    category = document.getElementById("newCatInput")?.value.trim();
+  }
+
+  if (!title || !url || !category) {
+    showToast("Preencha todos os campos!", "error");
+    return;
+  }
+
+  if (!url.startsWith("http")) url = `https://${url}`;
+
+  if (state.allLinks.some(l => l.url.toLowerCase() === url.toLowerCase())) {
+    showToast("Este link já existe!", "error");
+    return;
+  }
+
+  try {
+    await addLink({ title, url, category });
+    closeLinkModal();
+  } catch (error) {
+    // addLink() já mostra o toast de erro; aqui só evitamos fechar o modal se falhar
+  }
+}
+
 function exportNotesAsJSON() {
   if (state.allNotes.length === 0) {
     showToast("Nenhuma nota para exportar.", "error");
@@ -1065,14 +1111,17 @@ function initDashboard() {
 
   // ---- Botoes do Dashboard ----
   document.getElementById("addLinkBtn")?.addEventListener("click", () => {
-    document.getElementById("linkModal").style.display = "flex";
-  });
-  document.getElementById("modalClose")?.addEventListener("click", () => {
-    document.getElementById("linkModal").style.display = "none";
-  });
-  document.getElementById("modalCancel")?.addEventListener("click", () => {
-    document.getElementById("linkModal").style.display = "none";
-  });
+  document.getElementById("linkModal").style.display = "flex";
+  document.getElementById("urlInput")?.focus();
+});
+document.getElementById("modalClose")?.addEventListener("click", closeLinkModal);
+document.getElementById("modalCancel")?.addEventListener("click", closeLinkModal);
+document.getElementById("saveLink")?.addEventListener("click", saveLinkHandler);
+
+document.getElementById("catSelect")?.addEventListener("change", e => {
+  const nc = document.getElementById("newCatInput");
+  if (nc) nc.style.display = e.target.value === "new" ? "block" : "none";
+});
   document.getElementById("addNoteBtn")?.addEventListener("click", addNote);
   document.getElementById("newFolderBtn")?.addEventListener("click", handleNewFolderClick);
 
