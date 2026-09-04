@@ -1,0 +1,937 @@
+[
+  {
+    "title": "Ngrok",
+    "url": "https://ngrok.com/",
+    "category": "APIs gateway"
+  },
+  {
+    "title": "text2sql",
+    "url": "https://www.text2sql.ai/",
+    "category": "Banco de Dados"
+  },
+  {
+    "title": "Lindt",
+    "url": "https://www.lindt.com.br/",
+    "category": "Chocolate"
+  },
+  {
+    "title": "Luizari",
+    "url": "https://clientes.residencialluizari.com.br/luizari/cli_ctrl001_login/cli_ctrl001_login.php",
+    "category": "Conta a Pagar"
+  },
+  {
+    "title": "Freecodecamp",
+    "url": "https://www.freecodecamp.org/",
+    "category": "Cursos"
+  },
+  {
+    "title": "Spring.io guides",
+    "url": "https://spring.io/guides",
+    "category": "Cursos"
+  },
+  {
+    "title": "tic",
+    "url": "https://ticemtrilhas.instructure.com/?login_success=1",
+    "category": "Cursos"
+  },
+  {
+    "title": "Alura",
+    "url": "https://cursos.alura.com.br/loginForm",
+    "category": "Cursos"
+  },
+  {
+    "title": "Circle",
+    "url": "https://login.circle.so/sign_in",
+    "category": "Cursos"
+  },
+  {
+    "title": "Codecademy",
+    "url": "https://www.codecademy.com/",
+    "category": "Cursos"
+  },
+  {
+    "title": "Udemy",
+    "url": "https://www.udemy.com/pt/",
+    "category": "Cursos"
+  },
+  {
+    "title": "Roadmap backend",
+    "url": "https://roadmap.sh/backend",
+    "category": "Cursos"
+  },
+  {
+    "title": "Geek",
+    "url": "https://www.geeksforgeeks.org/",
+    "category": "Cursos"
+  },
+  {
+    "title": "alison curs",
+    "url": "https://alison.com/affiliates/learn-to-earn",
+    "category": "Cursos"
+  },
+  {
+    "title": "Spring-stack-flow",
+    "url": "https://spring-stack-flow.base44.app/Projects",
+    "category": "Cursos"
+  },
+  {
+    "title": "DIO",
+    "url": "https://auth.dio.me/realms/master/protocol/openid-connect/auth",
+    "category": "Cursos"
+  },
+  {
+    "title": "fernanda",
+    "url": "https://fernandakipper.com/dashboard",
+    "category": "Cursos"
+  },
+  {
+    "title": "Aws guia",
+    "url": "https://aws.amazon.com/pt/training/",
+    "category": "Cursos"
+  },
+  {
+    "title": "Sqlbolt guia",
+    "url": "https://sqlbolt.com/",
+    "category": "Cursos"
+  },
+  {
+    "title": "Restfulapi aula",
+    "url": "https://restfulapi.net/",
+    "category": "Cursos"
+  },
+  {
+    "title": "Devlorepaths",
+    "url": "https://www.devlorepaths.site/",
+    "category": "Cursos"
+  },
+  {
+    "title": "Developer rest guide",
+    "url": "https://developer.mozilla.org/pt-BR/docs/Web/HTTP",
+    "category": "Cursos"
+  },
+  {
+    "title": "Try Hack Me",
+    "url": "https://tryhackme.com/",
+    "category": "Cursos"
+  },
+  {
+    "title": "W3school",
+    "url": "https://www.w3schools.com/",
+    "category": "Cursos"
+  },
+  {
+    "title": "curso em video",
+    "url": "https://www.cursoemvideo.com/",
+    "category": "Cursos"
+  },
+  {
+    "title": "Skillbuilder AWS",
+    "url": "https://skillbuilder.aws/learn?cta=free",
+    "category": "Cursos"
+  },
+  {
+    "title": "Port Swigger",
+    "url": "https://portswigger.net/web-security",
+    "category": "Cursos"
+  },
+  {
+    "title": "Estudar.org",
+    "url": "https://ead.estudar.org.br/users/sign_in",
+    "category": "Cursos"
+  },
+  {
+    "title": "Docker guia",
+    "url": "https://www.docker.com/",
+    "category": "Cursos"
+  },
+  {
+    "title": "Alura",
+    "url": "https://cursos.alura.com.br",
+    "category": "Cursos"
+  },
+  {
+    "title": "sololearn",
+    "url": "https://www.sololearn.com/pt/learn/courses/web-development/lesson/5892568055?p=1",
+    "category": "Cursos"
+  },
+  {
+    "title": "Roadmap",
+    "url": "https://roadmap.sh/java",
+    "category": "Cursos"
+  },
+  {
+    "title": "javo",
+    "url": "https://www.youtube.com/channel/UClz8vOAb28UzP64meEvhg5w",
+    "category": "Cursos"
+  },
+  {
+    "title": "Quarkus guide",
+    "url": "https://quarkus.io/guides/",
+    "category": "Cursos"
+  },
+  {
+    "title": "Cursoemvideo",
+    "url": "https://www.cursoemvideo.com/cursos/",
+    "category": "Cursos"
+  },
+  {
+    "title": "DIO",
+    "url": "https://auth.dio.me/realms/master/protocol/openid-connect/auth?client_id=spa-core-client&redirect_uri=https%3A%2F%2Fweb.dio.me%2Fhome&state=30859c29-f131-45f2-836f-c8eaa2ea9993&response_mode=fragment&response_type=code&scope=openid&nonce=883b1f1b-66f4-496e-a3c2-ba64dfaebdf0",
+    "category": "Cursos"
+  },
+  {
+    "title": "Codeforce",
+    "url": "https://codeforces.com/",
+    "category": "Desafios"
+  },
+  {
+    "title": "AWS",
+    "url": "https://us-east-1.signin.aws.amazon.com",
+    "category": "Dev"
+  },
+  {
+    "title": "AWS",
+    "url": "https://us-east-1.signin.aws/platform/d-9067642ac7/login",
+    "category": "Dev"
+  },
+  {
+    "title": "Supabase",
+    "url": "https://supabase.com",
+    "category": "Dev"
+  },
+  {
+    "title": "Vercel",
+    "url": "https://vercel.com",
+    "category": "Dev"
+  },
+  {
+    "title": "GitHub",
+    "url": "https://github.com/",
+    "category": "Dev"
+  },
+  {
+    "title": "Unity",
+    "url": "https://cursos.dankicode.com/unity?ref=U77942400J",
+    "category": "Dev"
+  },
+  {
+    "title": "Supabase",
+    "url": "https://supabase.com/dashboard/sign-in?returnTo=%2Forganizations",
+    "category": "Dev"
+  },
+  {
+    "title": "Laravel",
+    "url": "https://www.cursou.com.br/informatica/programacao/php/laravel-framework-php-desenvolvimento-web/",
+    "category": "Dev"
+  },
+  {
+    "title": "Vercel",
+    "url": "https://vercel.com/victors-projects-9d919fd2",
+    "category": "Dev"
+  },
+  {
+    "title": "Make",
+    "url": "https://www.make.com/en",
+    "category": "Estudar"
+  },
+  {
+    "title": "Zapier",
+    "url": "https://zapier.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "Stripe",
+    "url": "https://stripe.com/br",
+    "category": "Estudar"
+  },
+  {
+    "title": "Asana",
+    "url": "https://asana.com/pt",
+    "category": "Estudar"
+  },
+  {
+    "title": "Jam",
+    "url": "https://jam.dev/",
+    "category": "Estudar"
+  },
+  {
+    "title": "clickup",
+    "url": "https://clickup.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "sentry",
+    "url": "https://sentry.io/welcome/",
+    "category": "Estudar"
+  },
+  {
+    "title": "PostHog",
+    "url": "https://posthog.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "TlDv",
+    "url": "https://tldv.io/pt-br/",
+    "category": "Estudar"
+  },
+  {
+    "title": "Wix",
+    "url": "https://pt.wix.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "MetaBase",
+    "url": "https://www.metabase.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "Pop Hive",
+    "url": "https://www.pophive.org/",
+    "category": "Estudar"
+  },
+  {
+    "title": "AirTable",
+    "url": "https://www.airtable.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "Dify",
+    "url": "https://dify.ai/",
+    "category": "Estudar"
+  },
+  {
+    "title": "prisma",
+    "url": "https://www.prisma.io/",
+    "category": "Estudar"
+  },
+  {
+    "title": "ZoomInfo",
+    "url": "https://www.zoominfo.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "Playwright",
+    "url": "https://playwright.dev/",
+    "category": "Estudar"
+  },
+  {
+    "title": "neon",
+    "url": "https://neon.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "estudar heroku",
+    "url": "https://devcenter.heroku.com/articles/getting-started-with-java",
+    "category": "Estudar"
+  },
+  {
+    "title": "TodoIst",
+    "url": "https://www.todoist.com/pt-BR",
+    "category": "Estudar"
+  },
+  {
+    "title": "RevenueCat",
+    "url": "https://www.revenuecat.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "FireCrawl",
+    "url": "https://www.firecrawl.dev/",
+    "category": "Estudar"
+  },
+  {
+    "title": "Linear",
+    "url": "https://linear.app/",
+    "category": "Estudar"
+  },
+  {
+    "title": "WebFlow",
+    "url": "https://webflow.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "GraphQL",
+    "url": "https://graphql.org/learn/#learn-graphql",
+    "category": "Estudar"
+  },
+  {
+    "title": "JotForme",
+    "url": "https://www.jotform.com/pt/",
+    "category": "Estudar"
+  },
+  {
+    "title": "Intercom",
+    "url": "https://www.intercom.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "Granola",
+    "url": "https://www.granola.ai/",
+    "category": "Estudar"
+  },
+  {
+    "title": "Hubspot",
+    "url": "https://br.hubspot.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "Line",
+    "url": "https://www.line.me/en/",
+    "category": "Estudar"
+  },
+  {
+    "title": "Xero",
+    "url": "https://www.xero.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "Close",
+    "url": "https://www.close.com/",
+    "category": "Estudar"
+  },
+  {
+    "title": "Baeldung",
+    "url": "https://www.baeldung.com/",
+    "category": "Estudo Programação"
+  },
+  {
+    "title": "Php The Right Way",
+    "url": "https://phptherightway.com/",
+    "category": "Estudo Programação"
+  },
+  {
+    "title": "Hyperskill",
+    "url": "https://hyperskill.org/",
+    "category": "Estudo Programação"
+  },
+  {
+    "title": "Refactoring",
+    "url": "https://refactoring.guru/",
+    "category": "Estudo Programação"
+  },
+  {
+    "title": "Teams (Faculdade)",
+    "url": "https://teams.microsoft.com/v2/",
+    "category": "Faculdade"
+  },
+  {
+    "title": "artigo rede",
+    "url": "https://docs.google.com/document/d/1KwQ7Is9lsjn9eZanAOGcAD2901HgdnsOcPkeQmrFG9U/edit?tab=t.0",
+    "category": "Faculdade"
+  },
+  {
+    "title": "modulo 3",
+    "url": "https://drive.google.com/drive/folders/1Binh3X--dzQGDu1AfFVd8ubOD9Gy-YqZ",
+    "category": "Faculdade"
+  },
+  {
+    "title": "redes de computador",
+    "url": "https://drive.google.com/drive/folders/1c4Os34cGMPJtljIc6CU1IaZ5VBFGO4Jc",
+    "category": "Faculdade"
+  },
+  {
+    "title": "Eng 3",
+    "url": "http://fatec.darce.com.br/ies300n/",
+    "category": "Faculdade"
+  },
+  {
+    "title": "Siga (Faculdade)",
+    "url": "https://siga.cps.sp.gov.br/sigaaluno/applogin.aspx",
+    "category": "Faculdade"
+  },
+  {
+    "title": "bruno",
+    "url": "https://www.usebruno.com/",
+    "category": "Ferramentas"
+  },
+  {
+    "title": "Geogebra",
+    "url": "https://www.geogebra.org/calculator",
+    "category": "Ferramentas"
+  },
+  {
+    "title": "Diagramas",
+    "url": "https://app.diagrams.net/",
+    "category": "Ferramentas"
+  },
+  {
+    "title": "JSON Formatter",
+    "url": "https://jsonformatter.curiousconcept.com/#",
+    "category": "Ferramentas"
+  },
+  {
+    "title": "gitgnore",
+    "url": "https://www.toptal.com/developers/gitignore",
+    "category": "Gitignore"
+  },
+  {
+    "title": "North Flank",
+    "url": "https://northflank.com/",
+    "category": "Hospedagem"
+  },
+  {
+    "title": "Fly",
+    "url": "https://fly.io/",
+    "category": "Hospedagem"
+  },
+  {
+    "title": "Railway",
+    "url": "https://railway.com/",
+    "category": "Hospedagem"
+  },
+  {
+    "title": "CloudWays",
+    "url": "https://www.cloudways.com/pt/",
+    "category": "Hospedagem"
+  },
+  {
+    "title": "Render",
+    "url": "https://render.com/",
+    "category": "Hospedagem"
+  },
+  {
+    "title": "cloudflare",
+    "url": "https://dash.cloudflare.com/e2d7b8eecd487bb2ae3ce11a38c7a5b7/home/overview",
+    "category": "Hospedagem"
+  },
+  {
+    "title": "Replit",
+    "url": "https://replit.com/",
+    "category": "Hospedagem"
+  },
+  {
+    "title": "App Write",
+    "url": "https://appwrite.io/",
+    "category": "Hospedagem"
+  },
+  {
+    "title": "Netlify",
+    "url": "https://www.netlify.com/",
+    "category": "Hospedagem"
+  },
+  {
+    "title": "Vapor",
+    "url": "https://vapor.laravel.com/login",
+    "category": "Hospedagem"
+  },
+  {
+    "title": "Pocket Base",
+    "url": "https://pocketbase.io/",
+    "category": "Hospedagem"
+  },
+  {
+    "title": "Laravel Forge",
+    "url": "https://laravel.com/forge",
+    "category": "Hospedagem"
+  },
+  {
+    "title": "ChatGPT",
+    "url": "https://chatgpt.com/",
+    "category": "IAs"
+  },
+  {
+    "title": "Manus Im",
+    "url": "https://manus.im/app",
+    "category": "IAs"
+  },
+  {
+    "title": "Tess",
+    "url": "https://tess.im/pt-BR",
+    "category": "IAs"
+  },
+  {
+    "title": "vertex",
+    "url": "https://console.cloud.google.com/vertex-ai/studio/build?project=linksdrive-4012c",
+    "category": "IAs"
+  },
+  {
+    "title": "Claude",
+    "url": "https://claude.ai/new",
+    "category": "IAs"
+  },
+  {
+    "title": "Jasper",
+    "url": "https://www.jasper.ai/",
+    "category": "IAs"
+  },
+  {
+    "title": "Base44",
+    "url": "https://app.base44.com/",
+    "category": "IAs"
+  },
+  {
+    "title": "InWorld",
+    "url": "https://platform.inworld.ai/signup?utm_device=c&utm_term=inworld%20ai&utm_campaign=Google_Brand_KW_US-EN_inworld_Search&utm_source=adwords&utm_medium=ppc&utm_content=brand&utm_adgroup=164107772623&hsa_acc=5807507431&hsa_cam=21520344854&hsa_grp=164107772623&hsa_ad=774830619837&hsa_src=g&hsa_tgt=kwd-1438136823756&hsa_kw=inworld%20ai&hsa_mt=e&hsa_net=adwords&hsa_ver=3&gad_source=1&gad_campaignid=21520344854&gbraid=0AAAAAo5ojYGKzNxvuwllrUo3l_1YgyCx1&gclid=Cj0KCQjwve7NBhC-ARIsALZy9HXOkwJwn_S-6Qr1TBkk82UoXzrTXMazMW8bSIUugNKIjuxTu15r2-MaAvTnEALw_wcB",
+    "category": "IAs"
+  },
+  {
+    "title": "Ollama",
+    "url": "https://ollama.com/library/llama3",
+    "category": "IAs"
+  },
+  {
+    "title": "Genspark",
+    "url": "https://www.genspark.ai/",
+    "category": "IAs"
+  },
+  {
+    "title": "DeepSeek",
+    "url": "https://chat.deepseek.com/",
+    "category": "IAs"
+  },
+  {
+    "title": "Perplexity",
+    "url": "https://www.perplexity.ai/",
+    "category": "IAs"
+  },
+  {
+    "title": "Meshy",
+    "url": "https://www.meshy.ai/",
+    "category": "IAs"
+  },
+  {
+    "title": "Gemini",
+    "url": "https://gemini.google.com/app",
+    "category": "IAs"
+  },
+  {
+    "title": "Synthesia",
+    "url": "https://www.synthesia.io/pt-br?utm_term=synthesia&utm_campaign=Synthesia&utm_source=google&utm_medium=cpc&hsa_acc=5132031546&hsa_cam=23176900765&hsa_grp=187476245916&hsa_ad=780383075496&hsa_src=g&hsa_tgt=kwd-323407513834&hsa_kw=synthesia&hsa_mt=e&hsa_net=adwords&hsa_ver=3&gad_source=1&gad_campaignid=23176900765&gbraid=0AAAAACSakFNfrn48IlJgZNhxafROQJWxm&gclid=Cj0KCQjwve7NBhC-ARIsALZy9HU9I9pyTLHV0bO3jBCDFGOIH1J-R1RDRc7-D497c21M4DCWmg7t2KoaAizDEALw_wcB",
+    "category": "IAs"
+  },
+  {
+    "title": "Notion IA",
+    "url": "https://www.notion.com/",
+    "category": "IAs"
+  },
+  {
+    "title": "Unity Ai",
+    "url": "https://unity.com/pt/features/ai",
+    "category": "IAs"
+  },
+  {
+    "title": "Rosebud",
+    "url": "https://rosebud.ai/",
+    "category": "IAs"
+  },
+  {
+    "title": "v0",
+    "url": "https://v0.app/",
+    "category": "IAs"
+  },
+  {
+    "title": "DeepSeek",
+    "url": "https://chat.deepseek.com",
+    "category": "IAs"
+  },
+  {
+    "title": "Semantic scholar",
+    "url": "https://www.semanticscholar.org/",
+    "category": "IAs"
+  },
+  {
+    "title": "Innerai",
+    "url": "https://innerai.com/pt/nossos-planos?utm_source=google&utm_medium=cpc&utm_campaign=21517650614&utm_term=inner+ai&utm_content=173918814908",
+    "category": "IAs"
+  },
+  {
+    "title": "Spleeter",
+    "url": "https://spleeter.online/",
+    "category": "IAs"
+  },
+  {
+    "title": "Leonardo",
+    "url": "https://leonardo.ai/",
+    "category": "IAs"
+  },
+  {
+    "title": "Mistral",
+    "url": "https://mistral.ai/",
+    "category": "IAs"
+  },
+  {
+    "title": "litmaps",
+    "url": "https://app.litmaps.com/",
+    "category": "IAs"
+  },
+  {
+    "title": "sixth",
+    "url": "https://app.trysixth.com/vscode/dashboard",
+    "category": "IAs"
+  },
+  {
+    "title": "Ludo",
+    "url": "https://ludo.ai/",
+    "category": "IAs"
+  },
+  {
+    "title": "Scispace",
+    "url": "https://scispace.com/?utm_source=google&utm_medium=cpc&utm_campaign=BR_ACQ_Google_CPC_BSearch_INR_ALL&utm_content=Scispace&utm_term=scispace&campaignid=23656033183&adgroupid=193442209199&creative=800102489034&matchtype=p&network=g&device=c&gad_source=1&gad_campaignid=23656033183&gbraid=0AAAAADRGWSjCmm1MJPPVxkbHMldT1hVKw&gclid=EAIaIQobChMIz6D7idKlkwMVyVVIAB3ruBfbEAAYASAAEgJYF_D_BwE",
+    "category": "IAs"
+  },
+  {
+    "title": "Game3RB",
+    "url": "https://game3rb.com/category/games-online/",
+    "category": "Jogos"
+  },
+  {
+    "title": "Guia Monster Hunter",
+    "url": "https://guiadomh.carrd.co/",
+    "category": "Jogos"
+  },
+  {
+    "title": "Nexus Mods (Skyrim)",
+    "url": "https://www.nexusmods.com/skyrim/mods/116605",
+    "category": "Jogos"
+  },
+  {
+    "title": "WarriorJS",
+    "url": "https://warriorjs.com/",
+    "category": "Jogos"
+  },
+  {
+    "title": "Game Jolt",
+    "url": "https://gamejolt.com/",
+    "category": "Jogos"
+  },
+  {
+    "title": "Loldle",
+    "url": "https://loldle.net/splash",
+    "category": "Jogos"
+  },
+  {
+    "title": "fit",
+    "url": "https://fitgirl-repacks.site/",
+    "category": "Jogos"
+  },
+  {
+    "title": "New Grounds",
+    "url": "https://www.newgrounds.com/games",
+    "category": "Jogos"
+  },
+  {
+    "title": "steamgg",
+    "url": "https://steamgg.net/",
+    "category": "Jogos"
+  },
+  {
+    "title": "Retro Games",
+    "url": "https://www.retrogames.onl/",
+    "category": "Jogos"
+  },
+  {
+    "title": "Linux From Scratch",
+    "url": "https://www.linuxfromscratch.org/",
+    "category": "Linux"
+  },
+  {
+    "title": "PortProton",
+    "url": "https://flathub.org/pt-BR/apps/ru.linux_gaming.PortProton",
+    "category": "Linux"
+  },
+  {
+    "title": "OSDEV",
+    "url": "https://wiki.osdev.org/Expanded_Main_Page",
+    "category": "Linux"
+  },
+  {
+    "title": "Mec Livros",
+    "url": "https://meclivros.mec.gov.br/",
+    "category": "Livros"
+  },
+  {
+    "title": "Repertório Violino",
+    "url": "https://canalparaviolinistas.com/downloads/",
+    "category": "Música"
+  },
+  {
+    "title": "Song BPM",
+    "url": "https://getsongbpm.com/",
+    "category": "Música"
+  },
+  {
+    "title": "Aspire Leaders",
+    "url": "https://engage.aspireleaders.org/profile",
+    "category": "Networking"
+  },
+  {
+    "title": "dev.to",
+    "url": "https://dev.to/",
+    "category": "Networking"
+  },
+  {
+    "title": "Reddit",
+    "url": "https://www.reddit.com/r/brdev/",
+    "category": "Networking"
+  },
+  {
+    "title": "LinkedIn",
+    "url": "https://www.linkedin.com/",
+    "category": "Networking"
+  },
+  {
+    "title": "Notion",
+    "url": "https://www.notion.so/",
+    "category": "Notas"
+  },
+  {
+    "title": "Notion",
+    "url": "https://www.notion.so/Ideia-de-projetos-271ec04d81468064a82bf511f2872bb1",
+    "category": "Notas"
+  },
+  {
+    "title": "Digital Ocean",
+    "url": "https://www.digitalocean.com/products/droplets",
+    "category": "Plataforma"
+  },
+  {
+    "title": "Heroku",
+    "url": "https://www.heroku.com/",
+    "category": "Plataforma"
+  },
+  {
+    "title": "Cloud Computer",
+    "url": "https://cloud.google.com/products/compute",
+    "category": "Plataforma"
+  },
+  {
+    "title": "nvidia",
+    "url": "https://build.nvidia.com/settings/api-keys",
+    "category": "Plataforma"
+  },
+  {
+    "title": "cloudflare guide workers",
+    "url": "https://developers.cloudflare.com/workers/",
+    "category": "Plataforma"
+  },
+  {
+    "title": "google cloud",
+    "url": "https://cloud.google.com/?hl=pt-BR",
+    "category": "Plataforma"
+  },
+  {
+    "title": "Expo React",
+    "url": "https://expo.dev/",
+    "category": "React"
+  },
+  {
+    "title": "Owasp",
+    "url": "https://owasp.org/",
+    "category": "Segurança"
+  },
+  {
+    "title": "WireShark",
+    "url": "https://www.wireshark.org/",
+    "category": "Segurança"
+  },
+  {
+    "title": "Redis Insight",
+    "url": "https://redis.io/insight/",
+    "category": "Softwares"
+  },
+  {
+    "title": "another redis",
+    "url": "https://github.com/qishibo/AnotherRedisDesktopManager",
+    "category": "Softwares"
+  },
+  {
+    "title": "CALIBRE LIVROS",
+    "url": "https://calibre-ebook.com/",
+    "category": "Softwares"
+  },
+  {
+    "title": "Sordum",
+    "url": "https://www.sordum.org/",
+    "category": "Softwares"
+  },
+  {
+    "title": "BTL",
+    "url": "https://legacy.owaspblt.org/accounts/signup/",
+    "category": "Softwares"
+  },
+  {
+    "title": "ICE CREAM LIVROS",
+    "url": "https://icecreamapps.com/pt/Ebook-Reader/",
+    "category": "Softwares"
+  },
+  {
+    "title": "Workana",
+    "url": "https://www.workana.com/jobs?language=pt",
+    "category": "freelancer"
+  },
+  {
+    "title": "99freelas",
+    "url": "https://www.99freelas.com.br/",
+    "category": "freelancer"
+  },
+  {
+    "title": "Freelancer",
+    "url": "https://freelancer.com.br/account/dashboard/professional",
+    "category": "freelancer"
+  },
+  {
+    "title": "ApInfo",
+    "url": "https://www.apinfo.com/apinfo/",
+    "category": "freelancer"
+  },
+  {
+    "title": "Upwork",
+    "url": "https://upwork.com/freelancers/?__cf_chl_tk=HxRs9ICcsKo_nVZtO_QIIgkvcfIZ8WFnKhLUIC_zWXk-1773245458-1.0.1.1-DjeXx7ar9DFkga.edmVv396tYjgzJQ_ICVw7q4FUKHA",
+    "category": "freelancer"
+  },
+  {
+    "title": "Fiverr",
+    "url": "https://br.fiverr.com/",
+    "category": "freelancer"
+  },
+  {
+    "title": "Programathor",
+    "url": "https://programathor.com.br/",
+    "category": "freelancer"
+  },
+  {
+    "title": "Resn",
+    "url": "https://resn.co.nz/#!/work/tracing-art/",
+    "category": "front-end invejável"
+  },
+  {
+    "title": "google exportação",
+    "url": "https://takeout.google.com/u/1/manage",
+    "category": "google"
+  },
+  {
+    "title": "gitbook",
+    "url": "https://www.gitbook.com/",
+    "category": "hospedagem estudar"
+  },
+  {
+    "title": "bookstackapp",
+    "url": "https://www.bookstackapp.com/",
+    "category": "hospedagem estudar"
+  },
+  {
+    "title": "js wiki",
+    "url": "https://js.wiki/",
+    "category": "hospedagem estudar"
+  },
+  {
+    "title": "java",
+    "url": "https://devcenter.heroku.com/start",
+    "category": "java"
+  },
+  {
+    "title": "opendx.io",
+    "url": "https://openjfx.io/",
+    "category": "java"
+  },
+  {
+    "title": "Java oracle",
+    "url": "https://docs.oracle.com/en/java/",
+    "category": "java"
+  },
+  {
+    "title": "4 cavaleiros o banquete",
+    "url": "https://mangalivre.blog/capitulo/the-seven-deadly-sins-four-knights-of-the-apocalypse-capitulo-120-banquete-dos-poderosos/",
+    "category": "nanatsu"
+  }
+]

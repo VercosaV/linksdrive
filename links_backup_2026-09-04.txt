@@ -1,0 +1,626 @@
+MyDashboard — Backup de Links
+Gerado em: 04/09/2026, 08:25:05
+Total: 187 links
+==================================================
+
+
+[APIs gateway]
+  Ngrok
+  https://ngrok.com/
+
+
+[Banco de Dados]
+  text2sql
+  https://www.text2sql.ai/
+
+
+[Chocolate]
+  Lindt
+  https://www.lindt.com.br/
+
+
+[Conta a Pagar]
+  Luizari
+  https://clientes.residencialluizari.com.br/luizari/cli_ctrl001_login/cli_ctrl001_login.php
+
+
+[Cursos]
+  alison curs
+  https://alison.com/affiliates/learn-to-earn
+
+  Alura
+  https://cursos.alura.com.br/loginForm
+
+  Alura
+  https://cursos.alura.com.br
+
+  Aws guia
+  https://aws.amazon.com/pt/training/
+
+  Circle
+  https://login.circle.so/sign_in
+
+  Codecademy
+  https://www.codecademy.com/
+
+  curso em video
+  https://www.cursoemvideo.com/
+
+  Cursoemvideo
+  https://www.cursoemvideo.com/cursos/
+
+  Developer rest guide
+  https://developer.mozilla.org/pt-BR/docs/Web/HTTP
+
+  Devlorepaths
+  https://www.devlorepaths.site/
+
+  DIO
+  https://auth.dio.me/realms/master/protocol/openid-connect/auth
+
+  DIO
+  https://auth.dio.me/realms/master/protocol/openid-connect/auth?client_id=spa-core-client&redirect_uri=https%3A%2F%2Fweb.dio.me%2Fhome&state=30859c29-f131-45f2-836f-c8eaa2ea9993&response_mode=fragment&response_type=code&scope=openid&nonce=883b1f1b-66f4-496e-a3c2-ba64dfaebdf0
+
+  Docker guia
+  https://www.docker.com/
+
+  Estudar.org
+  https://ead.estudar.org.br/users/sign_in
+
+  fernanda
+  https://fernandakipper.com/dashboard
+
+  Freecodecamp
+  https://www.freecodecamp.org/
+
+  Geek
+  https://www.geeksforgeeks.org/
+
+  javo
+  https://www.youtube.com/channel/UClz8vOAb28UzP64meEvhg5w
+
+  Port Swigger
+  https://portswigger.net/web-security
+
+  Quarkus guide
+  https://quarkus.io/guides/
+
+  Restfulapi aula
+  https://restfulapi.net/
+
+  Roadmap
+  https://roadmap.sh/java
+
+  Roadmap backend
+  https://roadmap.sh/backend
+
+  Skillbuilder AWS
+  https://skillbuilder.aws/learn?cta=free
+
+  sololearn
+  https://www.sololearn.com/pt/learn/courses/web-development/lesson/5892568055?p=1
+
+  Spring-stack-flow
+  https://spring-stack-flow.base44.app/Projects
+
+  Spring.io guides
+  https://spring.io/guides
+
+  Sqlbolt guia
+  https://sqlbolt.com/
+
+  tic
+  https://ticemtrilhas.instructure.com/?login_success=1
+
+  Try Hack Me
+  https://tryhackme.com/
+
+  Udemy
+  https://www.udemy.com/pt/
+
+  W3school
+  https://www.w3schools.com/
+
+
+[Desafios]
+  Codeforce
+  https://codeforces.com/
+
+
+[Dev]
+  AWS
+  https://us-east-1.signin.aws.amazon.com
+
+  AWS
+  https://us-east-1.signin.aws/platform/d-9067642ac7/login
+
+  GitHub
+  https://github.com/
+
+  Laravel
+  https://www.cursou.com.br/informatica/programacao/php/laravel-framework-php-desenvolvimento-web/
+
+  Supabase
+  https://supabase.com
+
+  Supabase
+  https://supabase.com/dashboard/sign-in?returnTo=%2Forganizations
+
+  Unity
+  https://cursos.dankicode.com/unity?ref=U77942400J
+
+  Vercel
+  https://vercel.com
+
+  Vercel
+  https://vercel.com/victors-projects-9d919fd2
+
+
+[Estudar]
+  AirTable
+  https://www.airtable.com/
+
+  Asana
+  https://asana.com/pt
+
+  clickup
+  https://clickup.com/
+
+  Close
+  https://www.close.com/
+
+  Dify
+  https://dify.ai/
+
+  estudar heroku
+  https://devcenter.heroku.com/articles/getting-started-with-java
+
+  FireCrawl
+  https://www.firecrawl.dev/
+
+  Granola
+  https://www.granola.ai/
+
+  GraphQL
+  https://graphql.org/learn/#learn-graphql
+
+  Hubspot
+  https://br.hubspot.com/
+
+  Intercom
+  https://www.intercom.com/
+
+  Jam
+  https://jam.dev/
+
+  JotForme
+  https://www.jotform.com/pt/
+
+  Line
+  https://www.line.me/en/
+
+  Linear
+  https://linear.app/
+
+  Make
+  https://www.make.com/en
+
+  MetaBase
+  https://www.metabase.com/
+
+  neon
+  https://neon.com/
+
+  Playwright
+  https://playwright.dev/
+
+  Pop Hive
+  https://www.pophive.org/
+
+  PostHog
+  https://posthog.com/
+
+  prisma
+  https://www.prisma.io/
+
+  RevenueCat
+  https://www.revenuecat.com/
+
+  sentry
+  https://sentry.io/welcome/
+
+  Stripe
+  https://stripe.com/br
+
+  TlDv
+  https://tldv.io/pt-br/
+
+  TodoIst
+  https://www.todoist.com/pt-BR
+
+  WebFlow
+  https://webflow.com/
+
+  Wix
+  https://pt.wix.com/
+
+  Xero
+  https://www.xero.com/
+
+  Zapier
+  https://zapier.com/
+
+  ZoomInfo
+  https://www.zoominfo.com/
+
+
+[Estudo Programação]
+  Baeldung
+  https://www.baeldung.com/
+
+  Hyperskill
+  https://hyperskill.org/
+
+  Php The Right Way
+  https://phptherightway.com/
+
+  Refactoring
+  https://refactoring.guru/
+
+
+[Faculdade]
+  artigo rede
+  https://docs.google.com/document/d/1KwQ7Is9lsjn9eZanAOGcAD2901HgdnsOcPkeQmrFG9U/edit?tab=t.0
+
+  Eng 3
+  http://fatec.darce.com.br/ies300n/
+
+  modulo 3
+  https://drive.google.com/drive/folders/1Binh3X--dzQGDu1AfFVd8ubOD9Gy-YqZ
+
+  redes de computador
+  https://drive.google.com/drive/folders/1c4Os34cGMPJtljIc6CU1IaZ5VBFGO4Jc
+
+  Siga (Faculdade)
+  https://siga.cps.sp.gov.br/sigaaluno/applogin.aspx
+
+  Teams (Faculdade)
+  https://teams.microsoft.com/v2/
+
+
+[Ferramentas]
+  bruno
+  https://www.usebruno.com/
+
+  Diagramas
+  https://app.diagrams.net/
+
+  Geogebra
+  https://www.geogebra.org/calculator
+
+  JSON Formatter
+  https://jsonformatter.curiousconcept.com/#
+
+
+[Gitignore]
+  gitgnore
+  https://www.toptal.com/developers/gitignore
+
+
+[Hospedagem]
+  App Write
+  https://appwrite.io/
+
+  cloudflare
+  https://dash.cloudflare.com/e2d7b8eecd487bb2ae3ce11a38c7a5b7/home/overview
+
+  CloudWays
+  https://www.cloudways.com/pt/
+
+  Fly
+  https://fly.io/
+
+  Laravel Forge
+  https://laravel.com/forge
+
+  Netlify
+  https://www.netlify.com/
+
+  North Flank
+  https://northflank.com/
+
+  Pocket Base
+  https://pocketbase.io/
+
+  Railway
+  https://railway.com/
+
+  Render
+  https://render.com/
+
+  Replit
+  https://replit.com/
+
+  Vapor
+  https://vapor.laravel.com/login
+
+
+[IAs]
+  Base44
+  https://app.base44.com/
+
+  ChatGPT
+  https://chatgpt.com/
+
+  Claude
+  https://claude.ai/new
+
+  DeepSeek
+  https://chat.deepseek.com/
+
+  DeepSeek
+  https://chat.deepseek.com
+
+  Gemini
+  https://gemini.google.com/app
+
+  Genspark
+  https://www.genspark.ai/
+
+  Innerai
+  https://innerai.com/pt/nossos-planos?utm_source=google&utm_medium=cpc&utm_campaign=21517650614&utm_term=inner+ai&utm_content=173918814908
+
+  InWorld
+  https://platform.inworld.ai/signup?utm_device=c&utm_term=inworld%20ai&utm_campaign=Google_Brand_KW_US-EN_inworld_Search&utm_source=adwords&utm_medium=ppc&utm_content=brand&utm_adgroup=164107772623&hsa_acc=5807507431&hsa_cam=21520344854&hsa_grp=164107772623&hsa_ad=774830619837&hsa_src=g&hsa_tgt=kwd-1438136823756&hsa_kw=inworld%20ai&hsa_mt=e&hsa_net=adwords&hsa_ver=3&gad_source=1&gad_campaignid=21520344854&gbraid=0AAAAAo5ojYGKzNxvuwllrUo3l_1YgyCx1&gclid=Cj0KCQjwve7NBhC-ARIsALZy9HXOkwJwn_S-6Qr1TBkk82UoXzrTXMazMW8bSIUugNKIjuxTu15r2-MaAvTnEALw_wcB
+
+  Jasper
+  https://www.jasper.ai/
+
+  Leonardo
+  https://leonardo.ai/
+
+  litmaps
+  https://app.litmaps.com/
+
+  Ludo
+  https://ludo.ai/
+
+  Manus Im
+  https://manus.im/app
+
+  Meshy
+  https://www.meshy.ai/
+
+  Mistral
+  https://mistral.ai/
+
+  Notion IA
+  https://www.notion.com/
+
+  Ollama
+  https://ollama.com/library/llama3
+
+  Perplexity
+  https://www.perplexity.ai/
+
+  Rosebud
+  https://rosebud.ai/
+
+  Scispace
+  https://scispace.com/?utm_source=google&utm_medium=cpc&utm_campaign=BR_ACQ_Google_CPC_BSearch_INR_ALL&utm_content=Scispace&utm_term=scispace&campaignid=23656033183&adgroupid=193442209199&creative=800102489034&matchtype=p&network=g&device=c&gad_source=1&gad_campaignid=23656033183&gbraid=0AAAAADRGWSjCmm1MJPPVxkbHMldT1hVKw&gclid=EAIaIQobChMIz6D7idKlkwMVyVVIAB3ruBfbEAAYASAAEgJYF_D_BwE
+
+  Semantic scholar
+  https://www.semanticscholar.org/
+
+  sixth
+  https://app.trysixth.com/vscode/dashboard
+
+  Spleeter
+  https://spleeter.online/
+
+  Synthesia
+  https://www.synthesia.io/pt-br?utm_term=synthesia&utm_campaign=Synthesia&utm_source=google&utm_medium=cpc&hsa_acc=5132031546&hsa_cam=23176900765&hsa_grp=187476245916&hsa_ad=780383075496&hsa_src=g&hsa_tgt=kwd-323407513834&hsa_kw=synthesia&hsa_mt=e&hsa_net=adwords&hsa_ver=3&gad_source=1&gad_campaignid=23176900765&gbraid=0AAAAACSakFNfrn48IlJgZNhxafROQJWxm&gclid=Cj0KCQjwve7NBhC-ARIsALZy9HU9I9pyTLHV0bO3jBCDFGOIH1J-R1RDRc7-D497c21M4DCWmg7t2KoaAizDEALw_wcB
+
+  Tess
+  https://tess.im/pt-BR
+
+  Unity Ai
+  https://unity.com/pt/features/ai
+
+  v0
+  https://v0.app/
+
+  vertex
+  https://console.cloud.google.com/vertex-ai/studio/build?project=linksdrive-4012c
+
+
+[Jogos]
+  fit
+  https://fitgirl-repacks.site/
+
+  Game Jolt
+  https://gamejolt.com/
+
+  Game3RB
+  https://game3rb.com/category/games-online/
+
+  Guia Monster Hunter
+  https://guiadomh.carrd.co/
+
+  Loldle
+  https://loldle.net/splash
+
+  New Grounds
+  https://www.newgrounds.com/games
+
+  Nexus Mods (Skyrim)
+  https://www.nexusmods.com/skyrim/mods/116605
+
+  Retro Games
+  https://www.retrogames.onl/
+
+  steamgg
+  https://steamgg.net/
+
+  WarriorJS
+  https://warriorjs.com/
+
+
+[Linux]
+  Linux From Scratch
+  https://www.linuxfromscratch.org/
+
+  OSDEV
+  https://wiki.osdev.org/Expanded_Main_Page
+
+  PortProton
+  https://flathub.org/pt-BR/apps/ru.linux_gaming.PortProton
+
+
+[Livros]
+  Mec Livros
+  https://meclivros.mec.gov.br/
+
+
+[Música]
+  Repertório Violino
+  https://canalparaviolinistas.com/downloads/
+
+  Song BPM
+  https://getsongbpm.com/
+
+
+[Networking]
+  Aspire Leaders
+  https://engage.aspireleaders.org/profile
+
+  dev.to
+  https://dev.to/
+
+  LinkedIn
+  https://www.linkedin.com/
+
+  Reddit
+  https://www.reddit.com/r/brdev/
+
+
+[Notas]
+  Notion
+  https://www.notion.so/
+
+  Notion
+  https://www.notion.so/Ideia-de-projetos-271ec04d81468064a82bf511f2872bb1
+
+
+[Plataforma]
+  Cloud Computer
+  https://cloud.google.com/products/compute
+
+  cloudflare guide workers
+  https://developers.cloudflare.com/workers/
+
+  Digital Ocean
+  https://www.digitalocean.com/products/droplets
+
+  google cloud
+  https://cloud.google.com/?hl=pt-BR
+
+  Heroku
+  https://www.heroku.com/
+
+  nvidia
+  https://build.nvidia.com/settings/api-keys
+
+
+[React]
+  Expo React
+  https://expo.dev/
+
+
+[Segurança]
+  Owasp
+  https://owasp.org/
+
+  WireShark
+  https://www.wireshark.org/
+
+
+[Softwares]
+  another redis
+  https://github.com/qishibo/AnotherRedisDesktopManager
+
+  BTL
+  https://legacy.owaspblt.org/accounts/signup/
+
+  CALIBRE LIVROS
+  https://calibre-ebook.com/
+
+  ICE CREAM LIVROS
+  https://icecreamapps.com/pt/Ebook-Reader/
+
+  Redis Insight
+  https://redis.io/insight/
+
+  Sordum
+  https://www.sordum.org/
+
+
+[freelancer]
+  99freelas
+  https://www.99freelas.com.br/
+
+  ApInfo
+  https://www.apinfo.com/apinfo/
+
+  Fiverr
+  https://br.fiverr.com/
+
+  Freelancer
+  https://freelancer.com.br/account/dashboard/professional
+
+  Programathor
+  https://programathor.com.br/
+
+  Upwork
+  https://upwork.com/freelancers/?__cf_chl_tk=HxRs9ICcsKo_nVZtO_QIIgkvcfIZ8WFnKhLUIC_zWXk-1773245458-1.0.1.1-DjeXx7ar9DFkga.edmVv396tYjgzJQ_ICVw7q4FUKHA
+
+  Workana
+  https://www.workana.com/jobs?language=pt
+
+
+[front-end invejável]
+  Resn
+  https://resn.co.nz/#!/work/tracing-art/
+
+
+[google]
+  google exportação
+  https://takeout.google.com/u/1/manage
+
+
+[hospedagem estudar]
+  bookstackapp
+  https://www.bookstackapp.com/
+
+  gitbook
+  https://www.gitbook.com/
+
+  js wiki
+  https://js.wiki/
+
+
+[java]
+  java
+  https://devcenter.heroku.com/start
+
+  Java oracle
+  https://docs.oracle.com/en/java/
+
+  opendx.io
+  https://openjfx.io/
+
+
+[nanatsu]
+  4 cavaleiros o banquete
+  https://mangalivre.blog/capitulo/the-seven-deadly-sins-four-knights-of-the-apocalypse-capitulo-120-banquete-dos-poderosos/
+
